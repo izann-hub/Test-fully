@@ -1,9 +1,11 @@
 -- ============================================================
--- 🚀 JENOWA FULLY MS V1 — FULL SCRIPT + LOADING + UI
+-- 🚀 JENOWA FULLY MS V1 — FULL SOURCE
+-- Loading 15s + Lagu Random + Anti Kick + Auto Farm
 -- ============================================================
 print("=== JENOWA FULLY MS V1 START ===")
 
 getgenv().FULLY_MS_V1 = true
+getgenv().JENOWA_UI_SHOWING = false
 
 -- ============================================================
 -- 🔥 AUTO CLICK PLAY
@@ -109,7 +111,7 @@ task.spawn(function()
                 end
             end
         end)
-        task.wait(0.1)
+        task.wait(0.3)
     end
 end)
 
@@ -190,13 +192,53 @@ local TweenService = game:GetService("TweenService")
 local LogService = game:GetService("LogService")
 local TeleportService = game:GetService("TeleportService")
 local SoundService = game:GetService("SoundService")
+local Lighting = game:GetService("Lighting")
 
 local LocalPlayer = Players.LocalPlayer
 local Player = LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
 
 -- ============================================================
--- 📦 REMOTE EVENT
+-- 🎵 LAGU PENYAMBUTAN — RANDOM
+-- ============================================================
+local LAGU_LIST = {
+    "rbxassetid://122687131024953",
+    "rbxassetid://124564676675935",
+    "rbxassetid://117020806574845",
+    "rbxassetid://132417947544523",
+    "rbxassetid://93864872749352",
+    "rbxassetid://93479531328112",
+    "rbxassetid://122084395776372",
+    "rbxassetid://70780471034312",
+}
+
+local randomLagu = LAGU_LIST[math.random(1, #LAGU_LIST)]
+
+local WelcomeSound = Instance.new("Sound")
+WelcomeSound.Name = "JenowaWelcome"
+WelcomeSound.SoundId = randomLagu
+WelcomeSound.Volume = 2
+WelcomeSound.Looped = false
+WelcomeSound.Parent = SoundService
+
+task.spawn(function()
+    local t = 0
+    while not WelcomeSound.IsLoaded and t < 15 do
+        task.wait(0.1)
+        t = t + 0.1
+    end
+    for i = 1, 3 do
+        pcall(function()
+            WelcomeSound.TimePosition = 0
+            WelcomeSound:Play()
+        end)
+        task.wait(0.3)
+    end
+    print("🎵 Now Playing: " .. randomLagu)
+end)
+
+-- ============================================================
+-- 📦 REMOTE
 -- ============================================================
 local RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("ReliableRemoteEvent")
 local RESPAWN_WARP = Vector3.new(999999, 9999999, 999999)
@@ -240,10 +282,10 @@ local StopRequest = false
 local FarmThread = nil
 
 -- ============================================================
--- 🎨 RGB NAME — GHOST.LOL
+-- 🎨 RGB NAME — JENOWA STORE
 -- ============================================================
 local RGBEnabled = true
-local CurrentDisplayName = "GHOST.LOL"
+local CurrentDisplayName = "JENOWA STORE"
 local RGBLoop = nil
 
 local function GenerateRGB()
@@ -276,7 +318,7 @@ local function StartRGBName()
     SetDisplayName(CurrentDisplayName, GenerateRGB())
     RGBLoop = task.spawn(function()
         while RGBEnabled do
-            task.wait(0.3)
+            task.wait(0.5)
             if RGBEnabled then SetDisplayName(nil, GenerateRGB()) end
         end
     end)
@@ -363,7 +405,7 @@ local function tpToPos(cx, cy, cz)
         if deathConn then deathConn:Disconnect() end
     end)
     local UNDERGROUND_Y = -4.00
-    local UG_SPEED = 12
+    local UG_SPEED = 7
     local ground = Instance.new("Part")
     ground.Name = "GroundTemp"
     ground.Size = Vector3.new(99999, 1, 99999)
@@ -531,7 +573,7 @@ local function EnsureBuyAprt()
 end
 
 -- ============================================================
--- 💰 BUY SYSTEM
+-- 💰 BUY
 -- ============================================================
 local function GetIngredientCount()
     local water, sugar, gelatin = 0, 0, 0
@@ -557,13 +599,13 @@ end
 
 local function BuyAll(amount)
     amount = amount or FarmSettings.Amount
-    FarmState.Step = "🛒 Buying Ingredients"
+    FarmState.Step = "🛒 Buying"
     for i = 1, amount do
         if StopRequest then return end
         local w, s, g = GetIngredientCount()
-        if w < i then FireBuy("\024\019\003") task.wait(0.45) end
-        if s < i then FireBuy("\024\019\002") task.wait(0.45) end
-        if g < i then FireBuy("\024\019\001") task.wait(0.45) end
+        if w < i then FireBuy("\024\019\003") task.wait(0.5) end
+        if s < i then FireBuy("\024\019\002") task.wait(0.5) end
+        if g < i then FireBuy("\024\019\001") task.wait(0.5) end
     end
     local finalW, finalS, finalG = GetIngredientCount()
     if finalW >= amount and finalS >= amount and finalG >= amount then
@@ -592,7 +634,7 @@ local function findLamont()
 end
 
 -- ============================================================
--- 🔧 NOCLIP
+-- 🔧 NOCLIP RINGAN
 -- ============================================================
 local noclipConn = nil
 local noclipRunning = false
@@ -606,11 +648,10 @@ local function EnableNoClipPermanent()
         if not char then return end
         local hum = char:FindFirstChildOfClass("Humanoid")
         if not hum or hum.Health <= 0 then return end
-        for _, part in ipairs(char:GetChildren()) do
-            if part:IsA("BasePart") then
-                pcall(function() part.CanCollide = false end)
-            end
-        end
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if hrp then hrp.CanCollide = false end
+        local torso = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
+        if torso then torso.CanCollide = false end
     end)
 end
 
@@ -623,7 +664,7 @@ local function DisableNoClipPermanent()
 end
 
 -- ============================================================
--- 🔥 QUICK TP TO POT
+-- 🔥 QUICK TP POT
 -- ============================================================
 local function QuickTeleportToPot(Pot)
     local char = Player.Character
@@ -685,7 +726,7 @@ local function DisableFlyLock()
 end
 
 -- ============================================================
--- 🍳 COOK HELPERS
+-- 🍳 COOK HELPERS — RINGAN
 -- ============================================================
 local function af_FirePrompt(prompt)
     if not prompt or not prompt.Parent then return end
@@ -699,21 +740,26 @@ local function af_FirePrompt(prompt)
 end
 
 local function af_Equip(toolName)
-    local hum = Player.Character and Player.Character:FindFirstChildOfClass("Humanoid")
+    local char = Player.Character
+    if not char then return false end
+    local hum = char:FindFirstChildOfClass("Humanoid")
     if not hum then return false end
-    local tool = (Player.Backpack and Player.Backpack:FindFirstChild(toolName)) or (Player.Character and Player.Character:FindFirstChild(toolName))
-    if tool then
-        pcall(function() hum:EquipTool(tool) end)
-        task.wait(0.3)
-        return true
-    end
-    return false
+    if char:FindFirstChild(toolName) then return true end
+    local bp = Player.Backpack
+    if not bp then return false end
+    local tool = bp:FindFirstChild(toolName)
+    if not tool then return false end
+    pcall(function() hum:EquipTool(tool) end)
+    task.wait(0.25)
+    return char:FindFirstChild(toolName) ~= nil
 end
 
 local function af_Unequip()
-    local hum = Player.Character and Player.Character:FindFirstChildOfClass("Humanoid")
+    local char = Player.Character
+    if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
     if hum then pcall(function() hum:UnequipTools() end) end
-    task.wait(0.2)
+    task.wait(0.15)
 end
 
 local function af_Tween(cf)
@@ -726,7 +772,7 @@ local function af_Tween(cf)
 end
 
 -- ============================================================
--- 🍳 COOK MARSHMALLOW
+-- 🍳 COOK — ANTI FREEZE
 -- ============================================================
 local function CookMarshmallow(amount, skipBuy)
     amount = amount or FarmSettings.Amount
@@ -745,15 +791,13 @@ local function CookMarshmallow(amount, skipBuy)
         end
         FarmState.Step = "🛒 Buying Ingredients"
         local buySuccess = false
-        for retry = 1, 10 do
+        for retry = 1, 5 do
             buySuccess = BuyAll(amount)
             if buySuccess then break end
             task.wait(2)
-            doSuicideTP({ x = 510, y = 4, z = 602 })
-            task.wait(1)
         end
         if not buySuccess then
-            task.wait(5)
+            task.wait(3)
             return true
         end
         task.wait(0.5)
@@ -783,6 +827,7 @@ local function CookMarshmallow(amount, skipBuy)
 
     EnableNoClipPermanent()
     QuickTeleportToPot(Pot)
+    task.wait(0.5)
 
     for i = 1, amount do
         if StopRequest then return false end
@@ -790,11 +835,12 @@ local function CookMarshmallow(amount, skipBuy)
         FarmState.BatchProgress = i .. "/" .. amount
 
         FarmState.Step = "💧 Water (" .. i .. "/" .. amount .. ")"
-        if not Player.Character:FindFirstChild("Water") then af_Equip("Water") end
-        task.wait(1)
-        af_FirePrompt(PotPrompt)
-        task.wait(2.5)
-
+        if af_Equip("Water") then
+            task.wait(0.2)
+            af_FirePrompt(PotPrompt)
+            task.wait(0.5)
+            af_Unequip()
+        end
         local timeout = 0
         while timeout < 21 do
             if StopRequest then return false end
@@ -805,14 +851,14 @@ local function CookMarshmallow(amount, skipBuy)
         end
 
         FarmState.Step = "🧂 Sugar (" .. i .. "/" .. amount .. ")"
-        if not Player.Character:FindFirstChild("Sugar Block Bag") then af_Equip("Sugar Block Bag") end
-        task.wait(1)
-        af_FirePrompt(PotPrompt)
-        task.wait(2.5)
-        af_Unequip()
-
+        if af_Equip("Sugar Block Bag") then
+            task.wait(0.2)
+            af_FirePrompt(PotPrompt)
+            task.wait(0.5)
+            af_Unequip()
+        end
         timeout = 0
-        while timeout < 1 do
+        while timeout < 2 do
             if StopRequest then return false end
             local timer = Pot:FindFirstChild("Timer")
             if timer and timer:IsA("TextLabel") and timer.Text == "0" then break end
@@ -821,12 +867,12 @@ local function CookMarshmallow(amount, skipBuy)
         end
 
         FarmState.Step = "🧪 Gelatin (" .. i .. "/" .. amount .. ")"
-        af_Unequip()
-        task.wait(1)
-        if not Player.Character:FindFirstChild("Gelatin") then af_Equip("Gelatin") end
-        af_FirePrompt(PotPrompt)
-        task.wait(2.5)
-
+        if af_Equip("Gelatin") then
+            task.wait(0.2)
+            af_FirePrompt(PotPrompt)
+            task.wait(0.5)
+            af_Unequip()
+        end
         timeout = 0
         while timeout < 46 do
             if StopRequest then return false end
@@ -837,11 +883,12 @@ local function CookMarshmallow(amount, skipBuy)
         end
 
         FarmState.Step = "🛍️ Collect (" .. i .. "/" .. amount .. ")"
-        if not Player.Character:FindFirstChild("Empty Bag") then af_Equip("Empty Bag") end
-        task.wait(1)
-        af_FirePrompt(PotPrompt)
-        task.wait(1)
-        af_Unequip()
+        if af_Equip("Empty Bag") then
+            task.wait(0.2)
+            af_FirePrompt(PotPrompt)
+            task.wait(0.5)
+            af_Unequip()
+        end
 
         FarmState.MarshmallowsMade = FarmState.MarshmallowsMade + 1
         UpdateCashTracker()
@@ -962,32 +1009,85 @@ _G.StartFullyFarm = StartFullyFarm
 _G.StopFullyFarm = StopFullyFarm
 
 -- ============================================================
--- 🎬 LOADING UI — 5 DETIK
+-- 🎬 LOADING SCREEN 15 DETIK + HUJAN
 -- ============================================================
 local LoadingGui = Instance.new("ScreenGui")
 LoadingGui.Name = "JenowaLoading"
 LoadingGui.ResetOnSpawn = false
 LoadingGui.IgnoreGuiInset = true
 LoadingGui.DisplayOrder = 999
+LoadingGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 LoadingGui.Parent = PlayerGui
 
 local LBg = Instance.new("Frame")
 LBg.Size = UDim2.new(1, 0, 1, 0)
 LBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 LBg.BorderSizePixel = 0
+LBg.ZIndex = 1
 LBg.Parent = LoadingGui
 
+local RainContainer = Instance.new("Frame")
+RainContainer.Size = UDim2.new(1, 0, 1, 0)
+RainContainer.BackgroundTransparency = 1
+RainContainer.ClipsDescendants = true
+RainContainer.ZIndex = 2
+RainContainer.Parent = LoadingGui
+
+local RAIN_IMAGE = "rbxassetid://84629047084163"
+local rainActive = true
+
+local function spawnDrop()
+    if not rainActive or not LoadingGui or not LoadingGui.Parent then return end
+    local ukuran = math.random(40, 90)
+    local img = Instance.new("ImageLabel")
+    img.Size = UDim2.fromOffset(ukuran, ukuran)
+    img.Position = UDim2.new(math.random(), 0, -0.15, 0)
+    img.BackgroundTransparency = 1
+    img.Image = RAIN_IMAGE
+    img.ImageTransparency = 1
+    img.Rotation = math.random(-30, 30)
+    img.ZIndex = 3
+    img.Parent = RainContainer
+    TweenService:Create(img, TweenInfo.new(0.5), { ImageTransparency = 0.15 + math.random() * 0.35 }):Play()
+    local dur = math.random(4, 8)
+    local tw = TweenService:Create(img, TweenInfo.new(dur, Enum.EasingStyle.Linear), {
+        Position = UDim2.new(img.Position.X.Scale, 0, 1.15, 0),
+        Rotation = img.Rotation + math.random(-60, 60)
+    })
+    tw:Play()
+    task.delay(dur * 0.6, function()
+        if img and img.Parent and rainActive then
+            TweenService:Create(img, TweenInfo.new(dur * 0.4), { ImageTransparency = 1 }):Play()
+        end
+    end)
+    tw.Completed:Connect(function() if img then img:Destroy() end end)
+end
+
+task.spawn(function()
+    for i = 1, 20 do task.wait(0.05) spawnDrop() end
+end)
+
+task.spawn(function()
+    while rainActive and LoadingGui and LoadingGui.Parent do
+        spawnDrop()
+        if math.random() < 0.4 then spawnDrop() end
+        task.wait(1/8)
+    end
+end)
+
 local LCenter = Instance.new("Frame")
-LCenter.Size = UDim2.new(0, 400, 0, 200)
-LCenter.Position = UDim2.new(0.5, -200, 0.5, -100)
+LCenter.Size = UDim2.new(0, 460, 0, 280)
+LCenter.Position = UDim2.new(0.5, -230, 0.5, -140)
 LCenter.BackgroundTransparency = 1
+LCenter.ZIndex = 10
 LCenter.Parent = LoadingGui
 
 local LogoBox = Instance.new("Frame")
-LogoBox.Size = UDim2.new(0, 80, 0, 80)
-LogoBox.Position = UDim2.new(0.5, -40, 0, 0)
+LogoBox.Size = UDim2.new(0, 90, 0, 90)
+LogoBox.Position = UDim2.new(0.5, -45, 0, 0)
 LogoBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 LogoBox.BorderSizePixel = 0
+LogoBox.ZIndex = 11
 LogoBox.Parent = LCenter
 Instance.new("UICorner", LogoBox).CornerRadius = UDim.new(0, 16)
 
@@ -997,34 +1097,38 @@ LogoEmoji.BackgroundTransparency = 1
 LogoEmoji.Text = "J"
 LogoEmoji.TextColor3 = Color3.fromRGB(0, 0, 0)
 LogoEmoji.Font = Enum.Font.GothamBold
-LogoEmoji.TextSize = 42
+LogoEmoji.TextSize = 46
+LogoEmoji.ZIndex = 12
 LogoEmoji.Parent = LogoBox
 
 local LTitle = Instance.new("TextLabel")
-LTitle.Size = UDim2.new(1, 0, 0, 40)
-LTitle.Position = UDim2.new(0, 0, 0, 95)
+LTitle.Size = UDim2.new(1, 0, 0, 44)
+LTitle.Position = UDim2.new(0, 0, 0, 108)
 LTitle.BackgroundTransparency = 1
 LTitle.Text = "JENOWA STORE"
 LTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
 LTitle.Font = Enum.Font.GothamBold
-LTitle.TextSize = 28
+LTitle.TextSize = 32
+LTitle.ZIndex = 12
 LTitle.Parent = LCenter
 
 local LSub = Instance.new("TextLabel")
 LSub.Size = UDim2.new(1, 0, 0, 20)
-LSub.Position = UDim2.new(0, 0, 0, 138)
+LSub.Position = UDim2.new(0, 0, 0, 152)
 LSub.BackgroundTransparency = 1
-LSub.Text = "Loading..."
+LSub.Text = "🎵 Loading..."
 LSub.TextColor3 = Color3.fromRGB(180, 180, 180)
 LSub.Font = Enum.Font.Gotham
 LSub.TextSize = 13
+LSub.ZIndex = 12
 LSub.Parent = LCenter
 
 local BarBg = Instance.new("Frame")
-BarBg.Size = UDim2.new(0, 320, 0, 8)
-BarBg.Position = UDim2.new(0.5, -160, 0, 168)
+BarBg.Size = UDim2.new(0, 380, 0, 8)
+BarBg.Position = UDim2.new(0.5, -190, 0, 190)
 BarBg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 BarBg.BorderSizePixel = 0
+BarBg.ZIndex = 12
 BarBg.Parent = LCenter
 Instance.new("UICorner", BarBg).CornerRadius = UDim.new(1, 0)
 
@@ -1032,43 +1136,100 @@ local BarFill = Instance.new("Frame")
 BarFill.Size = UDim2.new(0, 0, 1, 0)
 BarFill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 BarFill.BorderSizePixel = 0
+BarFill.ZIndex = 13
 BarFill.Parent = BarBg
 Instance.new("UICorner", BarFill).CornerRadius = UDim.new(1, 0)
 
+local PercentTxt = Instance.new("TextLabel")
+PercentTxt.Size = UDim2.new(0.5, 0, 0, 20)
+PercentTxt.Position = UDim2.new(0, 0, 0, 210)
+PercentTxt.BackgroundTransparency = 1
+PercentTxt.Text = "0%"
+PercentTxt.TextColor3 = Color3.fromRGB(255, 255, 255)
+PercentTxt.Font = Enum.Font.GothamBold
+PercentTxt.TextSize = 13
+PercentTxt.TextXAlignment = Enum.TextXAlignment.Left
+PercentTxt.ZIndex = 12
+PercentTxt.Parent = LCenter
+
+local StepTxt = Instance.new("TextLabel")
+StepTxt.Size = UDim2.new(0.5, 0, 0, 20)
+StepTxt.Position = UDim2.new(0.5, 0, 0, 210)
+StepTxt.BackgroundTransparency = 1
+StepTxt.Text = "Initializing..."
+StepTxt.TextColor3 = Color3.fromRGB(150, 150, 150)
+StepTxt.Font = Enum.Font.Gotham
+StepTxt.TextSize = 11
+StepTxt.TextXAlignment = Enum.TextXAlignment.Right
+StepTxt.ZIndex = 12
+StepTxt.Parent = LCenter
+
+local loadingTexts = {
+    "Checking executor...",
+    "Loading modules...",
+    "Initializing UI...",
+    "Setting up...",
+    "Loading Hyphon...",
+    "Loading Hujan...",
+    "Loading Lagu...",
+    "Loading Farm...",
+    "Connecting...",
+    "Caching data...",
+    "Preparing RGB...",
+    "Finalizing...",
+    "Almost ready...",
+    "Ready!"
+}
+
+local loadingActive = true
+local startTimeLoad = tick()
+local totalDuration = 15
+
 task.spawn(function()
-    local total = 5
-    local startT = tick()
-    while tick() - startT < total do
-        local pct = math.min((tick() - startT) / total, 1)
-        BarFill.Size = UDim2.new(pct, 0, 1, 0)
-        task.wait(0.05)
+    while loadingActive do
+        local elapsed = tick() - startTimeLoad
+        local pct = math.min(math.floor((elapsed / totalDuration) * 100), 100)
+        BarFill.Size = UDim2.new(pct/100, 0, 1, 0)
+        PercentTxt.Text = pct .. "%"
+        local idx = math.min(math.floor((pct/100) * #loadingTexts) + 1, #loadingTexts)
+        StepTxt.Text = loadingTexts[idx]
+        if pct >= 100 then loadingActive = false break end
+        task.wait(0.1)
     end
-    BarFill.Size = UDim2.new(1, 0, 1, 0)
+end)
+
+task.spawn(function()
+    while loadingActive do task.wait(0.1) end
     task.wait(0.3)
+    rainActive = false
+    local ft = 0.8
     pcall(function()
-        TweenService:Create(LBg, TweenInfo.new(0.5), { BackgroundTransparency = 1 }):Play()
-        TweenService:Create(LCenter, TweenInfo.new(0.5), { BackgroundTransparency = 1 }):Play()
+        TweenService:Create(LBg, TweenInfo.new(ft), { BackgroundTransparency = 1 }):Play()
+        TweenService:Create(LCenter, TweenInfo.new(ft), { BackgroundTransparency = 1 }):Play()
         for _, c in ipairs(LCenter:GetDescendants()) do
             if c:IsA("TextLabel") then
-                TweenService:Create(c, TweenInfo.new(0.5), { TextTransparency = 1 }):Play()
+                TweenService:Create(c, TweenInfo.new(ft), { TextTransparency = 1 }):Play()
             elseif c:IsA("Frame") then
-                TweenService:Create(c, TweenInfo.new(0.5), { BackgroundTransparency = 1 }):Play()
+                TweenService:Create(c, TweenInfo.new(ft), { BackgroundTransparency = 1 }):Play()
             end
         end
     end)
-    task.wait(0.6)
+    task.wait(ft + 0.3)
     pcall(function() LoadingGui:Destroy() end)
     print("✅ Loading selesai")
     if _G.ShowMainUI then _G.ShowMainUI() end
 end)
 
 -- ============================================================
--- 🖥️ MAIN UI — 3 TAB (FARM | BOOST | INFO)
+-- 🖥️ MAIN UI
 -- ============================================================
 _G.ShowMainUI = function()
+    if getgenv().JENOWA_UI_SHOWING then return end
+    getgenv().JENOWA_UI_SHOWING = true
+
     local existing = PlayerGui:FindFirstChild("JENOWA_UI")
     if existing then existing:Destroy() end
-    
+
     local C_BG       = Color3.fromRGB(0, 0, 0)
     local C_CARD     = Color3.fromRGB(15, 15, 15)
     local C_CARD2    = Color3.fromRGB(25, 25, 25)
@@ -1078,7 +1239,7 @@ _G.ShowMainUI = function()
     local C_TEXT_DIM = Color3.fromRGB(150, 150, 150)
     local C_GREEN    = Color3.fromRGB(80, 220, 130)
     local C_RED      = Color3.fromRGB(240, 80, 100)
-    
+
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "JENOWA_UI"
     ScreenGui.ResetOnSpawn = false
@@ -1086,7 +1247,7 @@ _G.ShowMainUI = function()
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     ScreenGui.DisplayOrder = 50
     ScreenGui.Parent = PlayerGui
-    
+
     local Main = Instance.new("Frame")
     Main.Size = UDim2.new(0, 380, 0, 300)
     Main.Position = UDim2.new(0.5, -190, 0.5, -150)
@@ -1095,21 +1256,20 @@ _G.ShowMainUI = function()
     Main.Active = true
     Main.Parent = ScreenGui
     Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
-    
+
     local MainStroke = Instance.new("UIStroke")
     MainStroke.Color = C_ACCENT
     MainStroke.Thickness = 1.5
     MainStroke.Transparency = 0.4
     MainStroke.Parent = Main
-    
-    -- HEADER
+
     local Header = Instance.new("Frame")
     Header.Size = UDim2.new(1, 0, 0, 45)
     Header.BackgroundColor3 = C_CARD
     Header.BorderSizePixel = 0
     Header.Parent = Main
     Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 12)
-    
+
     local LogoBox = Instance.new("Frame")
     LogoBox.Size = UDim2.new(0, 28, 0, 28)
     LogoBox.Position = UDim2.new(0, 12, 0.5, -14)
@@ -1117,7 +1277,7 @@ _G.ShowMainUI = function()
     LogoBox.BorderSizePixel = 0
     LogoBox.Parent = Header
     Instance.new("UICorner", LogoBox).CornerRadius = UDim.new(0, 7)
-    
+
     local LogoJ = Instance.new("TextLabel")
     LogoJ.Size = UDim2.new(1, 0, 1, 0)
     LogoJ.BackgroundTransparency = 1
@@ -1126,7 +1286,7 @@ _G.ShowMainUI = function()
     LogoJ.Font = Enum.Font.GothamBold
     LogoJ.TextSize = 16
     LogoJ.Parent = LogoBox
-    
+
     local TitleTxt = Instance.new("TextLabel")
     TitleTxt.Size = UDim2.new(1, -120, 1, 0)
     TitleTxt.Position = UDim2.new(0, 48, 0, 0)
@@ -1137,7 +1297,7 @@ _G.ShowMainUI = function()
     TitleTxt.TextSize = 13
     TitleTxt.TextXAlignment = Enum.TextXAlignment.Left
     TitleTxt.Parent = Header
-    
+
     local CloseBtn = Instance.new("TextButton")
     CloseBtn.Size = UDim2.new(0, 24, 0, 24)
     CloseBtn.Position = UDim2.new(1, -32, 0.5, -12)
@@ -1153,8 +1313,7 @@ _G.ShowMainUI = function()
     CloseBtn.MouseButton1Click:Connect(function() ScreenGui.Enabled = false end)
     CloseBtn.MouseEnter:Connect(function() CloseBtn.BackgroundColor3 = C_RED end)
     CloseBtn.MouseLeave:Connect(function() CloseBtn.BackgroundColor3 = C_BG end)
-    
-    -- DRAG
+
     local dragging, dragStart, startPos
     Header.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
@@ -1180,8 +1339,7 @@ _G.ShowMainUI = function()
             )
         end
     end)
-    
-    -- TAB BAR
+
     local TabBar = Instance.new("Frame")
     TabBar.Size = UDim2.new(1, -20, 0, 32)
     TabBar.Position = UDim2.new(0, 10, 0, 55)
@@ -1189,13 +1347,13 @@ _G.ShowMainUI = function()
     TabBar.BorderSizePixel = 0
     TabBar.Parent = Main
     Instance.new("UICorner", TabBar).CornerRadius = UDim.new(0, 8)
-    
+
     local Content = Instance.new("Frame")
     Content.Size = UDim2.new(1, -20, 1, -100)
     Content.Position = UDim2.new(0, 10, 0, 95)
     Content.BackgroundTransparency = 1
     Content.Parent = Main
-    
+
     local Tabs = {
         Farm = Instance.new("Frame"),
         Boost = Instance.new("Frame"),
@@ -1207,7 +1365,7 @@ _G.ShowMainUI = function()
         f.Visible = (k == "Farm")
         f.Parent = Content
     end
-    
+
     local TabBtns = {}
     local function MakeTab(name, label, order)
         local btn = Instance.new("TextButton")
@@ -1236,15 +1394,15 @@ _G.ShowMainUI = function()
         end)
         return btn
     end
-    
+
     local BtnFarm = MakeTab("Farm", "FARM", 1)
     local BtnBoost = MakeTab("Boost", "BOOST", 2)
     local BtnInfo = MakeTab("Info", "INFO", 3)
     BtnFarm.BackgroundTransparency = 0
     BtnFarm.BackgroundColor3 = C_ACCENT
     BtnFarm.TextColor3 = C_BG
-    
-    -- TAB FARM
+
+    -- FARM TAB
     local FarmCard = Instance.new("Frame")
     FarmCard.Size = UDim2.new(1, 0, 1, 0)
     FarmCard.BackgroundColor3 = C_CARD2
@@ -1255,7 +1413,7 @@ _G.ShowMainUI = function()
     FCStroke.Color = C_BORDER
     FCStroke.Thickness = 1
     FCStroke.Parent = FarmCard
-    
+
     local FCTitle = Instance.new("TextLabel")
     FCTitle.Size = UDim2.new(1, -16, 0, 18)
     FCTitle.Position = UDim2.new(0, 8, 0, 6)
@@ -1266,14 +1424,13 @@ _G.ShowMainUI = function()
     FCTitle.TextSize = 10
     FCTitle.TextXAlignment = Enum.TextXAlignment.Left
     FCTitle.Parent = FarmCard
-    
-    -- Toggle Autofarming
+
     local ToggleFrame = Instance.new("Frame")
     ToggleFrame.Size = UDim2.new(1, -16, 0, 28)
     ToggleFrame.Position = UDim2.new(0, 8, 0, 28)
     ToggleFrame.BackgroundTransparency = 1
     ToggleFrame.Parent = FarmCard
-    
+
     local ToggleLabel = Instance.new("TextLabel")
     ToggleLabel.Size = UDim2.new(0.5, 0, 1, 0)
     ToggleLabel.BackgroundTransparency = 1
@@ -1283,7 +1440,7 @@ _G.ShowMainUI = function()
     ToggleLabel.TextSize = 10
     ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
     ToggleLabel.Parent = ToggleFrame
-    
+
     local ToggleBtn = Instance.new("TextButton")
     ToggleBtn.Size = UDim2.new(0, 48, 0, 22)
     ToggleBtn.Position = UDim2.new(1, -48, 0.5, -11)
@@ -1296,7 +1453,7 @@ _G.ShowMainUI = function()
     ToggleBtn.AutoButtonColor = false
     ToggleBtn.Parent = ToggleFrame
     Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 5)
-    
+
     local farmOn = false
     ToggleBtn.MouseButton1Click:Connect(function()
         farmOn = not farmOn
@@ -1304,8 +1461,7 @@ _G.ShowMainUI = function()
         ToggleBtn.BackgroundColor3 = farmOn and C_GREEN or C_BORDER
         if farmOn then task.spawn(StartFullyFarm) else StopFullyFarm() end
     end)
-    
-    -- Slider
+
     local SliderLabel = Instance.new("TextLabel")
     SliderLabel.Size = UDim2.new(1, -16, 0, 14)
     SliderLabel.Position = UDim2.new(0, 8, 0, 62)
@@ -1316,7 +1472,7 @@ _G.ShowMainUI = function()
     SliderLabel.TextSize = 9
     SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
     SliderLabel.Parent = FarmCard
-    
+
     local SliderTrack = Instance.new("Frame")
     SliderTrack.Size = UDim2.new(1, -16, 0, 6)
     SliderTrack.Position = UDim2.new(0, 8, 0, 82)
@@ -1324,14 +1480,14 @@ _G.ShowMainUI = function()
     SliderTrack.BorderSizePixel = 0
     SliderTrack.Parent = FarmCard
     Instance.new("UICorner", SliderTrack).CornerRadius = UDim.new(1, 0)
-    
+
     local SliderFill = Instance.new("Frame")
     SliderFill.Size = UDim2.new((FarmSettings.Amount - 1) / 49, 0, 1, 0)
     SliderFill.BackgroundColor3 = C_ACCENT
     SliderFill.BorderSizePixel = 0
     SliderFill.Parent = SliderTrack
     Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(1, 0)
-    
+
     local SliderKnob = Instance.new("Frame")
     SliderKnob.Size = UDim2.new(0, 14, 0, 14)
     SliderKnob.Position = UDim2.new((FarmSettings.Amount - 1) / 49, -7, 0.5, -7)
@@ -1339,7 +1495,7 @@ _G.ShowMainUI = function()
     SliderKnob.BorderSizePixel = 0
     SliderKnob.Parent = SliderTrack
     Instance.new("UICorner", SliderKnob).CornerRadius = UDim.new(1, 0)
-    
+
     local sliderDragging = false
     local function updateSlider(val)
         val = math.clamp(math.floor(val), 1, 50)
@@ -1349,7 +1505,7 @@ _G.ShowMainUI = function()
         SliderKnob.Position = UDim2.new(pct, -7, 0.5, -7)
         SliderLabel.Text = "Buy Amount: " .. val
     end
-    
+
     SliderTrack.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             sliderDragging = true
@@ -1368,8 +1524,7 @@ _G.ShowMainUI = function()
             updateSlider(1 + rel * 49)
         end
     end)
-    
-    -- Stats
+
     local StatsBox = Instance.new("Frame")
     StatsBox.Size = UDim2.new(1, -16, 0, 60)
     StatsBox.Position = UDim2.new(0, 8, 0, 100)
@@ -1377,7 +1532,7 @@ _G.ShowMainUI = function()
     StatsBox.BorderSizePixel = 0
     StatsBox.Parent = FarmCard
     Instance.new("UICorner", StatsBox).CornerRadius = UDim.new(0, 6)
-    
+
     local MadeLabel = Instance.new("TextLabel")
     MadeLabel.Size = UDim2.new(1, -16, 0, 16)
     MadeLabel.Position = UDim2.new(0, 8, 0, 6)
@@ -1388,7 +1543,7 @@ _G.ShowMainUI = function()
     MadeLabel.TextSize = 10
     MadeLabel.TextXAlignment = Enum.TextXAlignment.Left
     MadeLabel.Parent = StatsBox
-    
+
     local SoldLabel = Instance.new("TextLabel")
     SoldLabel.Size = UDim2.new(1, -16, 0, 16)
     SoldLabel.Position = UDim2.new(0, 8, 0, 22)
@@ -1399,7 +1554,7 @@ _G.ShowMainUI = function()
     SoldLabel.TextSize = 10
     SoldLabel.TextXAlignment = Enum.TextXAlignment.Left
     SoldLabel.Parent = StatsBox
-    
+
     local StatusLabel = Instance.new("TextLabel")
     StatusLabel.Size = UDim2.new(1, -16, 0, 16)
     StatusLabel.Position = UDim2.new(0, 8, 0, 38)
@@ -1411,7 +1566,7 @@ _G.ShowMainUI = function()
     StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
     StatusLabel.TextTruncate = Enum.TextTruncate.AtEnd
     StatusLabel.Parent = StatsBox
-    
+
     task.spawn(function()
         while ScreenGui.Parent do
             pcall(function()
@@ -1419,11 +1574,11 @@ _G.ShowMainUI = function()
                 SoldLabel.Text = "💀 Sold: " .. (FarmState.Sold or 0)
                 StatusLabel.Text = "⚪ " .. (FarmState.Step or "Idle")
             end)
-            task.wait(0.5)
+            task.wait(1)
         end
     end)
-    
-    -- TAB BOOST
+
+    -- BOOST TAB
     local BoostCard = Instance.new("Frame")
     BoostCard.Size = UDim2.new(1, 0, 1, 0)
     BoostCard.BackgroundColor3 = C_CARD2
@@ -1434,7 +1589,7 @@ _G.ShowMainUI = function()
     BCStroke.Color = C_BORDER
     BCStroke.Thickness = 1
     BCStroke.Parent = BoostCard
-    
+
     local BCTitle = Instance.new("TextLabel")
     BCTitle.Size = UDim2.new(1, -16, 0, 18)
     BCTitle.Position = UDim2.new(0, 8, 0, 6)
@@ -1445,7 +1600,7 @@ _G.ShowMainUI = function()
     BCTitle.TextSize = 10
     BCTitle.TextXAlignment = Enum.TextXAlignment.Left
     BCTitle.Parent = BoostCard
-    
+
     local BoostToggle = Instance.new("TextButton")
     BoostToggle.Size = UDim2.new(1, -16, 0, 50)
     BoostToggle.Position = UDim2.new(0, 8, 0, 36)
@@ -1462,7 +1617,7 @@ _G.ShowMainUI = function()
     BTS.Color = C_BORDER
     BTS.Thickness = 1
     BTS.Parent = BoostToggle
-    
+
     local boostOn = false
     BoostToggle.MouseButton1Click:Connect(function()
         boostOn = not boostOn
@@ -1480,8 +1635,8 @@ _G.ShowMainUI = function()
             pcall(function() settings().Rendering.QualityLevel = Enum.QualityLevel.Automatic end)
         end
     end)
-    
-    -- TAB INFO
+
+    -- INFO TAB
     local InfoCard = Instance.new("Frame")
     InfoCard.Size = UDim2.new(1, 0, 1, 0)
     InfoCard.BackgroundColor3 = C_CARD2
@@ -1492,7 +1647,7 @@ _G.ShowMainUI = function()
     ICStroke.Color = C_BORDER
     ICStroke.Thickness = 1
     ICStroke.Parent = InfoCard
-    
+
     local ICTitle = Instance.new("TextLabel")
     ICTitle.Size = UDim2.new(1, -16, 0, 18)
     ICTitle.Position = UDim2.new(0, 8, 0, 6)
@@ -1503,12 +1658,12 @@ _G.ShowMainUI = function()
     ICTitle.TextSize = 10
     ICTitle.TextXAlignment = Enum.TextXAlignment.Left
     ICTitle.Parent = InfoCard
-    
+
     local InfoText = Instance.new("TextLabel")
     InfoText.Size = UDim2.new(1, -16, 1, -30)
     InfoText.Position = UDim2.new(0, 8, 0, 28)
     InfoText.BackgroundTransparency = 1
-    InfoText.Text = "JENOWA FULLY MS V1\n\n• Anti Kick\n• Auto Click Play\n• Hyphon Emulator\n• Auto Farm\n• Boost FPS\n\nCreated by JENOWA"
+    InfoText.Text = "JENOWA STORE\n\n• Anti Kick\n• Auto Click Play\n• Hyphon Emulator\n• Auto Farm\n• Boost FPS\n\nCreated by JENOWA STORE"
     InfoText.TextColor3 = C_TEXT
     InfoText.Font = Enum.Font.Gotham
     InfoText.TextSize = 10
@@ -1516,17 +1671,17 @@ _G.ShowMainUI = function()
     InfoText.TextXAlignment = Enum.TextXAlignment.Left
     InfoText.TextYAlignment = Enum.TextYAlignment.Top
     InfoText.Parent = InfoCard
-    
+
     -- TOMBOL LUAR UI
     task.wait(0.3)
-    
+
     local BtnGui = Instance.new("ScreenGui")
     BtnGui.Name = "JenowaExternalBtn"
     BtnGui.ResetOnSpawn = false
     BtnGui.IgnoreGuiInset = true
     BtnGui.DisplayOrder = 99999
     BtnGui.Parent = PlayerGui
-    
+
     local ToggleUI = Instance.new("TextButton")
     ToggleUI.Size = UDim2.new(0, 45, 0, 45)
     ToggleUI.Position = UDim2.new(1, -60, 0, -60)
@@ -1543,11 +1698,11 @@ _G.ShowMainUI = function()
     TUIS.Color = C_ACCENT
     TUIS.Thickness = 2
     TUIS.Parent = ToggleUI
-    
+
     TweenService:Create(ToggleUI, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
         Position = UDim2.new(1, -60, 0, 15)
     }):Play()
-    
+
     ToggleUI.MouseButton1Click:Connect(function()
         local ui = PlayerGui:FindFirstChild("JENOWA_UI")
         if ui then
@@ -1555,8 +1710,7 @@ _G.ShowMainUI = function()
             ToggleUI.Text = ui.Enabled and "J" or "X"
         end
     end)
-    
-    -- DRAG TOMBOL
+
     local dragging2, dragStart2, startPos2
     ToggleUI.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
@@ -1582,7 +1736,7 @@ _G.ShowMainUI = function()
             )
         end
     end)
-    
+
     print("✅ UI Loaded")
 end
 
@@ -1603,19 +1757,27 @@ end)
 -- ============================================================
 task.spawn(function()
     while getgenv().FULLY_MS_V1 do
+        task.wait(60)
         pcall(function()
             game:GetService("VirtualUser"):CaptureController()
             game:GetService("VirtualUser"):ClickButton2(Vector2.new())
         end)
-        task.wait(60)
+    end
+end)
+
+Player.Idled:Connect(function()
+    if FarmRunning then
+        game:GetService("VirtualUser"):CaptureController()
+        game:GetService("VirtualUser"):ClickButton2(Vector2.new())
     end
 end)
 
 print("")
 print("========================================")
-print("🚀 JENOWA FULLY MS V1 LOADED")
+print("🚀 JENOWA STORE — FULLY MS V1")
 print("========================================")
-print("📌 Loading 5 detik")
+print("📌 Loading 15s + Lagu Random")
+print("📌 Username: JENOWA STORE")
 print("📌 UI: FARM | BOOST | INFO")
 print("📌 Tombol J di kanan atas")
 print("📌 F3 = Toggle UI")
