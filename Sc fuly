@@ -1,152 +1,70 @@
 -- ============================================================
--- 🛒 JENOWA STORE v11.4 — ELIXIR BYPASS + FULL FEATURES
--- Anti Kick + Anti Ban + Spoof + Loading 15s + UI Hitam Putih
--- Screen Cover RGB + Boost FPS + FULLY MS
+-- 🛒 JENOWA STORE v11.5 — NO APARTMENT, ONLY COOKING POT
 -- ============================================================
-print("=== JENOWA STORE v11.4 START ===")
+print("=== JENOWA STORE v11.5 START ===")
 
--- ============================================================
--- 📦 FLAG GLOBAL
--- ============================================================
-getgenv().ELIXIR_ACTIVE = true
 getgenv().FULLY_MS_V1 = true
 
 -- ============================================================
--- 🎭 SIMPAN NAMA EXECUTOR ASLI
+-- 📦 SERVICES
 -- ============================================================
-getgenv().REAL_EXECUTOR_NAME = "Unknown"
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+local LogService = game:GetService("LogService")
+local TeleportService = game:GetService("TeleportService")
+local SoundService = game:GetService("SoundService")
+local Lighting = game:GetService("Lighting")
 
-pcall(function()
-    if getexecutorname then
-        local ok, name = pcall(getexecutorname)
-        if ok and name then
-            getgenv().REAL_EXECUTOR_NAME = tostring(name)
-        end
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui", 15)
+if not PlayerGui then warn("PlayerGui nil") return end
+
+for _, g in ipairs(PlayerGui:GetChildren()) do
+    if g.Name == "JenowaLoading" or g.Name == "JENOWA_UI" or g.Name == "JenowaScreenCover" then
+        pcall(function() g:Destroy() end)
     end
-end)
+end
 
-pcall(function()
-    if getgenv().REAL_EXECUTOR_NAME == "Unknown" and identifyexecutor then
-        local ok, name = pcall(identifyexecutor)
-        if ok and name then
-            getgenv().REAL_EXECUTOR_NAME = tostring(name)
-        end
-    end
-end)
-
-pcall(function()
-    if getgenv().REAL_EXECUTOR_NAME == "Unknown" then
-        if syn and syn.request then
-            getgenv().REAL_EXECUTOR_NAME = "Synapse X"
-        elseif KRNL_LOADED then
-            getgenv().REAL_EXECUTOR_NAME = "Krnl"
-        elseif is_sirhurt_closure then
-            getgenv().REAL_EXECUTOR_NAME = "SirHurt"
-        elseif secure_load then
-            getgenv().REAL_EXECUTOR_NAME = "Sentinel"
-        elseif fluxus then
-            getgenv().REAL_EXECUTOR_NAME = "Fluxus"
-        elseif isdelta then
-            getgenv().REAL_EXECUTOR_NAME = "Delta"
-        elseif getscriptbytecode then
-            getgenv().REAL_EXECUTOR_NAME = "Delta Mobile"
-        end
-    end
-end)
-
-print("✅ Real executor: " .. getgenv().REAL_EXECUTOR_NAME)
+local UIParent = PlayerGui
+pcall(function() if gethui then UIParent = gethui() end end)
 
 -- ============================================================
--- 🛡️ BYPASS ELIXIR — LAYER 1: ANTI KICK (METATABLE)
+-- 🛡️ ANTI KICK
 -- ============================================================
-local ELIXIR_OK = false
-
 pcall(function()
     if not getrawmetatable or not getnamecallmethod then return end
     local mt = getrawmetatable(game)
-    if not mt then return end
-    if not mt.__namecall then return end
-
-    local oldNamecall = mt.__namecall
-
-    if setreadonly then
-        pcall(setreadonly, mt, false)
-    end
-
+    if not mt or not mt.__namecall then return end
+    local oldNC = mt.__namecall
+    if setreadonly then pcall(setreadonly, mt, false) end
     mt.__namecall = function(self, ...)
         local method = getnamecallmethod()
-        if method == "Kick" or method == "Ban" then
-            return nil
-        end
-        return oldNamecall(self, ...)
+        if method == "Kick" or method == "Ban" then return nil end
+        return oldNC(self, ...)
     end
-
-    if setreadonly then
-        pcall(setreadonly, mt, true)
-    end
-
-    ELIXIR_OK = true
-end)
-
--- ============================================================
--- 🛡️ BYPASS ELIXIR — LAYER 2: HOOK PLAYER KICK
--- ============================================================
-pcall(function()
-    local p = game:GetService("Players").LocalPlayer
-    if p then
-        p.Kick = function() return end
-        local mt = getmetatable(p)
-        if mt then
-            local oldIndex = mt.__index
-            mt.__index = function(self, key)
-                if key == "Kick" or key == "Ban" then
-                    return function() end
-                end
-                return oldIndex(self, key)
-            end
-        end
-    end
+    if setreadonly then pcall(setreadonly, mt, true) end
 end)
 
 pcall(function()
-    game:GetService("Players").Kick = function() return end
+    local p = Players.LocalPlayer
+    if p then p.Kick = function() return end end
 end)
 
--- ============================================================
--- 🎭 BYPASS ELIXIR — LAYER 3: SPOOF EXECUTOR
--- ============================================================
-if ELIXIR_OK then
-    pcall(function()
-        getexecutorname = function() return "Roblox" end
-        identifyexecutor = function() return "Roblox" end
-        getidentity = function() return 2 end
-        getthreadidentity = function() return 2 end
-        checkcaller = function() return false end
-        is_synapse_function = function() return false end
-        is_protected = function() return false end
-        _G.script_key = nil
-        getgenv().script_key = nil
-        syn = nil
-        synapse = nil
-    end)
-    print("✅ ELIXIR SPOOF AKTIF")
-else
-    print("⚠️ ELIXIR SKIP — executor gak support getrawmetatable")
-end
-
--- ============================================================
--- 🛡️ BYPASS RINGAN — FALLBACK (SELALU JALAN)
--- ============================================================
-if not getnilinstances then getnilinstances = function() return {} end end
-if not getgc then getgc = function() return {} end end
-if not getgenv then getgenv = function() return _G end end
+pcall(function()
+    Players.Kick = function() return end
+end)
 
 -- Kick popup destroyer
 task.spawn(function()
     while getgenv().FULLY_MS_V1 do
         pcall(function()
-            local cg = game:GetService("CoreGui")
-            local pg = game:GetService("Players").LocalPlayer and game:GetService("Players").LocalPlayer.PlayerGui
+            local cg = CoreGui
+            local pg = Players.LocalPlayer and Players.LocalPlayer.PlayerGui
             for _, gui in pairs(cg:GetChildren()) do
                 local name = gui.Name or ""
                 if name:find("Kick") or name:find("Ban") or name:find("Disconnect") or
@@ -167,13 +85,12 @@ task.spawn(function()
     end
 end)
 
-print("✅ SAFE BYPASS AKTIF — Anti Kick + Anti AFK")
+print("✅ Anti Kick aktif")
 
 -- ============================================================
 -- 🔥 AUTO CLICK PLAY
 -- ============================================================
 local function ClickPlay()
-    local Players = game:GetService("Players")
     local LP = Players.LocalPlayer
     if not LP then return false end
     local PG = LP:FindFirstChild("PlayerGui")
@@ -215,36 +132,6 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- 📦 SERVICES
--- ============================================================
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Workspace = game:GetService("Workspace")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local CoreGui = game:GetService("CoreGui")
-local TweenService = game:GetService("TweenService")
-local LogService = game:GetService("LogService")
-local TeleportService = game:GetService("TeleportService")
-local SoundService = game:GetService("SoundService")
-local Lighting = game:GetService("Lighting")
-
-local Player = Players.LocalPlayer
-local PlayerGui = Player:WaitForChild("PlayerGui", 15)
-if not PlayerGui then warn("PlayerGui nil") return end
-
-for _, g in ipairs(PlayerGui:GetChildren()) do
-    if g.Name == "JenowaLoading" or g.Name == "JENOWA_UI" or g.Name == "JenowaScreenCover" then
-        pcall(function() g:Destroy() end)
-    end
-end
-
-local UIParent = PlayerGui
-pcall(function() if gethui then UIParent = gethui() end end)
-
-print("Environment OK")
-
--- ============================================================
 -- 🎵 LAGU
 -- ============================================================
 local LAGU_LIST = {
@@ -279,7 +166,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- 🎬 LOADING 15 DETIK + HUJAN FOTO
+-- 🎬 LOADING 15 DETIK
 -- ============================================================
 local LoadingGui = Instance.new("ScreenGui")
 LoadingGui.Name = "JenowaLoading"
@@ -496,26 +383,22 @@ print("RemoteEvent:", RemoteEvent and "OK" or "NIL")
 
 local RESPAWN_WARP = Vector3.new(999999, 9999999, 999999)
 
-local APRT_NAMES = {
-    "CompactWalkupAPT1", "CompactWalkupAPT2", "CompactWalkupAPT3",
-    "CompactWalkupAPT4", "CompactWalkupAPT5", "CompactWalkupAPT6",
-}
-local APRT_COORDS = {
-    ["CompactWalkupAPT1"] = Vector3.new(897.535, 10.093, 40.186),
-    ["CompactWalkupAPT2"] = Vector3.new(925.972, 10.093, 40.267),
-    ["CompactWalkupAPT3"] = Vector3.new(985.743, 10.093, 248.035),
-    ["CompactWalkupAPT4"] = Vector3.new(985.899, 10.093, 219.997),
-    ["CompactWalkupAPT5"] = Vector3.new(1141.123, 10.093, 422.462),
-    ["CompactWalkupAPT6"] = Vector3.new(1141.049, 10.093, 451.013),
+-- ============================================================
+-- 🔧 STATE
+-- ============================================================
+local FarmSettings = {
+    OffsetY = 5,
+    Amount = 8,
+    IngredientCost = 190,
 }
 
-local FarmSettings = { OffsetY = 5, Amount = 8, ApartmentCost = 500, IngredientCost = 190 }
 local FarmState = {
-    Cycles = 0, Status = "Idle", Sold = 0, MarshmallowsMade = 0, OwnedAprt = nil,
+    Cycles = 0, Status = "Idle", Sold = 0, MarshmallowsMade = 0,
     TotalIncome = 0, TotalExpense = 0, PreviousCash = 0, CurrentCash = 0,
     CashInitialized = false, BatchProgress = "0/0", CurrentBatch = 0,
     Step = "Idle", Profit = 0,
 }
+
 local FarmRunning = false
 local StopRequest = false
 local FarmThread = nil
@@ -523,25 +406,18 @@ local FarmThread = nil
 -- ============================================================
 -- ⚡ BOOST FPS
 -- ============================================================
-local BoostFPS = {
-    Enabled = false,
-    Connections = {},
-    OriginalSettings = {},
-}
+local BoostFPS = { Enabled = false, OriginalSettings = {} }
 
 local function EnableBoostFPS()
     if BoostFPS.Enabled then return end
     BoostFPS.Enabled = true
     print("Boost FPS: ON")
-
     BoostFPS.OriginalSettings.GlobalShadows = Lighting.GlobalShadows
     BoostFPS.OriginalSettings.FogEnd = Lighting.FogEnd
     BoostFPS.OriginalSettings.Brightness = Lighting.Brightness
-
     pcall(function() Lighting.GlobalShadows = false end)
     pcall(function() Lighting.FogEnd = 9e9 end)
     pcall(function() Lighting.Brightness = 2 end)
-
     pcall(function()
         for _, effect in pairs(Lighting:GetChildren()) do
             if effect:IsA("BlurEffect") or effect:IsA("BloomEffect")
@@ -552,7 +428,6 @@ local function EnableBoostFPS()
             end
         end
     end)
-
     pcall(function()
         settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
     end)
@@ -562,11 +437,9 @@ local function DisableBoostFPS()
     if not BoostFPS.Enabled then return end
     BoostFPS.Enabled = false
     print("Boost FPS: OFF")
-
     pcall(function() Lighting.GlobalShadows = BoostFPS.OriginalSettings.GlobalShadows end)
     pcall(function() Lighting.FogEnd = BoostFPS.OriginalSettings.FogEnd end)
     pcall(function() Lighting.Brightness = BoostFPS.OriginalSettings.Brightness end)
-
     pcall(function()
         for _, effect in pairs(Lighting:GetChildren()) do
             if BoostFPS.OriginalSettings[effect.Name] ~= nil then
@@ -574,14 +447,13 @@ local function DisableBoostFPS()
             end
         end
     end)
-
     pcall(function()
         settings().Rendering.QualityLevel = Enum.QualityLevel.Automatic
     end)
 end
 
 -- ============================================================
--- 🖤🤍 SCREEN COVER — RGB HITAM → PUTIH → HITAM
+-- 🖤🤍 SCREEN COVER
 -- ============================================================
 local ScreenCover = { Enabled = false, Gui = nil, Frame = nil, Thread = nil }
 
@@ -808,7 +680,8 @@ end
 
 local function doSuicideTP(loc)
     if tpBusy then return end
-    tpBusy = true    local ch = Player.Character
+    tpBusy = true
+    local ch = Player.Character
     local hrp0 = ch and ch:FindFirstChild("HumanoidRootPart")
     if not hrp0 then tpBusy = false return end
     hrp0.CFrame = CFrame.new(RESPAWN_WARP)
@@ -821,115 +694,6 @@ local function doSuicideTP(loc)
     tpBusy = false
     task.wait(0.2)
     SetDisplayName(CurrentDisplayName, GenerateRGB())
-end
-
--- ============================================================
--- 🏢 APARTMENT
--- ============================================================
-local function GetBoardText(board)
-    local txt = ""
-    local namePart = board:FindFirstChild("name")
-    if namePart then
-        local sg = namePart:FindFirstChild("SurfaceGui")
-        local tl = sg and sg:FindFirstChildWhichIsA("TextLabel", true)
-        if tl then txt = tl.Text end
-    end
-    if txt == "" then
-        local sg = board:FindFirstChild("SurfaceGui")
-        if sg then
-            local occ = sg:FindFirstChild("Occupation")
-            if occ then txt = occ.Text
-            else
-                local tl = sg:FindFirstChildWhichIsA("TextLabel", true)
-                if tl then txt = tl.Text end
-            end
-        end
-    end
-    return txt
-end
-
-local function FindAprt()
-    local map = Workspace:FindFirstChild("Map")
-    local aptFolder = map and map:FindFirstChild("Apartments")
-    if not aptFolder then return nil, nil end
-    local owned, vacant = nil, nil
-    for _, name in ipairs(APRT_NAMES) do
-        local obj = aptFolder:FindFirstChild(name)
-        if obj and (obj:IsA("Model") or obj:IsA("Folder")) then
-            local board = obj:FindFirstChild("Board", true)
-            if board then
-                local txt = GetBoardText(board)
-                if txt == Player.Name then owned = { obj = obj, board = board }
-                elseif txt == "VACANT" and not owned and not vacant then vacant = { obj = obj, board = board } end
-            end
-        end
-    end
-    if owned then return owned, "Owned" end
-    return vacant, "Vacant"
-end
-
-local function GetAprtByName(name)
-    if not name then return nil end
-    local map = Workspace:FindFirstChild("Map")
-    local f = map and map:FindFirstChild("Apartments")
-    local o = f and f:FindFirstChild(name)
-    if o and (o:IsA("Model") or o:IsA("Folder")) then return o end
-    return nil
-end
-
-local function GetOwnedAprtTarget()
-    local cachedName = getgenv().FA_OWNED_APRT
-    if cachedName then
-        local coords = APRT_COORDS[cachedName]
-        if coords then
-            local obj = GetAprtByName(cachedName)
-            return coords, obj and { obj = obj } or nil
-        end
-    end
-    local entry, status = FindAprt()
-    if entry and status == "Owned" then
-        getgenv().FA_OWNED_APRT = entry.obj.Name
-        local coords = APRT_COORDS[entry.obj.Name]
-        if coords then return coords, entry end
-    end
-    return nil
-end
-
-local function EnsureBuyAprt()
-    local entry, status = FindAprt()
-    if not entry then return false end
-    if status == "Owned" then
-        FarmState.OwnedAprt = entry.obj.Name
-        getgenv().FA_OWNED_APRT = entry.obj.Name
-        return true
-    end
-    FarmState.Step = "Buying Apartment"
-    local board = entry.board
-    local backboard = board:FindFirstChild("backboard")
-    local bp = backboard and backboard:FindFirstChildWhichIsA("ProximityPrompt", true)
-    if not bp then bp = board:FindFirstChildWhichIsA("ProximityPrompt", true) end
-    if not bp then return false end
-    bp.MaxActivationDistance = 9e9
-    bp.HoldDuration = 0
-    bp.RequiresLineOfSight = false
-    doSuicideTP({
-        x = backboard and backboard.Position.X or board.Position.X,
-        y = backboard and backboard.Position.Y + 3 or board.Position.Y + 3,
-        z = backboard and backboard.Position.Z or board.Position.Z
-    })
-    task.wait(0.5)
-    for attempt = 1, 8 do
-        if StopRequest then return false end
-        pcall(function() fireproximityprompt(bp) end)
-        task.wait(1.5)
-        if GetBoardText(board) == Player.Name then
-            FarmState.OwnedAprt = entry.obj.Name
-            getgenv().FA_OWNED_APRT = entry.obj.Name
-            task.wait(0.5)
-            return true
-        end
-    end
-    return false
 end
 
 -- ============================================================
@@ -960,7 +724,7 @@ end
 
 local function BuyAll(amount)
     amount = amount or FarmSettings.Amount
-    FarmState.Step = "Buying Ingredients"
+    FarmState.Step = "🛒 Buying Ingredients"
     for i = 1, amount do
         if StopRequest then return end
         local w, s, g = GetIngredientCount()
@@ -974,7 +738,7 @@ local function BuyAll(amount)
 end
 
 -- ============================================================
--- 🔥 LAMONT
+-- 🔥 FIND LAMONT
 -- ============================================================
 local function findLamont()
     local folders = workspace:FindFirstChild("Folders")
@@ -993,7 +757,31 @@ local function findLamont()
 end
 
 -- ============================================================
--- 🔧 NOCLIP FIXED
+-- 🔥 FIND COOKING POT
+-- ============================================================
+local function findCookingPot()
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj.Name == "Cooking Pot" and obj:IsA("BasePart") then
+            return obj
+        end
+    end
+    return nil
+end
+
+local function getPotPrompt(Pot)
+    if not Pot then return nil end
+    local att = Pot:FindFirstChild("Attachment")
+    if att then
+        local prompt = att:FindFirstChildWhichIsA("ProximityPrompt")
+        if prompt then return prompt end
+    end
+    local prompt = Pot:FindFirstChildWhichIsA("ProximityPrompt", true)
+    if prompt then return prompt end
+    return nil
+end
+
+-- ============================================================
+-- 🔧 NOCLIP
 -- ============================================================
 local noclipConn = nil
 local noclipRunning = false
@@ -1032,14 +820,6 @@ local function DisableNoClipPermanent()
     if noclipConn then
         pcall(function() noclipConn:Disconnect() end)
         noclipConn = nil
-    end
-    local char = Player.Character
-    if char then
-        for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                pcall(function() part.CanCollide = true end)
-            end
-        end
     end
 end
 
@@ -1108,7 +888,7 @@ local function DisableFlyLock()
 end
 
 -- ============================================================
--- 🍳 COOK
+-- 🍳 COOK HELPERS
 -- ============================================================
 local function af_FirePrompt(prompt)
     if not prompt or not prompt.Parent then return end
@@ -1142,21 +922,28 @@ local function af_Tween(cf)
     tw.Completed:Wait()
 end
 
+-- ============================================================
+-- 🍳 COOK — TANPA APARTMENT, LANGSUNG KE KOMPOR
+-- ============================================================
 local function CookMarshmallow(amount, skipBuy)
     amount = amount or FarmSettings.Amount
     FarmState.BatchProgress = "0/" .. amount
     FarmState.CurrentBatch = 0
+
+    -- 🔥 BUY INGREDIENTS
     if not skipBuy then
         local char = Player.Character
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
         local isNearStore = false
-        if hrp and (hrp.Position - Vector3.new(510, 4, 602)).Magnitude < 20 then isNearStore = true end
+        if hrp and (hrp.Position - Vector3.new(510, 4, 602)).Magnitude < 20 then
+            isNearStore = true
+        end
         if not isNearStore then
-            FarmState.Step = "Going to Store"
+            FarmState.Step = "🚗 Going to Store"
             doSuicideTP({ x = 510, y = 4, z = 602 })
             task.wait(1)
         end
-        FarmState.Step = "Buying Ingredients"
+        FarmState.Step = "🛒 Buying Ingredients"
         local buySuccess = false
         for retry = 1, 10 do
             buySuccess = BuyAll(amount)
@@ -1165,34 +952,45 @@ local function CookMarshmallow(amount, skipBuy)
             doSuicideTP({ x = 510, y = 4, z = 602 })
             task.wait(1)
         end
-        if not buySuccess then task.wait(5) return true end
+        if not buySuccess then
+            print("⚠️ Buy failed, skip cycle")
+            task.wait(5)
+            return true
+        end
         task.wait(0.5)
     end
-    FarmState.Step = "Going to Apartment"
-    local targetPos, entry = GetOwnedAprtTarget()
-    if not targetPos then return true end
-    af_TP(CFrame.new(targetPos.X, targetPos.Y + 3, targetPos.Z))
+
+    -- 🔥 CARI COMPOR
+    FarmState.Step = "🍳 Finding Cooking Pot"
+    local Pot = findCookingPot()
+    if not Pot then
+        print("⚠️ Cooking Pot not found, skip cycle")
+        task.wait(5)
+        return true
+    end
+
+    local PotPrompt = getPotPrompt(Pot)
+    if not PotPrompt then
+        print("⚠️ Pot Prompt not found, skip cycle")
+        task.wait(5)
+        return true
+    end
+
+    -- 🔥 TELEPORT KE COMPOR
+    FarmState.Step = "🚗 Going to Cooking Pot"
+    af_TP(Pot.CFrame + Vector3.new(0, 3, 0))
     task.wait(1)
-    local House = entry and entry.obj
-    if not House then return true end
-    local Interior = House:FindFirstChild("Interior") or House
-    for _, v in pairs(Interior:GetChildren()) do
-        if v.Name == "Floor" then pcall(function() v.CanCollide = false end) end
-    end
-    local Pot = Interior:FindFirstChild("Cooking Pot", true)
-    local PotPrompt = nil
-    if Pot then
-        local att = Pot:FindFirstChild("Attachment")
-        PotPrompt = att and att:FindFirstChildOfClass("ProximityPrompt") or Pot:FindFirstChildWhichIsA("ProximityPrompt", true)
-    end
-    if not Pot or not PotPrompt then return true end
+
     EnableNoClipPermanent()
     QuickTeleportToPot(Pot)
+
     for i = 1, amount do
         if StopRequest then return false end
         FarmState.CurrentBatch = i
         FarmState.BatchProgress = i .. "/" .. amount
-        FarmState.Step = "Water " .. i .. "/" .. amount
+
+        -- WATER
+        FarmState.Step = "💧 Water (" .. i .. "/" .. amount .. ")"
         if not Player.Character:FindFirstChild("Water") then af_Equip("Water") end
         task.wait(1)
         af_FirePrompt(PotPrompt)
@@ -1205,7 +1003,9 @@ local function CookMarshmallow(amount, skipBuy)
             task.wait(0.5)
             timeout = timeout + 0.5
         end
-        FarmState.Step = "Sugar " .. i .. "/" .. amount
+
+        -- SUGAR
+        FarmState.Step = "🧂 Sugar (" .. i .. "/" .. amount .. ")"
         if not Player.Character:FindFirstChild("Sugar Block Bag") then af_Equip("Sugar Block Bag") end
         task.wait(1)
         af_FirePrompt(PotPrompt)
@@ -1219,7 +1019,9 @@ local function CookMarshmallow(amount, skipBuy)
             task.wait(0.5)
             timeout = timeout + 0.5
         end
-        FarmState.Step = "Gelatin " .. i .. "/" .. amount
+
+        -- GELATIN
+        FarmState.Step = "🧪 Gelatin (" .. i .. "/" .. amount .. ")"
         af_Unequip()
         task.wait(1)
         if not Player.Character:FindFirstChild("Gelatin") then af_Equip("Gelatin") end
@@ -1233,21 +1035,28 @@ local function CookMarshmallow(amount, skipBuy)
             task.wait(0.5)
             timeout = timeout + 0.5
         end
-        FarmState.Step = "Collect " .. i .. "/" .. amount
+
+        -- EMPTY BAG
+        FarmState.Step = "🛍️ Collect (" .. i .. "/" .. amount .. ")"
         if not Player.Character:FindFirstChild("Empty Bag") then af_Equip("Empty Bag") end
         task.wait(1)
         af_FirePrompt(PotPrompt)
         task.wait(1)
         af_Unequip()
+
         FarmState.MarshmallowsMade = FarmState.MarshmallowsMade + 1
         UpdateCashTracker()
     end
+
     DisableFlyLock()
     return true
 end
 
+-- ============================================================
+-- 💰 SELL
+-- ============================================================
 local function SellMarshmallow()
-    FarmState.Step = "Selling"
+    FarmState.Step = "💰 Selling"
     af_TP(CFrame.new(510, 4, 602))
     local timeout = 0
     while not findLamont() and timeout < 10 do
@@ -1276,35 +1085,39 @@ local function SellMarshmallow()
     return sold > 0
 end
 
+-- ============================================================
+-- 🔄 FULL CYCLE — TANPA APARTMENT
+-- ============================================================
 local CurrentCycle = 0
-local isFirstCycle = true
 
 local function FullCycle()
     FarmState.BatchProgress = "0/" .. FarmSettings.Amount
     FarmState.CurrentBatch = 0
-    if isFirstCycle then
-        FarmState.Step = "Buying Apartment"
-        if not EnsureBuyAprt() then task.wait(5) return true end
-        task.wait(1)
-        isFirstCycle = false
-    end
+
     local cookSuccess = CookMarshmallow(FarmSettings.Amount, false)
-    if not cookSuccess then task.wait(5) return true end
+    if not cookSuccess then
+        task.wait(5)
+        return true
+    end
+
     DisableFlyLock()
     SellMarshmallow()
     task.wait(0.5)
+
     CurrentCycle = CurrentCycle + 1
     FarmState.Cycles = CurrentCycle
     UpdateCashTracker()
     return true
 end
 
+-- ============================================================
+-- 🚀 START/STOP
+-- ============================================================
 local function StartFullyFarm()
     if FarmRunning then return end
     FarmRunning = true
     StopRequest = false
     CurrentCycle = 0
-    isFirstCycle = true
     FarmState.Cycles = 0
     FarmState.Sold = 0
     FarmState.MarshmallowsMade = 0
@@ -1333,7 +1146,7 @@ _G.StartFullyFarm = StartFullyFarm
 _G.StopFullyFarm = StopFullyFarm
 
 -- ============================================================
--- 🖥️ UI HITAM PUTIH — 4 TAB + SCREEN COVER
+-- 🖥️ UI HITAM PUTIH — 4 TAB
 -- ============================================================
 _G.ShowMainUI = function()
     local old = PlayerGui:FindFirstChild("JENOWA_UI")
@@ -1490,12 +1303,7 @@ _G.ShowMainUI = function()
     Content.ZIndex = 11
     Content.Parent = Main
 
-    local Tabs = { 
-        Farm = Instance.new("Frame"), 
-        Boost = Instance.new("Frame"), 
-        Music = Instance.new("Frame"),
-        Info = Instance.new("Frame") 
-    }
+    local Tabs = { Farm = Instance.new("Frame"), Boost = Instance.new("Frame"), Music = Instance.new("Frame"), Info = Instance.new("Frame") }
     for k, f in pairs(Tabs) do
         f.Size = UDim2.new(1, 0, 1, 0)
         f.BackgroundTransparency = 1
@@ -1544,7 +1352,6 @@ _G.ShowMainUI = function()
 
     -- TAB FARM
     local TabFarm = Tabs.Farm
-
     local FarmCard = Instance.new("Frame")
     FarmCard.Size = UDim2.new(1, 0, 1, 0)
     FarmCard.BackgroundColor3 = C_CARD2
@@ -1627,18 +1434,6 @@ _G.ShowMainUI = function()
     CoverLabel.TextXAlignment = Enum.TextXAlignment.Left
     CoverLabel.ZIndex = 15
     CoverLabel.Parent = CoverFrame
-
-    local CoverSubLabel = Instance.new("TextLabel")
-    CoverSubLabel.Size = UDim2.new(1, 0, 0, 10)
-    CoverSubLabel.Position = UDim2.new(0, 0, 1, 0)
-    CoverSubLabel.BackgroundTransparency = 1
-    CoverSubLabel.Text = "RGB hitam ↔ putih"
-    CoverSubLabel.TextColor3 = C_TEXT_DIM
-    CoverSubLabel.Font = Enum.Font.Gotham
-    CoverSubLabel.TextSize = 7
-    CoverSubLabel.TextXAlignment = Enum.TextXAlignment.Left
-    CoverSubLabel.ZIndex = 15
-    CoverSubLabel.Parent = CoverFrame
 
     local CoverBtn = Instance.new("TextButton")
     CoverBtn.Size = UDim2.new(0, 48, 0, 22)
@@ -1779,9 +1574,20 @@ _G.ShowMainUI = function()
     StatusLabel.ZIndex = 15
     StatusLabel.Parent = StatsBox
 
+    -- Update stats loop
+    task.spawn(function()
+        while ScreenGui.Parent do
+            pcall(function()
+                MadeLabel.Text = "Made: " .. (FarmState.MarshmallowsMade or 0)
+                SoldLabel.Text = "Sold: " .. (FarmState.Sold or 0)
+                StatusLabel.Text = FarmState.Step or "Idle"
+            end)
+            task.wait(0.5)
+        end
+    end)
+
     -- TAB BOOST
     local TabBoost = Tabs.Boost
-
     local BoostCard = Instance.new("Frame")
     BoostCard.Size = UDim2.new(1, 0, 1, 0)
     BoostCard.BackgroundColor3 = C_CARD2
@@ -1838,7 +1644,6 @@ _G.ShowMainUI = function()
 
     -- TAB MUSIC
     local TabMusic = Tabs.Music
-
     local MusicCard = Instance.new("Frame")
     MusicCard.Size = UDim2.new(1, 0, 1, 0)
     MusicCard.BackgroundColor3 = C_CARD2
@@ -1850,125 +1655,150 @@ _G.ShowMainUI = function()
     MCStroke.Color = C_BORDER
     MCStroke.Thickness = 1
 
-    local NowPlaying = Instance.new("Frame")
-    NowPlaying.Size = UDim2.new(1, -16, 0, 42)
-    NowPlaying.Position = UDim2.new(0, 8, 0, 8)
-    NowPlaying.BackgroundColor3 = C_BG
-    NowPlaying.BorderSizePixel = 0
-    NowPlaying.ZIndex = 14
-    NowPlaying.Parent = MusicCard
-    Instance.new("UICorner", NowPlaying).CornerRadius = UDim.new(0, 6)
+    local MCTitle = Instance.new("TextLabel")
+    MCTitle.Size = UDim2.new(1, -16, 0, 20)
+    MCTitle.Position = UDim2.new(0, 8, 0, 8)
+    MCTitle.BackgroundTransparency = 1
+    MCTitle.Text = "MUSIC PLAYER"
+    MCTitle.TextColor3 = C_ACCENT
+    MCTitle.Font = Enum.Font.GothamBold
+    MCTitle.TextSize = 11
+    MCTitle.TextXAlignment = Enum.TextXAlignment.Left
+    MCTitle.ZIndex = 14
+    MCTitle.Parent = MusicCard
 
-    local NPicon = Instance.new("TextLabel")
-    NPicon.Size = UDim2.new(0, 30, 0, 30)
-    NPicon.Position = UDim2.new(0, 6, 0.5, -15)
-    NPicon.BackgroundColor3 = C_ACCENT
-    NPicon.Text = "♪"
-    NPicon.TextColor3 = C_BG
-    NPicon.Font = Enum.Font.GothamBold
-    NPicon.TextSize = 16
-    NPicon.BorderSizePixel = 0
-    NPicon.ZIndex = 15
-    NPicon.Parent = NowPlaying
-    Instance.new("UICorner", NPicon).CornerRadius = UDim.new(0, 6)
+    local MusicNow = Instance.new("TextLabel")
+    MusicNow.Size = UDim2.new(1, -16, 0, 18)
+    MusicNow.Position = UDim2.new(0, 8, 0, 32)
+    MusicNow.BackgroundTransparency = 1
+    MusicNow.Text = "🎵 " .. LAGU_LIST[laguIndex].nama
+    MusicNow.TextColor3 = C_TEXT
+    MusicNow.Font = Enum.Font.Gotham
+    MusicNow.TextSize = 10
+    MusicNow.TextXAlignment = Enum.TextXAlignment.Left
+    MusicNow.TextTruncate = Enum.TextTruncate.AtEnd
+    MusicNow.ZIndex = 14
+    MusicNow.Parent = MusicCard
 
-    local NPtitle = Instance.new("TextLabel")
-    NPtitle.Size = UDim2.new(1, -55, 0, 16)
-    NPtitle.Position = UDim2.new(0, 42, 0, 6)
-    NPtitle.BackgroundTransparency = 1
-    NPtitle.Text = laguPilihan.nama
-    NPtitle.TextColor3 = C_TEXT
-    NPtitle.Font = Enum.Font.GothamBold
-    NPtitle.TextSize = 10
-    NPtitle.TextXAlignment = Enum.TextXAlignment.Left
-    NPtitle.TextTruncate = Enum.TextTruncate.AtEnd
-    NPtitle.ZIndex = 15
-    NPtitle.Parent = NowPlaying
+    -- Music control buttons
+    local MBtnFrame = Instance.new("Frame")
+    MBtnFrame.Size = UDim2.new(1, -16, 0, 30)
+    MBtnFrame.Position = UDim2.new(0, 8, 0, 56)
+    MBtnFrame.BackgroundTransparency = 1
+    MBtnFrame.ZIndex = 14
+    MBtnFrame.Parent = MusicCard
 
-    local NPstatus = Instance.new("TextLabel")
-    NPstatus.Size = UDim2.new(1, -55, 0, 10)
-    NPstatus.Position = UDim2.new(0, 42, 0, 24)
-    NPstatus.BackgroundTransparency = 1
-    NPstatus.Text = "Now Playing"
-    NPstatus.TextColor3 = C_GREEN
-    NPstatus.Font = Enum.Font.Gotham
-    NPstatus.TextSize = 8
-    NPstatus.TextXAlignment = Enum.TextXAlignment.Left
-    NPstatus.ZIndex = 15
-    NPstatus.Parent = NowPlaying
+    local MBtnLayout = Instance.new("UIListLayout")
+    MBtnLayout.FillDirection = Enum.FillDirection.Horizontal
+    MBtnLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    MBtnLayout.Padding = UDim.new(0, 6)
+    MBtnLayout.Parent = MBtnFrame
 
-    local ListScroll = Instance.new("ScrollingFrame")
-    ListScroll.Size = UDim2.new(1, -16, 1, -60)
-    ListScroll.Position = UDim2.new(0, 8, 0, 56)
-    ListScroll.BackgroundColor3 = C_BG
-    ListScroll.BorderSizePixel = 0
-    ListScroll.ScrollBarThickness = 3
-    ListScroll.ScrollBarImageColor3 = C_ACCENT
-    ListScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-    ListScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    ListScroll.ZIndex = 14
-    ListScroll.Parent = MusicCard
-    Instance.new("UICorner", ListScroll).CornerRadius = UDim.new(0, 6)
+    local function MakeMusicBtn(text)
+        local b = Instance.new("TextButton")
+        b.Size = UDim2.new(0, 60, 0, 28)
+        b.BackgroundColor3 = C_BG
+        b.Text = text
+        b.TextColor3 = C_TEXT
+        b.Font = Enum.Font.GothamBold
+        b.TextSize = 12
+        b.BorderSizePixel = 0
+        b.AutoButtonColor = false
+        b.ZIndex = 15
+        b.Parent = MBtnFrame
+        Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+        local s = Instance.new("UIStroke", b)
+        s.Color = C_BORDER
+        s.Thickness = 1
+        return b
+    end
 
-    local ListLayout = Instance.new("UIListLayout", ListScroll)
-    ListLayout.Padding = UDim.new(0, 3)
+    local MBtnPrev = MakeMusicBtn("⏮")
+    local MBtnPlay = MakeMusicBtn("▶")
+    local MBtnNext = MakeMusicBtn("⏭")
 
-    local laguButtons = {}
+    -- Music list
+    local MListScroll = Instance.new("ScrollingFrame")
+    MListScroll.Size = UDim2.new(1, -16, 1, -100)
+    MListScroll.Position = UDim2.new(0, 8, 0, 92)
+    MListScroll.BackgroundColor3 = C_BG
+    MListScroll.BorderSizePixel = 0
+    MListScroll.ScrollBarThickness = 4
+    MListScroll.ScrollBarImageColor3 = C_ACCENT
+    MListScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    MListScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    MListScroll.ZIndex = 14
+    MListScroll.Parent = MusicCard
+    Instance.new("UICorner", MListScroll).CornerRadius = UDim.new(0, 6)
+
+    local MListLayout = Instance.new("UIListLayout")
+    MListLayout.Padding = UDim.new(0, 2)
+    MListLayout.Parent = MListScroll
+
+    local musicButtons = {}
     for i, lagu in ipairs(LAGU_LIST) do
         local item = Instance.new("TextButton")
-        item.Size = UDim2.new(1, -6, 0, 28)
-        item.BackgroundColor3 = C_CARD
+        item.Size = UDim2.new(1, -6, 0, 22)
+        item.BackgroundColor3 = C_BG
         item.BorderSizePixel = 0
-        item.Text = ""
+        item.Text = "  " .. lagu.nama
+        item.TextColor3 = C_TEXT
+        item.Font = Enum.Font.Gotham
+        item.TextSize = 9
+        item.TextXAlignment = Enum.TextXAlignment.Left
         item.AutoButtonColor = false
         item.ZIndex = 15
-        item.Parent = ListScroll
-        Instance.new("UICorner", item).CornerRadius = UDim.new(0, 5)
+        item.Parent = MListScroll
+        Instance.new("UICorner", item).CornerRadius = UDim.new(0, 4)
+        table.insert(musicButtons, item)
 
-        local num = Instance.new("TextLabel")
-        num.Size = UDim2.new(0, 22, 1, 0)
-        num.Position = UDim2.new(0, 4, 0, 0)
-        num.BackgroundTransparency = 1
-        num.Text = "#" .. i
-        num.TextColor3 = C_TEXT_DIM
-        num.Font = Enum.Font.GothamBold
-        num.TextSize = 9
-        num.ZIndex = 16
-        num.Parent = item
-
-        local nm = Instance.new("TextLabel")
-        nm.Size = UDim2.new(1, -34, 1, 0)
-        nm.Position = UDim2.new(0, 28, 0, 0)
-        nm.BackgroundTransparency = 1
-        nm.Text = lagu.nama
-        nm.TextColor3 = C_TEXT
-        nm.Font = Enum.Font.Gotham
-        nm.TextSize = 9
-        nm.TextXAlignment = Enum.TextXAlignment.Left
-        nm.TextTruncate = Enum.TextTruncate.AtEnd
-        nm.ZIndex = 16
-        nm.Parent = item
-
-        table.insert(laguButtons, item)
         item.MouseButton1Click:Connect(function()
             laguIndex = i
             laguPilihan = LAGU_LIST[i]
             pcall(function() BGM:Stop() end)
             BGM.SoundId = laguPilihan.id
-            BGM:Play()
-            NPtitle.Text = laguPilihan.nama
-            NPstatus.Text = "Now Playing"
-            NPstatus.TextColor3 = C_GREEN
-            for _, b in ipairs(laguButtons) do
-                b.BackgroundColor3 = C_CARD
+            pcall(function() BGM:Play() end)
+            MusicNow.Text = "🎵 " .. laguPilihan.nama
+            MBtnPlay.Text = "⏸"
+            for _, b in ipairs(musicButtons) do
+                b.BackgroundColor3 = C_BG
             end
-            item.BackgroundColor3 = C_ACCENT
+            item.BackgroundColor3 = C_BORDER
         end)
     end
 
+    MBtnPlay.MouseButton1Click:Connect(function()
+        if BGM.IsPlaying then
+            BGM:Pause()
+            MBtnPlay.Text = "▶"
+        else
+            BGM:Resume()
+            MBtnPlay.Text = "⏸"
+        end
+    end)
+
+    MBtnNext.MouseButton1Click:Connect(function()
+        laguIndex = laguIndex + 1
+        if laguIndex > #LAGU_LIST then laguIndex = 1 end
+        laguPilihan = LAGU_LIST[laguIndex]
+        pcall(function() BGM:Stop() end)
+        BGM.SoundId = laguPilihan.id
+        pcall(function() BGM:Play() end)
+        MusicNow.Text = "🎵 " .. laguPilihan.nama
+    end)
+
+    MBtnPrev.MouseButton1Click:Connect(function()
+        laguIndex = laguIndex - 1
+        if laguIndex < 1 then laguIndex = #LAGU_LIST end
+        laguPilihan = LAGU_LIST[laguIndex]
+        pcall(function() BGM:Stop() end)
+        BGM.SoundId = laguPilihan.id
+        pcall(function() BGM:Play() end)
+        MusicNow.Text = "🎵 " .. laguPilihan.nama
+    end)
+
     -- TAB INFO
     local TabInfo = Tabs.Info
-
     local InfoCard = Instance.new("Frame")
     InfoCard.Size = UDim2.new(1, 0, 1, 0)
     InfoCard.BackgroundColor3 = C_CARD2
@@ -1984,73 +1814,62 @@ _G.ShowMainUI = function()
     ICTitle.Size = UDim2.new(1, -16, 0, 20)
     ICTitle.Position = UDim2.new(0, 8, 0, 8)
     ICTitle.BackgroundTransparency = 1
-    ICTitle.Text = "JENOWA STORE"
+    ICTitle.Text = "INFO"
     ICTitle.TextColor3 = C_ACCENT
     ICTitle.Font = Enum.Font.GothamBold
-    ICTitle.TextSize = 12
+    ICTitle.TextSize = 11
     ICTitle.TextXAlignment = Enum.TextXAlignment.Left
     ICTitle.ZIndex = 14
     ICTitle.Parent = InfoCard
 
-    local InfoDesc = Instance.new("TextLabel")
-    InfoDesc.Size = UDim2.new(1, -16, 0, 150)
-    InfoDesc.Position = UDim2.new(0, 8, 0, 32)
-    InfoDesc.BackgroundTransparency = 1
-    InfoDesc.Text = "Version 11.4\n\n" ..
-        "- Autofarming\n" ..
-        "- Screen Cover (RGB)\n" ..
-        "- Boost FPS\n" ..
-        "- RGB Name: JENOWA\n" ..
-        "- Music Player 9 lagu\n" ..
-        "- Elixir Bypass\n\n" ..
-        "Theme: Black & White\n\n" ..
-        "Created by JENOWA"
-    InfoDesc.TextColor3 = C_TEXT_DIM
-    InfoDesc.Font = Enum.Font.Gotham
-    InfoDesc.TextSize = 10
-    InfoDesc.TextXAlignment = Enum.TextXAlignment.Left
-    InfoDesc.TextYAlignment = Enum.TextYAlignment.Top
-    InfoDesc.TextWrapped = true
-    InfoDesc.LineHeight = 1.4
-    InfoDesc.ZIndex = 14
-    InfoDesc.Parent = InfoCard
+    local InfoText = Instance.new("TextLabel")
+    InfoText.Size = UDim2.new(1, -16, 1, -40)
+    InfoText.Position = UDim2.new(0, 8, 0, 32)
+    InfoText.BackgroundTransparency = 1
+    InfoText.Text = "JENOWA STORE v11.5\n\n• Anti Kick\n• Anti Ban\n• Loading 15s\n• Boost FPS\n• Screen Cover RGB\n• FULLY MS (No Apartment)\n• Music Player\n\nCreated by JENOWA"
+    InfoText.TextColor3 = C_TEXT
+    InfoText.Font = Enum.Font.Gotham
+    InfoText.TextSize = 10
+    InfoText.TextWrapped = true
+    InfoText.TextXAlignment = Enum.TextXAlignment.Left
+    InfoText.TextYAlignment = Enum.TextYAlignment.Top
+    InfoText.ZIndex = 14
+    InfoText.Parent = InfoCard
 
-    task.spawn(function()
-        while ScreenGui.Parent do
-            pcall(function()
-                MadeLabel.Text = "Made: " .. (FarmState.MarshmallowsMade or 0)
-                SoldLabel.Text = "Sold: " .. (FarmState.Sold or 0)
-                if FarmRunning then
-                    StatusLabel.Text = FarmState.Step or "Running"
-                    StatusLabel.TextColor3 = C_GREEN
-                else
-                    StatusLabel.Text = "Idle"
-                    StatusLabel.TextColor3 = C_TEXT_DIM
-                end
-            end)
-            task.wait(0.5)
-        end
-    end)
-
-    UserInputService.InputBegan:Connect(function(input)
-        if input.KeyCode == Enum.KeyCode.F3 then
-            ScreenGui.Enabled = not ScreenGui.Enabled
-        end
-    end)
-
-    print("UI LOADED - JENOWA STORE v11.4 (Elixir Bypass)")
+    print("✅ UI Loaded")
 end
 
 -- ============================================================
--- 🛡️ ANTI AFK
+-- 🚀 AUTO SHOW UI SETELAH LOADING
+-- ============================================================
+task.spawn(function()
+    while loadingActive do task.wait(0.1) end
+    task.wait(1.5)
+    if _G.ShowMainUI then _G.ShowMainUI() end
+end)
+
+-- ============================================================
+-- ⌨️ KEYBIND F3
+-- ============================================================
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.F3 then
+        local ui = PlayerGui:FindFirstChild("JENOWA_UI")
+        if ui then
+            ui.Enabled = not ui.Enabled
+        end
+    end
+end)
+
+-- ============================================================
+-- ANTI AFK
 -- ============================================================
 task.spawn(function()
     while getgenv().FULLY_MS_V1 do
+        task.wait(60)
         pcall(function()
             game:GetService("VirtualUser"):CaptureController()
             game:GetService("VirtualUser"):ClickButton2(Vector2.new())
         end)
-        task.wait(60)
     end
 end)
 
@@ -2063,11 +1882,10 @@ end)
 
 print("")
 print("========================================")
-print("JENOWA STORE v11.4 LOADED")
+print("🛒 JENOWA STORE v11.5 LOADED")
 print("========================================")
-print("Bypass: Elixir + Fallback Ringan")
-print("UI: Hitam Putih")
-print("Fitur: Screen Cover RGB + Boost FPS")
-print("Nama: JENOWA (RGB)")
-print("F3 = Toggle UI")
+print("📌 NO APARTMENT — ONLY COOKING POT")
+print("📌 Loading 15s + Lagu")
+print("📌 Tab: FARM | BOOST | MUSIC | INFO")
+print("📌 F3 = Toggle UI")
 print("========================================")
