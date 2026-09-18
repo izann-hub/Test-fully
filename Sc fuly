@@ -1,9 +1,10 @@
 -- ============================================================
--- 🛒 JENOWA STORE v11.7 — NO APARTMENT + EXTERNAL BUTTONS
+-- 🛒 JENOWA STORE v11.8 — NO TELEPORT + FIXED UI BUTTON
 -- ============================================================
-print("=== JENOWA STORE v11.7 START ===")
+print("=== JENOWA STORE v11.8 START ===")
 
 getgenv().FULLY_MS_V1 = true
+getgenv().JENOWA_UI_SHOWING = false
 
 -- ============================================================
 -- 📦 SERVICES
@@ -16,7 +17,6 @@ local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
 local LogService = game:GetService("LogService")
-local TeleportService = game:GetService("TeleportService")
 local SoundService = game:GetService("SoundService")
 local Lighting = game:GetService("Lighting")
 local VirtualUser = game:GetService("VirtualUser")
@@ -56,28 +56,22 @@ pcall(function()
     if p then p.Kick = function() return end end
 end)
 
-pcall(function()
-    Players.Kick = function() return end
-end)
+pcall(function() Players.Kick = function() return end end)
 
 task.spawn(function()
     while getgenv().FULLY_MS_V1 do
         pcall(function()
-            local cg = CoreGui
-            local pg = Players.LocalPlayer and Players.LocalPlayer.PlayerGui
-            for _, gui in pairs(cg:GetChildren()) do
+            for _, gui in pairs(CoreGui:GetChildren()) do
                 local name = gui.Name or ""
                 if name:find("Kick") or name:find("Ban") or name:find("Disconnect") or
                    name:find("Error") or name:find("Warning") or name:find("Popup") then
                     pcall(function() gui:Destroy() end)
                 end
             end
-            if pg then
-                for _, gui in pairs(pg:GetChildren()) do
-                    local name = gui.Name or ""
-                    if name:find("Kick") or name:find("Ban") or name:find("Disconnect") then
-                        pcall(function() gui:Destroy() end)
-                    end
+            for _, gui in pairs(PlayerGui:GetChildren()) do
+                local name = gui.Name or ""
+                if name:find("Kick") or name:find("Ban") or name:find("Disconnect") then
+                    pcall(function() gui:Destroy() end)
                 end
             end
         end)
@@ -112,12 +106,6 @@ local function ClickPlay()
                 task.wait(0.05)
                 VIM:SendMouseButtonEvent(pos.X + size.X/2, pos.Y + size.Y/2, 0, false, game, 0)
             end
-        end
-    end)
-    pcall(function()
-        if getconnections then
-            local conns = getconnections(btn.MouseButton1Click)
-            if conns then for _, c in pairs(conns) do pcall(function() c:Fire() end) end end
         end
     end)
     task.wait(1)
@@ -363,12 +351,6 @@ task.spawn(function()
     task.wait(ft + 0.3)
     pcall(function() LoadingGui:Destroy() end)
     print("Loading selesai")
-    if _G.ShowMainUI then _G.ShowMainUI() end
-end)
-
-task.delay(20, function()
-    local lg = PlayerGui:FindFirstChild("JenowaLoading")
-    if lg then pcall(function() lg:Destroy() end) end
 end)
 
 -- ============================================================
@@ -381,13 +363,10 @@ pcall(function()
 end)
 print("RemoteEvent:", RemoteEvent and "OK" or "NIL")
 
-local RESPAWN_WARP = Vector3.new(999999, 9999999, 999999)
-
 -- ============================================================
 -- 🔧 STATE
 -- ============================================================
 local FarmSettings = {
-    OffsetY = 5,
     Amount = 8,
     IngredientCost = 190,
 }
@@ -428,9 +407,7 @@ local function EnableBoostFPS()
             end
         end
     end)
-    pcall(function()
-        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-    end)
+    pcall(function() settings().Rendering.QualityLevel = Enum.QualityLevel.Level01 end)
 end
 
 local function DisableBoostFPS()
@@ -447,9 +424,7 @@ local function DisableBoostFPS()
             end
         end
     end)
-    pcall(function()
-        settings().Rendering.QualityLevel = Enum.QualityLevel.Automatic
-    end)
+    pcall(function() settings().Rendering.QualityLevel = Enum.QualityLevel.Automatic end)
 end
 
 -- ============================================================
@@ -477,7 +452,7 @@ local function ToggleScreenCover()
         gui.Name = "JenowaScreenCover"
         gui.ResetOnSpawn = false
         gui.IgnoreGuiInset = true
-        gui.DisplayOrder = 999999
+        gui.DisplayOrder = 999998
         gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
         local pOK = pcall(function() gui.Parent = UIParent end)
         if not pOK or not gui.Parent then pcall(function() gui.Parent = PlayerGui end) end
@@ -601,59 +576,6 @@ local function UpdateCashTracker()
 end
 
 -- ============================================================
--- 🔥 TELEPORT
--- ============================================================
-local tpActive, tpCancelled, tpBusy = false, false, false
-
-local function tpToPos(cx, cy, cz)
-    if tpActive then return end
-    tpActive = true
-    tpCancelled = false
-    local ch = Player.Character
-    local hrp = ch and ch:FindFirstChild("HumanoidRootPart")
-    local hum = ch and ch:FindFirstChildOfClass("Humanoid")
-    if not hrp or not hum then tpActive = false return end
-    local deathConn
-    deathConn = hum.Died:Connect(function()
-        tpCancelled = true
-        if deathConn then deathConn:Disconnect() end
-    end)
-    pcall(function()
-        hrp.CFrame = CFrame.new(cx, cy, cz)
-        hrp.AssemblyLinearVelocity = Vector3.zero
-        hrp.AssemblyAngularVelocity = Vector3.zero
-    end)
-    task.wait(0.3)
-    if deathConn then deathConn:Disconnect() end
-    tpActive = false
-end
-
-local function af_TP(cf)
-    local x, y, z
-    if typeof(cf) == "CFrame" then x, y, z = cf.X, cf.Y, cf.Z
-    elseif typeof(cf) == "Vector3" then x, y, z = cf.X, cf.Y, cf.Z
-    else return end
-    tpToPos(x, y, z)
-end
-
-local function doSuicideTP(loc)
-    if tpBusy then return end
-    tpBusy = true
-    local ch = Player.Character
-    local hrp0 = ch and ch:FindFirstChild("HumanoidRootPart")
-    if not hrp0 then tpBusy = false return end
-    pcall(function() hrp0.CFrame = CFrame.new(RESPAWN_WARP) end)
-    local nc = Player.CharacterAdded:Wait()
-    local hrp = nc:WaitForChild("HumanoidRootPart", 10)
-    if not hrp then tpBusy = false return end
-    task.wait(0.8)
-    pcall(function() hrp.CFrame = CFrame.new(loc.x, loc.y + 3, loc.z) end)
-    tpBusy = false
-    task.wait(0.2)
-    SetDisplayName(CurrentDisplayName, GenerateRGB())
-end
-
--- ============================================================
 -- 💰 BUY
 -- ============================================================
 local function GetIngredientCount()
@@ -694,6 +616,38 @@ local function BuyAll(amount)
 end
 
 -- ============================================================
+-- 🔥 FIND NEAREST COOKING POT — TANPA TELEPORT
+-- ============================================================
+local function findNearestPot()
+    local char = Player.Character
+    if not char then return nil end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return nil end
+    
+    local nearest, nearestDist = nil, 999
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj.Name == "Cooking Pot" and obj:IsA("BasePart") then
+            local dist = (hrp.Position - obj.Position).Magnitude
+            if dist < nearestDist then
+                nearestDist = dist
+                nearest = obj
+            end
+        end
+    end
+    return nearest, nearestDist
+end
+
+local function getPotPrompt(Pot)
+    if not Pot then return nil end
+    local att = Pot:FindFirstChild("Attachment")
+    if att then
+        local p = att:FindFirstChildWhichIsA("ProximityPrompt")
+        if p then return p end
+    end
+    return Pot:FindFirstChildWhichIsA("ProximityPrompt", true)
+end
+
+-- ============================================================
 -- 🔥 FIND LAMONT
 -- ============================================================
 local function findLamont()
@@ -710,51 +664,12 @@ local function findLamont()
 end
 
 -- ============================================================
--- 🔥 FIND COOKING POT
--- ============================================================
-local cachedPot = nil
-local cachedPrompt = nil
-
-local function findCookingPot()
-    if cachedPot and cachedPot.Parent then return cachedPot end
-    local map = Workspace:FindFirstChild("Map")
-    if map then
-        for _, obj in pairs(map:GetDescendants()) do
-            if obj.Name == "Cooking Pot" and obj:IsA("BasePart") then
-                cachedPot = obj
-                return obj
-            end
-        end
-    end
-    for _, obj in pairs(Workspace:GetChildren()) do
-        if obj.Name == "Cooking Pot" and obj:IsA("BasePart") then
-            cachedPot = obj
-            return obj
-        end
-    end
-    return nil
-end
-
-local function getPotPrompt(Pot)
-    if not Pot then return nil end
-    if cachedPrompt and cachedPrompt.Parent then return cachedPrompt end
-    local att = Pot:FindFirstChild("Attachment")
-    if att then
-        local p = att:FindFirstChildWhichIsA("ProximityPrompt")
-        if p then cachedPrompt = p return p end
-    end
-    local p = Pot:FindFirstChildWhichIsA("ProximityPrompt", true)
-    if p then cachedPrompt = p return p end
-    return nil
-end
-
--- ============================================================
 -- 🔧 NOCLIP RINGAN
 -- ============================================================
 local noclipConn = nil
 local noclipRunning = false
 
-local function EnableNoClipPermanent()
+local function EnableNoClip()
     if noclipRunning then return end
     noclipRunning = true
     noclipConn = RunService.Heartbeat:Connect(function()
@@ -770,7 +685,7 @@ local function EnableNoClipPermanent()
     end)
 end
 
-local function DisableNoClipPermanent()
+local function DisableNoClip()
     noclipRunning = false
     if noclipConn then
         pcall(function() noclipConn:Disconnect() end)
@@ -816,7 +731,7 @@ local function af_Unequip()
 end
 
 -- ============================================================
--- 🍳 COOK — ANTI CRASH
+-- 🍳 COOK — TANPA TELEPORT
 -- ============================================================
 local function CookMarshmallow(amount, skipBuy)
     amount = amount or FarmSettings.Amount
@@ -824,17 +739,6 @@ local function CookMarshmallow(amount, skipBuy)
     FarmState.CurrentBatch = 0
 
     if not skipBuy then
-        local char = Player.Character
-        local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        local isNearStore = false
-        if hrp and (hrp.Position - Vector3.new(510, 4, 602)).Magnitude < 20 then
-            isNearStore = true
-        end
-        if not isNearStore then
-            FarmState.Step = "🚗 Going to Store"
-            doSuicideTP({ x = 510, y = 4, z = 602 })
-            task.wait(1)
-        end
         FarmState.Step = "🛒 Buying Ingredients"
         local buySuccess = false
         for retry = 1, 5 do
@@ -851,12 +755,14 @@ local function CookMarshmallow(amount, skipBuy)
     end
 
     FarmState.Step = "🍳 Finding Pot"
-    local Pot = findCookingPot()
+    local Pot, dist = findNearestPot()
     if not Pot then
         print("⚠️ Pot not found, skip cycle")
         task.wait(3)
         return true
     end
+    
+    print("🍳 Pot found at distance: " .. math.floor(dist))
 
     local PotPrompt = getPotPrompt(Pot)
     if not PotPrompt then
@@ -865,23 +771,7 @@ local function CookMarshmallow(amount, skipBuy)
         return true
     end
 
-    -- Teleport ke kompor
-    FarmState.Step = "🚗 Going to Pot"
-    local char = Player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        local targetPos = Pot.Position + Vector3.new(0, 5, 0)
-        if (hrp.Position - targetPos).Magnitude > 10 then
-            pcall(function()
-                hrp.CFrame = CFrame.new(targetPos)
-                hrp.AssemblyLinearVelocity = Vector3.zero
-                hrp.AssemblyAngularVelocity = Vector3.zero
-            end)
-            task.wait(0.5)
-        end
-    end
-
-    EnableNoClipPermanent()
+    EnableNoClip()
 
     for i = 1, amount do
         if StopRequest then return false end
@@ -956,21 +846,22 @@ local function CookMarshmallow(amount, skipBuy)
 end
 
 -- ============================================================
--- 💰 SELL
+-- 💰 SELL — TANPA TELEPORT
 -- ============================================================
 local function SellMarshmallow()
     FarmState.Step = "💰 Selling"
-    doSuicideTP({ x = 510, y = 4, z = 602 })
-    local timeout = 0
-    while not findLamont() and timeout < 10 do
-        task.wait(0.5)
-        timeout = timeout + 0.5
-    end
-    task.wait(1)
     local lamont = findLamont()
-    local sellP = lamont and lamont:FindFirstChild("UpperTorso") and lamont.UpperTorso:FindFirstChildOfClass("ProximityPrompt")
+    if not lamont then
+        print("⚠️ Lamont not found")
+        return false
+    end
+    local sellP = lamont:FindFirstChild("UpperTorso") and lamont.UpperTorso:FindFirstChildOfClass("ProximityPrompt")
+    if not sellP then
+        print("⚠️ Sell prompt not found")
+        return false
+    end
     local sold = 0
-    if Player.Backpack and sellP then
+    if Player.Backpack then
         for _, v in pairs(Player.Backpack:GetChildren()) do
             if StopRequest then break end
             if v:IsA("Tool") and v.Name:find("Marshmallow") then
@@ -1002,7 +893,7 @@ local function FullCycle()
         return true
     end
 
-    DisableNoClipPermanent()
+    DisableNoClip()
     SellMarshmallow()
     task.wait(0.5)
 
@@ -1048,11 +939,14 @@ _G.StartFullyFarm = StartFullyFarm
 _G.StopFullyFarm = StopFullyFarm
 
 -- ============================================================
--- 🖥️ UI HITAM PUTIH — 4 TAB
+-- 🖥️ UI — HANYA DIBUAT SEKALI
 -- ============================================================
 _G.ShowMainUI = function()
-    local old = PlayerGui:FindFirstChild("JENOWA_UI")
-    if old then old:Destroy() end
+    if getgenv().JENOWA_UI_SHOWING then return end
+    getgenv().JENOWA_UI_SHOWING = true
+    
+    local existing = PlayerGui:FindFirstChild("JENOWA_UI")
+    if existing then existing:Destroy() end
 
     local C_BG       = Color3.fromRGB(0, 0, 0)
     local C_CARD     = Color3.fromRGB(12, 12, 12)
@@ -1165,6 +1059,7 @@ _G.ShowMainUI = function()
     CloseBtn.MouseEnter:Connect(function() CloseBtn.BackgroundColor3 = C_RED end)
     CloseBtn.MouseLeave:Connect(function() CloseBtn.BackgroundColor3 = C_BG end)
 
+    -- DRAG
     local dragging, dragStart, startPos
     Header.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
@@ -1186,6 +1081,7 @@ _G.ShowMainUI = function()
         end
     end)
 
+    -- TAB BAR
     local TabBar = Instance.new("Frame")
     TabBar.Size = UDim2.new(1, -24, 0, 36)
     TabBar.Position = UDim2.new(0, 12, 0, 58)
@@ -1357,7 +1253,6 @@ _G.ShowMainUI = function()
         if _G.ToggleScreenCover then _G.ToggleScreenCover() end
     end)
 
-    -- Slider
     local SliderFrame = Instance.new("Frame")
     SliderFrame.Size = UDim2.new(1, -16, 0, 40)
     SliderFrame.Position = UDim2.new(0, 8, 0, 96)
@@ -1431,7 +1326,6 @@ _G.ShowMainUI = function()
         end
     end)
 
-    -- Stats
     local StatsBox = Instance.new("Frame")
     StatsBox.Size = UDim2.new(1, -16, 0, 42)
     StatsBox.Position = UDim2.new(0, 8, 0, 142)
@@ -1723,7 +1617,7 @@ _G.ShowMainUI = function()
     InfoText.Size = UDim2.new(1, -16, 1, -40)
     InfoText.Position = UDim2.new(0, 8, 0, 32)
     InfoText.BackgroundTransparency = 1
-    InfoText.Text = "JENOWA STORE v11.7\n\n• Anti Kick\n• Anti Ban\n• Loading 15s + Lagu\n• Boost FPS\n• Screen Cover RGB\n• FULLY MS (No Apartment)\n• Music Player\n\nCreated by JENOWA"
+    InfoText.Text = "JENOWA STORE v11.8\n\n• Anti Kick\n• Anti Ban\n• Loading 15s + Lagu\n• Boost FPS\n• Screen Cover RGB\n• FULLY MS (No Teleport)\n• Music Player\n\nCreated by JENOWA"
     InfoText.TextColor3 = C_TEXT
     InfoText.Font = Enum.Font.Gotham
     InfoText.TextSize = 10
@@ -1733,26 +1627,13 @@ _G.ShowMainUI = function()
     InfoText.ZIndex = 14
     InfoText.Parent = InfoCard
 
-    print("✅ UI Loaded")
-end
-
--- ============================================================
--- 🚀 AUTO SHOW UI SETELAH LOADING
--- ============================================================
-task.spawn(function()
-    while loadingActive do task.wait(0.1) end
-    task.wait(1.5)
-    if _G.ShowMainUI then _G.ShowMainUI() end
-end)
-
--- ============================================================
--- 🎛️ TOMBOL LUAR UI — TOGGLE UI + SCREEN COVER
--- ============================================================
-task.spawn(function()
-    task.wait(2)
+    -- ============================================================
+    -- 🎛️ TOMBOL LUAR UI — DIBUAT SETELAH UI MUNCUL
+    -- ============================================================
+    task.wait(0.3)
     
-    local oldBtn = PlayerGui:FindFirstChild("JenowaExternalBtn")
-    if oldBtn then oldBtn:Destroy() end
+    local oldBtnGui = PlayerGui:FindFirstChild("JenowaExternalBtn")
+    if oldBtnGui then oldBtnGui:Destroy() end
     
     local BtnGui = Instance.new("ScreenGui")
     BtnGui.Name = "JenowaExternalBtn"
@@ -1762,11 +1643,11 @@ task.spawn(function()
     BtnGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     BtnGui.Parent = PlayerGui
     
-    -- TOMBOL TOGGLE UI
+    -- TOMBOL TOGGLE UI — TWEEN UNDER GROW
     local ToggleUI = Instance.new("TextButton")
     ToggleUI.Name = "ToggleUI"
     ToggleUI.Size = UDim2.new(0, 45, 0, 45)
-    ToggleUI.Position = UDim2.new(1, -60, 0, 15)
+    ToggleUI.Position = UDim2.new(1, -60, 0, -60)
     ToggleUI.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     ToggleUI.Text = "J"
     ToggleUI.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -1786,6 +1667,12 @@ task.spawn(function()
     TUIS.Thickness = 2
     TUIS.Parent = ToggleUI
     
+    -- TWEEN UNDER GROW
+    task.wait(0.1)
+    TweenService:Create(ToggleUI, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+        Position = UDim2.new(1, -60, 0, 15)
+    }):Play()
+    
     ToggleUI.MouseEnter:Connect(function()
         TweenService:Create(ToggleUI, TweenInfo.new(0.2), { Size = UDim2.new(0, 50, 0, 50) }):Play()
     end)
@@ -1801,11 +1688,11 @@ task.spawn(function()
         end
     end)
     
-    -- TOMBOL SCREEN COVER
+    -- TOMBOL SCREEN COVER — TWEEN UNDER GROW
     local CoverBtn2 = Instance.new("TextButton")
     CoverBtn2.Name = "CoverBtn"
     CoverBtn2.Size = UDim2.new(0, 45, 0, 45)
-    CoverBtn2.Position = UDim2.new(1, -60, 0, 70)
+    CoverBtn2.Position = UDim2.new(1, -60, 0, -60)
     CoverBtn2.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     CoverBtn2.Text = "◐"
     CoverBtn2.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -1824,6 +1711,11 @@ task.spawn(function()
     CBS.Color = Color3.fromRGB(255, 255, 255)
     CBS.Thickness = 2
     CBS.Parent = CoverBtn2
+    
+    task.wait(0.15)
+    TweenService:Create(CoverBtn2, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+        Position = UDim2.new(1, -60, 0, 70)
+    }):Play()
     
     CoverBtn2.MouseEnter:Connect(function()
         TweenService:Create(CoverBtn2, TweenInfo.new(0.2), { Size = UDim2.new(0, 50, 0, 50) }):Play()
@@ -1872,6 +1764,16 @@ task.spawn(function()
     end)
     
     print("✅ Tombol luar UI aktif")
+    print("✅ UI Loaded")
+end
+
+-- ============================================================
+-- 🚀 AUTO SHOW UI SETELAH LOADING
+-- ============================================================
+task.spawn(function()
+    while loadingActive do task.wait(0.1) end
+    task.wait(1.5)
+    if _G.ShowMainUI then _G.ShowMainUI() end
 end)
 
 -- ============================================================
@@ -1908,9 +1810,10 @@ end)
 
 print("")
 print("========================================")
-print("🛒 JENOWA STORE v11.7 LOADED")
+print("🛒 JENOWA STORE v11.8 LOADED")
 print("========================================")
-print("📌 NO APARTMENT — ONLY COOKING POT")
-print("📌 Tombol luar: J (toggle) + ◐ (cover)")
+print("📌 NO TELEPORT — Karakter diem")
+print("📌 UI muncul 1x")
+print("📌 Tombol J + ◐ (tween under grow)")
 print("📌 F3 = Toggle UI")
 print("========================================")
