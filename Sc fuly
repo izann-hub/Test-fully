@@ -1,8 +1,8 @@
 -- ============================================================
--- 🚀 JENOWA FULLY MS V1 — FULL SOURCE
--- Loading 15s + Lagu Random + Anti Kick + Auto Farm
+-- 🚀 JENOWA STORE — FULLY MS V1
+-- Loading 15s + Lagu 125005076899953 + Anti Kick + Auto Farm
 -- ============================================================
-print("=== JENOWA FULLY MS V1 START ===")
+print("=== JENOWA STORE START ===")
 
 getgenv().FULLY_MS_V1 = true
 getgenv().JENOWA_UI_SHOWING = false
@@ -189,8 +189,6 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
-local LogService = game:GetService("LogService")
-local TeleportService = game:GetService("TeleportService")
 local SoundService = game:GetService("SoundService")
 local Lighting = game:GetService("Lighting")
 
@@ -199,24 +197,13 @@ local Player = LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
 
 -- ============================================================
--- 🎵 LAGU PENYAMBUTAN — RANDOM
+-- 🎵 LAGU PENYAMBUTAN
 -- ============================================================
-local LAGU_LIST = {
-    "rbxassetid://122687131024953",
-    "rbxassetid://124564676675935",
-    "rbxassetid://117020806574845",
-    "rbxassetid://132417947544523",
-    "rbxassetid://93864872749352",
-    "rbxassetid://93479531328112",
-    "rbxassetid://122084395776372",
-    "rbxassetid://70780471034312",
-}
-
-local randomLagu = LAGU_LIST[math.random(1, #LAGU_LIST)]
+local LAGU_ID = "rbxassetid://125005076899953"
 
 local WelcomeSound = Instance.new("Sound")
 WelcomeSound.Name = "JenowaWelcome"
-WelcomeSound.SoundId = randomLagu
+WelcomeSound.SoundId = LAGU_ID
 WelcomeSound.Volume = 2
 WelcomeSound.Looped = false
 WelcomeSound.Parent = SoundService
@@ -234,7 +221,7 @@ task.spawn(function()
         end)
         task.wait(0.3)
     end
-    print("🎵 Now Playing: " .. randomLagu)
+    print("🎵 Now Playing: " .. LAGU_ID)
 end)
 
 -- ============================================================
@@ -573,6 +560,47 @@ local function EnsureBuyAprt()
 end
 
 -- ============================================================
+-- 🧹 CLEAN APARTMENT
+-- ============================================================
+local function CleanApartment(House)
+    if not House then return end
+    local Interior = House:FindFirstChild("Interior") or House
+    if not Interior then return end
+    local cleaned = 0
+    for _, obj in pairs(Interior:GetDescendants()) do
+        if obj:IsA("BasePart") then
+            if obj.Name == "Cooking Pot" then continue end
+            if obj.Name == "Floor" or obj.Name:find("Floor") then continue end
+            if obj.Name == "Ceiling" then continue end
+            pcall(function()
+                obj.Transparency = 1
+                obj.CanCollide = false
+            end)
+            cleaned = cleaned + 1
+        end
+        if obj:IsA("Decal") or obj:IsA("Texture") or obj:IsA("SurfaceGui") then
+            pcall(function() obj:Destroy() end)
+        end
+        if obj:IsA("Model") then
+            local mn = obj.Name:lower()
+            if mn:find("wall") or mn:find("door") or mn:find("window")
+            or mn:find("furniture") or mn:find("bed") or mn:find("table")
+            or mn:find("chair") or mn:find("lamp") then
+                pcall(function()
+                    for _, part in pairs(obj:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            part.Transparency = 1
+                            part.CanCollide = false
+                        end
+                    end
+                end)
+            end
+        end
+    end
+    print("🧹 Apartment dibersihkan: " .. cleaned .. " part")
+end
+
+-- ============================================================
 -- 💰 BUY
 -- ============================================================
 local function GetIngredientCount()
@@ -634,7 +662,7 @@ local function findLamont()
 end
 
 -- ============================================================
--- 🔧 NOCLIP RINGAN
+-- 🔧 NOCLIP
 -- ============================================================
 local noclipConn = nil
 local noclipRunning = false
@@ -726,7 +754,7 @@ local function DisableFlyLock()
 end
 
 -- ============================================================
--- 🍳 COOK HELPERS — RINGAN
+-- 🍳 COOK HELPERS
 -- ============================================================
 local function af_FirePrompt(prompt)
     if not prompt or not prompt.Parent then return end
@@ -772,7 +800,7 @@ local function af_Tween(cf)
 end
 
 -- ============================================================
--- 🍳 COOK — ANTI FREEZE
+-- 🍳 COOK
 -- ============================================================
 local function CookMarshmallow(amount, skipBuy)
     amount = amount or FarmSettings.Amount
@@ -812,11 +840,10 @@ local function CookMarshmallow(amount, skipBuy)
     local House = entry and entry.obj
     if not House then return true end
 
-    local Interior = House:FindFirstChild("Interior") or House
-    for _, v in pairs(Interior:GetChildren()) do
-        if v.Name == "Floor" then pcall(function() v.CanCollide = false end) end
-    end
+    -- 🔥 CLEAN APARTMENT
+    CleanApartment(House)
 
+    local Interior = House:FindFirstChild("Interior") or House
     local Pot = Interior:FindFirstChild("Cooking Pot", true)
     local PotPrompt = nil
     if Pot then
@@ -1009,7 +1036,7 @@ _G.StartFullyFarm = StartFullyFarm
 _G.StopFullyFarm = StopFullyFarm
 
 -- ============================================================
--- 🎬 LOADING SCREEN 15 DETIK + HUJAN
+-- 🎬 LOADING 15 DETIK
 -- ============================================================
 local LoadingGui = Instance.new("ScreenGui")
 LoadingGui.Name = "JenowaLoading"
@@ -1025,55 +1052,6 @@ LBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 LBg.BorderSizePixel = 0
 LBg.ZIndex = 1
 LBg.Parent = LoadingGui
-
-local RainContainer = Instance.new("Frame")
-RainContainer.Size = UDim2.new(1, 0, 1, 0)
-RainContainer.BackgroundTransparency = 1
-RainContainer.ClipsDescendants = true
-RainContainer.ZIndex = 2
-RainContainer.Parent = LoadingGui
-
-local RAIN_IMAGE = "rbxassetid://84629047084163"
-local rainActive = true
-
-local function spawnDrop()
-    if not rainActive or not LoadingGui or not LoadingGui.Parent then return end
-    local ukuran = math.random(40, 90)
-    local img = Instance.new("ImageLabel")
-    img.Size = UDim2.fromOffset(ukuran, ukuran)
-    img.Position = UDim2.new(math.random(), 0, -0.15, 0)
-    img.BackgroundTransparency = 1
-    img.Image = RAIN_IMAGE
-    img.ImageTransparency = 1
-    img.Rotation = math.random(-30, 30)
-    img.ZIndex = 3
-    img.Parent = RainContainer
-    TweenService:Create(img, TweenInfo.new(0.5), { ImageTransparency = 0.15 + math.random() * 0.35 }):Play()
-    local dur = math.random(4, 8)
-    local tw = TweenService:Create(img, TweenInfo.new(dur, Enum.EasingStyle.Linear), {
-        Position = UDim2.new(img.Position.X.Scale, 0, 1.15, 0),
-        Rotation = img.Rotation + math.random(-60, 60)
-    })
-    tw:Play()
-    task.delay(dur * 0.6, function()
-        if img and img.Parent and rainActive then
-            TweenService:Create(img, TweenInfo.new(dur * 0.4), { ImageTransparency = 1 }):Play()
-        end
-    end)
-    tw.Completed:Connect(function() if img then img:Destroy() end end)
-end
-
-task.spawn(function()
-    for i = 1, 20 do task.wait(0.05) spawnDrop() end
-end)
-
-task.spawn(function()
-    while rainActive and LoadingGui and LoadingGui.Parent do
-        spawnDrop()
-        if math.random() < 0.4 then spawnDrop() end
-        task.wait(1/8)
-    end
-end)
 
 local LCenter = Instance.new("Frame")
 LCenter.Size = UDim2.new(0, 460, 0, 280)
@@ -1170,7 +1148,6 @@ local loadingTexts = {
     "Initializing UI...",
     "Setting up...",
     "Loading Hyphon...",
-    "Loading Hujan...",
     "Loading Lagu...",
     "Loading Farm...",
     "Connecting...",
@@ -1201,7 +1178,6 @@ end)
 task.spawn(function()
     while loadingActive do task.wait(0.1) end
     task.wait(0.3)
-    rainActive = false
     local ft = 0.8
     pcall(function()
         TweenService:Create(LBg, TweenInfo.new(ft), { BackgroundTransparency = 1 }):Play()
@@ -1270,22 +1246,22 @@ _G.ShowMainUI = function()
     Header.Parent = Main
     Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 12)
 
-    local LogoBox = Instance.new("Frame")
-    LogoBox.Size = UDim2.new(0, 28, 0, 28)
-    LogoBox.Position = UDim2.new(0, 12, 0.5, -14)
-    LogoBox.BackgroundColor3 = C_ACCENT
-    LogoBox.BorderSizePixel = 0
-    LogoBox.Parent = Header
-    Instance.new("UICorner", LogoBox).CornerRadius = UDim.new(0, 7)
+    local LogoBox2 = Instance.new("Frame")
+    LogoBox2.Size = UDim2.new(0, 28, 0, 28)
+    LogoBox2.Position = UDim2.new(0, 12, 0.5, -14)
+    LogoBox2.BackgroundColor3 = C_ACCENT
+    LogoBox2.BorderSizePixel = 0
+    LogoBox2.Parent = Header
+    Instance.new("UICorner", LogoBox2).CornerRadius = UDim.new(0, 7)
 
-    local LogoJ = Instance.new("TextLabel")
-    LogoJ.Size = UDim2.new(1, 0, 1, 0)
-    LogoJ.BackgroundTransparency = 1
-    LogoJ.Text = "J"
-    LogoJ.TextColor3 = C_BG
-    LogoJ.Font = Enum.Font.GothamBold
-    LogoJ.TextSize = 16
-    LogoJ.Parent = LogoBox
+    local LogoJ2 = Instance.new("TextLabel")
+    LogoJ2.Size = UDim2.new(1, 0, 1, 0)
+    LogoJ2.BackgroundTransparency = 1
+    LogoJ2.Text = "J"
+    LogoJ2.TextColor3 = C_BG
+    LogoJ2.Font = Enum.Font.GothamBold
+    LogoJ2.TextSize = 16
+    LogoJ2.Parent = LogoBox2
 
     local TitleTxt = Instance.new("TextLabel")
     TitleTxt.Size = UDim2.new(1, -120, 1, 0)
@@ -1663,7 +1639,7 @@ _G.ShowMainUI = function()
     InfoText.Size = UDim2.new(1, -16, 1, -30)
     InfoText.Position = UDim2.new(0, 8, 0, 28)
     InfoText.BackgroundTransparency = 1
-    InfoText.Text = "JENOWA STORE\n\n• Anti Kick\n• Auto Click Play\n• Hyphon Emulator\n• Auto Farm\n• Boost FPS\n\nCreated by JENOWA STORE"
+    InfoText.Text = "JENOWA STORE\n\n• Anti Kick\n• Auto Click Play\n• Hyphon Emulator\n• Auto Farm\n• Clean Apartment\n• Boost FPS\n\nCreated by JENOWA STORE"
     InfoText.TextColor3 = C_TEXT
     InfoText.Font = Enum.Font.Gotham
     InfoText.TextSize = 10
@@ -1672,7 +1648,7 @@ _G.ShowMainUI = function()
     InfoText.TextYAlignment = Enum.TextYAlignment.Top
     InfoText.Parent = InfoCard
 
-    -- TOMBOL LUAR UI
+    -- TOMBOL LUAR
     task.wait(0.3)
 
     local BtnGui = Instance.new("ScreenGui")
@@ -1776,7 +1752,7 @@ print("")
 print("========================================")
 print("🚀 JENOWA STORE — FULLY MS V1")
 print("========================================")
-print("📌 Loading 15s + Lagu Random")
+print("📌 Loading 15s + Lagu 125005076899953")
 print("📌 Username: JENOWA STORE")
 print("📌 UI: FARM | BOOST | INFO")
 print("📌 Tombol J di kanan atas")
