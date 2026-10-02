@@ -840,11 +840,11 @@ local function EnsureBuyAprt()
     if status == "Owned" then
         FarmState.OwnedAprt = entry.obj.Name
         getgenv().FA_OWNED_APRT = entry.obj.Name
-        return true    end
+        return true
+    end
     
     FarmState.Step = "🏠 Buying Apartment (Cost: $500)"
-    local board = entry.board
-    local backboard = board:FindFirstChild("backboard")
+    local board = entry.board    local backboard = board:FindFirstChild("backboard")
     local bp = backboard and backboard:FindFirstChildWhichIsA("ProximityPrompt", true)
     if not bp then bp = board:FindFirstChildWhichIsA("ProximityPrompt", true) end
     if not bp then return false end
@@ -1512,7 +1512,7 @@ Player.Idled:Connect(function()
 end)
 
 -- ============================================================
--- 🖥️ CREATE UI (HITAM PUTIH ABU)
+-- 🖥️ CREATE UI (HITAM PUTIH ABU + SHADOW MERAH)
 -- ============================================================
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "JENOWA_UI"
@@ -1533,28 +1533,28 @@ MainFrame.ZIndex = 1
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 
 -- ============================================================
--- 🌑 SHADOW (DROP SHADOW)
+-- 🌑 SHADOW MERAH (TIDAK LANCIP)
 -- ============================================================
 local Shadow = Instance.new("ImageLabel")
 Shadow.Name = "Shadow"
 Shadow.AnchorPoint = Vector2.new(0.5, 0.5)
 Shadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-Shadow.Size = UDim2.new(1, 40, 1, 40)
+Shadow.Size = UDim2.new(1, 60, 1, 60)
 Shadow.BackgroundTransparency = 1
 Shadow.Image = "rbxassetid://1316045217"
-Shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-Shadow.ImageTransparency = 0.5
+Shadow.ImageColor3 = Color3.fromRGB(180, 0, 0)
+Shadow.ImageTransparency = 0.35
 Shadow.ScaleType = Enum.ScaleType.Slice
-Shadow.SliceCenter = Rect.new(10, 10, 118, 118)
+Shadow.SliceCenter = Rect.new(20, 20, 108, 108)
 Shadow.ZIndex = 0
 Shadow.Parent = MainFrame
 
--- ⚪ STROKE STATIS ABU
+-- 🔴 STROKE MERAH
 local RGBStroke = Instance.new("UIStroke")
 RGBStroke.Name = "RGBStroke"
-RGBStroke.Thickness = 2
+RGBStroke.Thickness = 2.5
 RGBStroke.Transparency = 0
-RGBStroke.Color = Color3.fromRGB(180, 180, 180)
+RGBStroke.Color = Color3.fromRGB(180, 0, 0)
 RGBStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 RGBStroke.Parent = MainFrame
 
@@ -1682,8 +1682,8 @@ local toggleState = false
 ToggleBtn.MouseButton1Click:Connect(function()
     toggleState = not toggleState
     ToggleBtn.Text = toggleState and "ON" or "OFF"
-    ToggleBtn.BackgroundColor3 = toggleState and Color3.fromRGB(230, 230, 230) or Color3.fromRGB(60, 60, 60)
-    ToggleBtn.TextColor3 = toggleState and Color3.fromRGB(20, 20, 20) or Color3.fromRGB(255, 255, 255)
+    ToggleBtn.BackgroundColor3 = toggleState and Color3.fromRGB(180, 0, 0) or Color3.fromRGB(60, 60, 60)
+    ToggleBtn.TextColor3 = toggleState and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(255, 255, 255)
     
     if toggleState then
         if _G.StartFullyFarm then task.spawn(_G.StartFullyFarm) end
@@ -1725,7 +1725,7 @@ SliderTrack.Parent = SliderFrame
 
 local SliderFill = Instance.new("Frame")
 SliderFill.Size = UDim2.new((FarmSettings.Amount - 1) / 49, 0, 1, 0)
-SliderFill.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
+SliderFill.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
 SliderFill.BorderSizePixel = 0
 SliderFill.ZIndex = 6
 Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(1, 0)
@@ -1937,8 +1937,8 @@ print("========================================")
 print("👻 JENOWA STORE UI LOADED")
 print("========================================")
 print("📌 F3 = Toggle UI")
-print("⚪ Stroke: Abu Statis")
+print("🔴 Shadow Merah (Tidak Lancip)")
+print("🔴 Sisi UI Merah")
 print("📝 Buy Amount: Slider + Type")
-print("🌑 Drop Shadow: ON")
-print("🎨 Tema: Hitam / Putih / Abu")
+print("🎨 Tema: Hitam / Putih / Abu / Merah")
 print("========================================")
