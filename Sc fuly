@@ -844,7 +844,8 @@ local function EnsureBuyAprt()
     end
     
     FarmState.Step = "🏠 Buying Apartment (Cost: $500)"
-    local board = entry.board    local backboard = board:FindFirstChild("backboard")
+    local board = entry.board
+    local backboard = board:FindFirstChild("backboard")
     local bp = backboard and backboard:FindFirstChildWhichIsA("ProximityPrompt", true)
     if not bp then bp = board:FindFirstChildWhichIsA("ProximityPrompt", true) end
     if not bp then return false end
@@ -1512,7 +1513,7 @@ Player.Idled:Connect(function()
 end)
 
 -- ============================================================
--- 🖥️ CREATE UI (HITAM PUTIH ABU + SHADOW MERAH)
+-- 🖥️ CREATE UI (BACKGROUND HITAM + SHADOW BERLEKUK MERAH)
 -- ============================================================
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "JENOWA_UI"
@@ -1521,31 +1522,31 @@ ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.IgnoreGuiInset = true
 ScreenGui.Parent = CoreGui
 
--- MAIN FRAME
+-- MAIN FRAME (HITAM PEKAT)
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 400, 0, 200)
 MainFrame.Position = UDim2.new(0.5, -200, 0.5, -130)
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.ClipsDescendants = false
 MainFrame.ZIndex = 1
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
 
 -- ============================================================
--- 🌑 SHADOW MERAH (TIDAK LANCIP)
+-- 🌑 SHADOW MERAH BERLEKUK (TIDAK LANCIP)
 -- ============================================================
 local Shadow = Instance.new("ImageLabel")
 Shadow.Name = "Shadow"
 Shadow.AnchorPoint = Vector2.new(0.5, 0.5)
 Shadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-Shadow.Size = UDim2.new(1, 60, 1, 60)
+Shadow.Size = UDim2.new(1, 50, 1, 50)
 Shadow.BackgroundTransparency = 1
-Shadow.Image = "rbxassetid://1316045217"
+Shadow.Image = "rbxassetid://5104552636"
 Shadow.ImageColor3 = Color3.fromRGB(180, 0, 0)
 Shadow.ImageTransparency = 0.35
 Shadow.ScaleType = Enum.ScaleType.Slice
-Shadow.SliceCenter = Rect.new(20, 20, 108, 108)
+Shadow.SliceCenter = Rect.new(30, 30, 98, 98)
 Shadow.ZIndex = 0
 Shadow.Parent = MainFrame
 
@@ -1565,16 +1566,16 @@ MainFrame.Parent = ScreenGui
 -- ============================================================
 local TopBar = Instance.new("Frame")
 TopBar.Size = UDim2.new(1, 0, 0, 36)
-TopBar.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
+TopBar.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 TopBar.BorderSizePixel = 0
 TopBar.ZIndex = 2
 TopBar.Parent = MainFrame
-Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 12)
 
 local TopBarBottom = Instance.new("Frame")
 TopBarBottom.Size = UDim2.new(1, 0, 0, 6)
 TopBarBottom.Position = UDim2.new(0, 0, 1, -6)
-TopBarBottom.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
+TopBarBottom.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 TopBarBottom.BorderSizePixel = 0
 TopBarBottom.ZIndex = 2
 TopBarBottom.Parent = TopBar
@@ -1595,7 +1596,7 @@ TitleLabel.Parent = TopBar
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Size = UDim2.new(0, 22, 0, 22)
 CloseBtn.Position = UDim2.new(1, -28, 0, 7)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 CloseBtn.Text = "✕"
 CloseBtn.Font = Enum.Font.GothamBold
 CloseBtn.TextSize = 12
@@ -1626,10 +1627,10 @@ Content.Parent = MainFrame
 local FarmSection = Instance.new("Frame")
 FarmSection.Size = UDim2.new(0.5, -18, 1, -24)
 FarmSection.Position = UDim2.new(0, 12, 0, 12)
-FarmSection.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+FarmSection.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 FarmSection.BorderSizePixel = 0
 FarmSection.ZIndex = 3
-Instance.new("UICorner", FarmSection).CornerRadius = UDim.new(0, 8)
+Instance.new("UICorner", FarmSection).CornerRadius = UDim.new(0, 10)
 FarmSection.Parent = Content
 
 local FarmTitle = Instance.new("TextLabel")
@@ -1746,7 +1747,7 @@ SliderKnob.Parent = SliderTrack
 local TextboxFrame = Instance.new("Frame")
 TextboxFrame.Size = UDim2.new(1, 0, 0, 24)
 TextboxFrame.Position = UDim2.new(0, 0, 0, 36)
-TextboxFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+TextboxFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 TextboxFrame.BorderSizePixel = 0
 TextboxFrame.ZIndex = 5
 Instance.new("UICorner", TextboxFrame).CornerRadius = UDim.new(0, 5)
@@ -1818,10 +1819,10 @@ end)
 local StatsSection = Instance.new("Frame")
 StatsSection.Size = UDim2.new(0.5, -18, 1, -24)
 StatsSection.Position = UDim2.new(0.5, 6, 0, 12)
-StatsSection.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+StatsSection.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 StatsSection.BorderSizePixel = 0
 StatsSection.ZIndex = 3
-Instance.new("UICorner", StatsSection).CornerRadius = UDim.new(0, 8)
+Instance.new("UICorner", StatsSection).CornerRadius = UDim.new(0, 10)
 StatsSection.Parent = Content
 
 local StatsTitle = Instance.new("TextLabel")
@@ -1937,8 +1938,8 @@ print("========================================")
 print("👻 JENOWA STORE UI LOADED")
 print("========================================")
 print("📌 F3 = Toggle UI")
-print("🔴 Shadow Merah (Tidak Lancip)")
-print("🔴 Sisi UI Merah")
+print("🔴 Shadow Merah Berlekuk (Tidak Lancip)")
+print("🖤 Background Hitam Pekat")
 print("📝 Buy Amount: Slider + Type")
 print("🎨 Tema: Hitam / Putih / Abu / Merah")
 print("========================================")
