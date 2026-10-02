@@ -1,8 +1,8 @@
 -- ============================================================
--- 🔴 FORZIE UI - DARK ANGEL EDITION
+-- 🚀 FULLY MS V1 - UI MODERN KECIL + SLIDE 1-45
 -- ============================================================
 -- ============================================================
--- 🔥 FULLY MS V1 - FIXED CRASH
+-- 🚀 FULLY MS V1 - FIXED CRASH
 -- ============================================================
 
 -- ============================================================
@@ -489,18 +489,19 @@ local function SetupAutoRefresh()
 end
 
 -- ============================================================
--- 🎨 RGB NAME (GHOST.LOL) - AUTO ON
+-- 🎨 RGB NAME (JENOWA STORE) - AUTO ON
 -- ============================================================
 local RGBEnabled = true
-local CurrentDisplayName = "FORZIE"
+local CurrentDisplayName = "JENOWA STORE"
 local RGBLoop = nil
 
 local function GenerateRGB()
     local colors = {
-        Color3.fromRGB(255, 0, 0), Color3.fromRGB(220, 40, 60),
-        Color3.fromRGB(200, 30, 45), Color3.fromRGB(255, 60, 80),
-        Color3.fromRGB(180, 20, 40), Color3.fromRGB(255, 100, 100),
-        Color3.fromRGB(230, 50, 70), Color3.fromRGB(190, 35, 55),
+        Color3.fromRGB(255, 255, 255),
+        Color3.fromRGB(220, 220, 220),
+        Color3.fromRGB(180, 180, 180),
+        Color3.fromRGB(140, 140, 140),
+        Color3.fromRGB(100, 100, 100),
     }
     return colors[math.random(1, #colors)]
 end
@@ -839,8 +840,7 @@ local function EnsureBuyAprt()
     if status == "Owned" then
         FarmState.OwnedAprt = entry.obj.Name
         getgenv().FA_OWNED_APRT = entry.obj.Name
-        return true
-    end
+        return true    end
     
     FarmState.Step = "🏠 Buying Apartment (Cost: $500)"
     local board = entry.board
@@ -1052,7 +1052,7 @@ local function QuickTeleportToPot(Pot)
 end
 
 -- ============================================================
--- 🔥 DISABLE FLY LOCK
+-- 🔥 TAMBAHKAN FUNGSI DISABLE
 -- ============================================================
 local function DisableFlyLock()
     local char = Player.Character
@@ -1115,7 +1115,7 @@ local function af_Tween(cf)
 end
 
 -- ============================================================
--- 🍳 COOK MARSHMALLOW
+-- 🍳 COOK MARSHMALLOW (FIXED)
 -- ============================================================
 local function CookMarshmallow(amount, skipBuy)
     amount = amount or FarmSettings.Amount
@@ -1255,7 +1255,7 @@ local function CookMarshmallow(amount, skipBuy)
             timeout = timeout + 0.5
         end
         
-        FarmState.Step = "🛍️ Collecting Marshmallow (" .. i .. "/" .. amount .. ")"
+        FarmState.Step = "🍡 Collecting Marshmallow (" .. i .. "/" .. amount .. ")"
         if not Player.Character:FindFirstChild("Empty Bag") then af_Equip("Empty Bag") end
         task.wait(1)
         af_FirePrompt(PotPrompt)
@@ -1271,7 +1271,7 @@ local function CookMarshmallow(amount, skipBuy)
 end
 
 -- ============================================================
--- 💰 SELL MARSHMALLOW
+-- 💰 SELL MARSHMALLOW (FIXED)
 -- ============================================================
 local function SellMarshmallow()
     FarmState.Step = "💰 Selling Marshmallows"
@@ -1305,7 +1305,7 @@ local function SellMarshmallow()
 end
 
 -- ============================================================
--- 🔄 FULL CYCLE
+-- 🔄 FULL CYCLE (FIXED - LOOP TERUS)
 -- ============================================================
 local CurrentCycle = 0
 local isFirstCycle = true
@@ -1345,7 +1345,7 @@ local function FullCycle()
 end
 
 -- ============================================================
--- 🚀 START/STOP
+-- 🚀 START/STOP (FIXED RUNTIME)
 -- ============================================================
 local function StartFullyFarm()
     if FarmRunning then return end
@@ -1394,7 +1394,7 @@ _G.StartFullyFarm = StartFullyFarm
 _G.StopFullyFarm = StopFullyFarm
 
 -- ============================================================
--- 🔄 AUTO REJOIN SYSTEM
+-- 🔄 AUTO REJOIN SYSTEM (FIXED)
 -- ============================================================
 local AutoRejoinConfig = {
     Enabled = true,
@@ -1466,7 +1466,7 @@ end
 SetupDeathDetection()
 
 -- ============================================================
--- 🚀 AUTO EXECUTE
+-- 🚀 AUTO EXECUTE (HANYA SETELAH REJOIN)
 -- ============================================================
 task.spawn(function()
     task.wait(3)
@@ -1487,7 +1487,7 @@ task.spawn(function()
         task.wait(2)
         StartFullyFarm()
     else
-        print("📌 FORZIE READY - Use F3 to open UI")
+        print("📌 JENOWA STORE READY - Use F3 to open UI")
     end
 end)
 
@@ -1512,10 +1512,10 @@ Player.Idled:Connect(function()
 end)
 
 -- ============================================================
--- 🖥️ CREATE UI - FORZIE RED EDITION
+-- 🖥️ CREATE UI (HITAM PUTIH ABU)
 -- ============================================================
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "FORZIE_UI"
+ScreenGui.Name = "JENOWA_UI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.IgnoreGuiInset = true
@@ -1525,27 +1525,38 @@ ScreenGui.Parent = CoreGui
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 400, 0, 200)
 MainFrame.Position = UDim2.new(0.5, -200, 0.5, -130)
-MainFrame.BackgroundColor3 = Color3.fromRGB(12, 6, 8)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
-MainFrame.ClipsDescendants = true
+MainFrame.ClipsDescendants = false
+MainFrame.ZIndex = 1
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 
--- 🔴 RGB BORDER MERAH (SLOW PULSE)
+-- ============================================================
+-- 🌑 SHADOW (DROP SHADOW)
+-- ============================================================
+local Shadow = Instance.new("ImageLabel")
+Shadow.Name = "Shadow"
+Shadow.AnchorPoint = Vector2.new(0.5, 0.5)
+Shadow.Position = UDim2.new(0.5, 0, 0.5, 0)
+Shadow.Size = UDim2.new(1, 40, 1, 40)
+Shadow.BackgroundTransparency = 1
+Shadow.Image = "rbxassetid://1316045217"
+Shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+Shadow.ImageTransparency = 0.5
+Shadow.ScaleType = Enum.ScaleType.Slice
+Shadow.SliceCenter = Rect.new(10, 10, 118, 118)
+Shadow.ZIndex = 0
+Shadow.Parent = MainFrame
+
+-- ⚪ STROKE STATIS ABU
 local RGBStroke = Instance.new("UIStroke")
 RGBStroke.Name = "RGBStroke"
 RGBStroke.Thickness = 2
 RGBStroke.Transparency = 0
+RGBStroke.Color = Color3.fromRGB(180, 180, 180)
 RGBStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 RGBStroke.Parent = MainFrame
-
-local rgbHue = 0
-RunService.RenderStepped:Connect(function()
-    pcall(function()
-        rgbHue = (rgbHue + 0.002) % 0.08
-        RGBStroke.Color = Color3.fromHSV(rgbHue, 0.9, 1)
-    end)
-end)
 
 MainFrame.Parent = ScreenGui
 
@@ -1554,53 +1565,44 @@ MainFrame.Parent = ScreenGui
 -- ============================================================
 local TopBar = Instance.new("Frame")
 TopBar.Size = UDim2.new(1, 0, 0, 36)
-TopBar.BackgroundColor3 = Color3.fromRGB(35, 8, 12)
+TopBar.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
 TopBar.BorderSizePixel = 0
+TopBar.ZIndex = 2
 TopBar.Parent = MainFrame
 Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 10)
 
 local TopBarBottom = Instance.new("Frame")
 TopBarBottom.Size = UDim2.new(1, 0, 0, 6)
 TopBarBottom.Position = UDim2.new(0, 0, 1, -6)
-TopBarBottom.BackgroundColor3 = Color3.fromRGB(35, 8, 12)
+TopBarBottom.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
 TopBarBottom.BorderSizePixel = 0
+TopBarBottom.ZIndex = 2
 TopBarBottom.Parent = TopBar
 
--- TITLE FORZIE
 local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Size = UDim2.new(0, 100, 1, 0)
+TitleLabel.Size = UDim2.new(1, -60, 1, 0)
 TitleLabel.Position = UDim2.new(0, 14, 0, 0)
 TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "FORZIE"
+TitleLabel.Text = "JENOWA STORE"
 TitleLabel.Font = Enum.Font.GothamBold
 TitleLabel.TextSize = 16
-TitleLabel.TextColor3 = Color3.fromRGB(220, 40, 60)
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.ZIndex = 3
 TitleLabel.Parent = TopBar
-
--- USERNAME LABEL
-local UserLabel = Instance.new("TextLabel")
-UserLabel.Size = UDim2.new(0, 160, 1, 0)
-UserLabel.Position = UDim2.new(1, -195, 0, 0)
-UserLabel.BackgroundTransparency = 1
-UserLabel.Text = "👤 " .. (Player.DisplayName or Player.Name)
-UserLabel.Font = Enum.Font.GothamMedium
-UserLabel.TextSize = 11
-UserLabel.TextColor3 = Color3.fromRGB(220, 120, 130)
-UserLabel.TextXAlignment = Enum.TextXAlignment.Right
-UserLabel.Parent = TopBar
 
 -- Close Button
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Size = UDim2.new(0, 22, 0, 22)
 CloseBtn.Position = UDim2.new(1, -28, 0, 7)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(80, 15, 25)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 CloseBtn.Text = "✕"
 CloseBtn.Font = Enum.Font.GothamBold
 CloseBtn.TextSize = 12
-CloseBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
+CloseBtn.TextColor3 = Color3.fromRGB(230, 230, 230)
 CloseBtn.BorderSizePixel = 0
 CloseBtn.AutoButtonColor = false
+CloseBtn.ZIndex = 3
 Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
 CloseBtn.Parent = TopBar
 
@@ -1615,6 +1617,7 @@ local Content = Instance.new("Frame")
 Content.Size = UDim2.new(1, 0, 1, -36)
 Content.Position = UDim2.new(0, 0, 0, 36)
 Content.BackgroundTransparency = 1
+Content.ZIndex = 2
 Content.Parent = MainFrame
 
 -- ============================================================
@@ -1623,8 +1626,9 @@ Content.Parent = MainFrame
 local FarmSection = Instance.new("Frame")
 FarmSection.Size = UDim2.new(0.5, -18, 1, -24)
 FarmSection.Position = UDim2.new(0, 12, 0, 12)
-FarmSection.BackgroundColor3 = Color3.fromRGB(28, 10, 14)
+FarmSection.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 FarmSection.BorderSizePixel = 0
+FarmSection.ZIndex = 3
 Instance.new("UICorner", FarmSection).CornerRadius = UDim.new(0, 8)
 FarmSection.Parent = Content
 
@@ -1635,8 +1639,9 @@ FarmTitle.BackgroundTransparency = 1
 FarmTitle.Text = "⚡ FARM SETTINGS"
 FarmTitle.Font = Enum.Font.GothamBold
 FarmTitle.TextSize = 12
-FarmTitle.TextColor3 = Color3.fromRGB(220, 40, 60)
+FarmTitle.TextColor3 = Color3.fromRGB(200, 200, 200)
 FarmTitle.TextXAlignment = Enum.TextXAlignment.Left
+FarmTitle.ZIndex = 4
 FarmTitle.Parent = FarmSection
 
 -- Toggle Autofarming
@@ -1644,6 +1649,7 @@ local ToggleFrame = Instance.new("Frame")
 ToggleFrame.Size = UDim2.new(1, -16, 0, 30)
 ToggleFrame.Position = UDim2.new(0, 8, 0, 38)
 ToggleFrame.BackgroundTransparency = 1
+ToggleFrame.ZIndex = 4
 ToggleFrame.Parent = FarmSection
 
 local ToggleLabel = Instance.new("TextLabel")
@@ -1653,20 +1659,22 @@ ToggleLabel.BackgroundTransparency = 1
 ToggleLabel.Text = "Autofarming"
 ToggleLabel.Font = Enum.Font.Gotham
 ToggleLabel.TextSize = 12
-ToggleLabel.TextColor3 = Color3.fromRGB(240, 230, 232)
+ToggleLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
 ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
+ToggleLabel.ZIndex = 5
 ToggleLabel.Parent = ToggleFrame
 
 local ToggleBtn = Instance.new("TextButton")
 ToggleBtn.Size = UDim2.new(0, 50, 0, 24)
 ToggleBtn.Position = UDim2.new(1, -50, 0.5, -12)
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(60, 30, 35)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 ToggleBtn.Text = "OFF"
 ToggleBtn.Font = Enum.Font.GothamBold
 ToggleBtn.TextSize = 11
 ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 ToggleBtn.BorderSizePixel = 0
 ToggleBtn.AutoButtonColor = false
+ToggleBtn.ZIndex = 5
 Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 5)
 ToggleBtn.Parent = ToggleFrame
 
@@ -1674,7 +1682,8 @@ local toggleState = false
 ToggleBtn.MouseButton1Click:Connect(function()
     toggleState = not toggleState
     ToggleBtn.Text = toggleState and "ON" or "OFF"
-    ToggleBtn.BackgroundColor3 = toggleState and Color3.fromRGB(200, 35, 55) or Color3.fromRGB(60, 30, 35)
+    ToggleBtn.BackgroundColor3 = toggleState and Color3.fromRGB(230, 230, 230) or Color3.fromRGB(60, 60, 60)
+    ToggleBtn.TextColor3 = toggleState and Color3.fromRGB(20, 20, 20) or Color3.fromRGB(255, 255, 255)
     
     if toggleState then
         if _G.StartFullyFarm then task.spawn(_G.StartFullyFarm) end
@@ -1690,6 +1699,7 @@ local SliderFrame = Instance.new("Frame")
 SliderFrame.Size = UDim2.new(1, -16, 0, 55)
 SliderFrame.Position = UDim2.new(0, 8, 0, 76)
 SliderFrame.BackgroundTransparency = 1
+SliderFrame.ZIndex = 4
 SliderFrame.Parent = FarmSection
 
 local SliderLabel = Instance.new("TextLabel")
@@ -1699,22 +1709,25 @@ SliderLabel.BackgroundTransparency = 1
 SliderLabel.Text = "Buy Amount: " .. FarmSettings.Amount
 SliderLabel.Font = Enum.Font.Gotham
 SliderLabel.TextSize = 11
-SliderLabel.TextColor3 = Color3.fromRGB(200, 180, 185)
+SliderLabel.TextColor3 = Color3.fromRGB(190, 190, 190)
 SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+SliderLabel.ZIndex = 5
 SliderLabel.Parent = SliderFrame
 
 local SliderTrack = Instance.new("Frame")
 SliderTrack.Size = UDim2.new(1, 0, 0, 6)
 SliderTrack.Position = UDim2.new(0, 0, 0, 22)
-SliderTrack.BackgroundColor3 = Color3.fromRGB(60, 25, 30)
+SliderTrack.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 SliderTrack.BorderSizePixel = 0
+SliderTrack.ZIndex = 5
 Instance.new("UICorner", SliderTrack).CornerRadius = UDim.new(1, 0)
 SliderTrack.Parent = SliderFrame
 
 local SliderFill = Instance.new("Frame")
 SliderFill.Size = UDim2.new((FarmSettings.Amount - 1) / 49, 0, 1, 0)
-SliderFill.BackgroundColor3 = Color3.fromRGB(200, 30, 45)
+SliderFill.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
 SliderFill.BorderSizePixel = 0
+SliderFill.ZIndex = 6
 Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(1, 0)
 SliderFill.Parent = SliderTrack
 
@@ -1723,6 +1736,7 @@ SliderKnob.Size = UDim2.new(0, 14, 0, 14)
 SliderKnob.Position = UDim2.new((FarmSettings.Amount - 1) / 49, -7, 0.5, -7)
 SliderKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 SliderKnob.BorderSizePixel = 0
+SliderKnob.ZIndex = 7
 Instance.new("UICorner", SliderKnob).CornerRadius = UDim.new(1, 0)
 SliderKnob.Parent = SliderTrack
 
@@ -1732,8 +1746,9 @@ SliderKnob.Parent = SliderTrack
 local TextboxFrame = Instance.new("Frame")
 TextboxFrame.Size = UDim2.new(1, 0, 0, 24)
 TextboxFrame.Position = UDim2.new(0, 0, 0, 36)
-TextboxFrame.BackgroundColor3 = Color3.fromRGB(45, 15, 20)
+TextboxFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 TextboxFrame.BorderSizePixel = 0
+TextboxFrame.ZIndex = 5
 Instance.new("UICorner", TextboxFrame).CornerRadius = UDim.new(0, 5)
 TextboxFrame.Parent = SliderFrame
 
@@ -1746,9 +1761,10 @@ Textbox.PlaceholderText = "Type amount (1-50)..."
 Textbox.Font = Enum.Font.Gotham
 Textbox.TextSize = 11
 Textbox.TextColor3 = Color3.fromRGB(255, 255, 255)
-Textbox.PlaceholderColor3 = Color3.fromRGB(140, 100, 105)
+Textbox.PlaceholderColor3 = Color3.fromRGB(140, 140, 140)
 Textbox.TextXAlignment = Enum.TextXAlignment.Left
 Textbox.ClearTextOnFocus = false
+Textbox.ZIndex = 6
 Textbox.Parent = TextboxFrame
 
 -- ============================================================
@@ -1802,8 +1818,9 @@ end)
 local StatsSection = Instance.new("Frame")
 StatsSection.Size = UDim2.new(0.5, -18, 1, -24)
 StatsSection.Position = UDim2.new(0.5, 6, 0, 12)
-StatsSection.BackgroundColor3 = Color3.fromRGB(28, 10, 14)
+StatsSection.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 StatsSection.BorderSizePixel = 0
+StatsSection.ZIndex = 3
 Instance.new("UICorner", StatsSection).CornerRadius = UDim.new(0, 8)
 StatsSection.Parent = Content
 
@@ -1814,8 +1831,9 @@ StatsTitle.BackgroundTransparency = 1
 StatsTitle.Text = "📊 STATISTICS"
 StatsTitle.Font = Enum.Font.GothamBold
 StatsTitle.TextSize = 12
-StatsTitle.TextColor3 = Color3.fromRGB(220, 40, 60)
+StatsTitle.TextColor3 = Color3.fromRGB(200, 200, 200)
 StatsTitle.TextXAlignment = Enum.TextXAlignment.Left
+StatsTitle.ZIndex = 4
 StatsTitle.Parent = StatsSection
 
 -- Marshmallow Made
@@ -1826,8 +1844,9 @@ MarshLabel.BackgroundTransparency = 1
 MarshLabel.Text = "🍬 Marshmallow Made: 0"
 MarshLabel.Font = Enum.Font.Gotham
 MarshLabel.TextSize = 12
-MarshLabel.TextColor3 = Color3.fromRGB(240, 230, 232)
+MarshLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
 MarshLabel.TextXAlignment = Enum.TextXAlignment.Left
+MarshLabel.ZIndex = 4
 MarshLabel.Parent = StatsSection
 
 -- Sold
@@ -1838,8 +1857,9 @@ SoldLabel.BackgroundTransparency = 1
 SoldLabel.Text = "💀 Sold: 0"
 SoldLabel.Font = Enum.Font.Gotham
 SoldLabel.TextSize = 12
-SoldLabel.TextColor3 = Color3.fromRGB(240, 230, 232)
+SoldLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
 SoldLabel.TextXAlignment = Enum.TextXAlignment.Left
+SoldLabel.ZIndex = 4
 SoldLabel.Parent = StatsSection
 
 -- Status
@@ -1850,9 +1870,10 @@ StatusLabel.BackgroundTransparency = 1
 StatusLabel.Text = "⚪ Status: Idle"
 StatusLabel.Font = Enum.Font.Gotham
 StatusLabel.TextSize = 11
-StatusLabel.TextColor3 = Color3.fromRGB(180, 140, 145)
+StatusLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
 StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
 StatusLabel.TextWrapped = true
+StatusLabel.ZIndex = 4
 StatusLabel.Parent = StatsSection
 
 -- ============================================================
@@ -1864,11 +1885,9 @@ task.spawn(function()
             MarshLabel.Text = "🍬 Marshmallow Made: " .. (FarmState.MarshmallowsMade or 0)
             SoldLabel.Text = "💀 Sold: " .. (FarmState.Sold or 0)
             if FarmRunning then
-                StatusLabel.Text = "🔴 Status: " .. (FarmState.Step or "Running")
-                StatusLabel.TextColor3 = Color3.fromRGB(220, 40, 60)
+                StatusLabel.Text = "🟢 Status: " .. (FarmState.Step or "Running")
             else
-                StatusLabel.Text = "⚫ Status: Stopped"
-                StatusLabel.TextColor3 = Color3.fromRGB(140, 100, 105)
+                StatusLabel.Text = "🔴 Status: Stopped"
             end
         end)
         task.wait(0.5)
@@ -1915,10 +1934,11 @@ UserInputService.InputBegan:Connect(function(input)
 end)
 
 print("========================================")
-print("🔴 FORZIE UI LOADED - DARK ANGEL EDITION")
+print("👻 JENOWA STORE UI LOADED")
 print("========================================")
 print("📌 F3 = Toggle UI")
-print("🎨 Warna: Merah (Red)")
-print("👤 User: " .. (Player.DisplayName or Player.Name))
+print("⚪ Stroke: Abu Statis")
 print("📝 Buy Amount: Slider + Type")
+print("🌑 Drop Shadow: ON")
+print("🎨 Tema: Hitam / Putih / Abu")
 print("========================================")
