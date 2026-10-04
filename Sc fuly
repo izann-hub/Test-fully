@@ -421,27 +421,11 @@ local function SetupAutoRefresh()
 end
 
 -- ============================================================
--- 🎨 RGB NAME - 707 KILLER
+-- 🩸 USERNAME MERAH - 707 KILLER
 -- ============================================================
 local RGBEnabled = true
 local CurrentDisplayName = "707 KILLER"
-local RGBLoop = nil
-
-local function GenerateRGB()
-    local colors = {
-        Color3.fromRGB(255, 0, 0), Color3.fromRGB(0, 255, 0),
-        Color3.fromRGB(0, 0, 255), Color3.fromRGB(255, 255, 0),
-        Color3.fromRGB(255, 0, 255), Color3.fromRGB(0, 255, 255),
-        Color3.fromRGB(255, 165, 0), Color3.fromRGB(255, 20, 147),
-        Color3.fromRGB(0, 255, 127), Color3.fromRGB(138, 43, 226),
-        Color3.fromRGB(255, 215, 0), Color3.fromRGB(0, 191, 255),
-        Color3.fromRGB(255, 105, 180), Color3.fromRGB(50, 205, 50),
-        Color3.fromRGB(255, 140, 0), Color3.fromRGB(147, 112, 219),
-        Color3.fromRGB(0, 250, 154), Color3.fromRGB(255, 69, 0),
-        Color3.fromRGB(218, 112, 214), Color3.fromRGB(0, 206, 209),
-    }
-    return colors[math.random(1, #colors)]
-end
+local MERAH_USERNAME = Color3.fromRGB(220, 40, 40)
 
 local function SetDisplayName(name, color)
     pcall(function()
@@ -474,29 +458,19 @@ local function SetDisplayName(name, color)
 end
 
 local function ApplyName()
-    if RGBEnabled then
-        SetDisplayName(CurrentDisplayName, GenerateRGB())
-    else
-        SetDisplayName(CurrentDisplayName, Color3.fromRGB(255, 255, 255))
-    end
+    SetDisplayName(CurrentDisplayName, MERAH_USERNAME)
 end
 
 local function StartRGBName()
-    if RGBLoop then return end
-    RGBEnabled = true
     ApplyName()
-    RGBLoop = task.spawn(function()
-        while RGBEnabled do
-            task.wait(0.3)
-            if RGBEnabled then SetDisplayName(nil, GenerateRGB()) end
-        end
+    Player.CharacterAdded:Connect(function()
+        task.wait(1)
+        ApplyName()
     end)
 end
 
 local function StopRGBName()
-    RGBEnabled = false
-    if RGBLoop then task.cancel(RGBLoop); RGBLoop = nil end
-    SetDisplayName(nil, Color3.fromRGB(255, 255, 255))
+    SetDisplayName(nil, MERAH_USERNAME)
 end
 
 -- ============================================================
@@ -1461,7 +1435,7 @@ local function AddShadow(parent, transparency)
 end
 
 -- ============================================================
--- 🩸 CREATE UI
+-- 🩸 CREATE UI — BACKGROUND HITAM
 -- ============================================================
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "707_KILLER_UI"
@@ -1489,22 +1463,6 @@ BloodStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 BloodStroke.Parent = MainFrame
 
 MainFrame.Parent = ScreenGui
-
--- BACKGROUND IMAGE
-local BackgroundImage = Instance.new("ImageLabel")
-BackgroundImage.Name = "BackgroundImage"
-BackgroundImage.Size = UDim2.new(1, 0, 1, 0)
-BackgroundImage.Position = UDim2.new(0, 0, 0, 0)
-BackgroundImage.BackgroundTransparency = 1
-BackgroundImage.Image = "rbxassetid://95839868456804"
-BackgroundImage.ImageTransparency = 0.7
-BackgroundImage.ScaleType = Enum.ScaleType.Crop
-BackgroundImage.ZIndex = 0
-BackgroundImage.Parent = MainFrame
-
-local BgCorner = Instance.new("UICorner")
-BgCorner.CornerRadius = UDim.new(0, 10)
-BgCorner.Parent = BackgroundImage
 
 AddShadow(MainFrame, 0.5)
 
@@ -1875,8 +1833,8 @@ end)
 print("========================================")
 print("🩸 707 KILLER UI LOADED")
 print("========================================")
-print("🩸 Warna: Darah, Hitam, Putih")
+print("🩸 Warna: Darah, Hitam Pekat, Putih")
 print("🩸 Shadow: Merah")
-print("🩸 Background: Gambar")
+print("🩸 Background: Hitam (tanpa gambar)")
 print("⌨️ F3 = Toggle UI")
 print("========================================")
