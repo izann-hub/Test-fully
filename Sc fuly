@@ -1,44 +1,27 @@
 -- ============================================================
--- 🩸 707 KILLER - UI MODERN KECIL + SLIDE 1-45
+-- 🩸 707 KILLER — FULL SCRIPT (FARM + UI DARAH)
 -- ============================================================
--- ============================================================
--- 🩸 707 KILLER - FIXED CRASH
--- ============================================================
-
--- ============================================================
--- 🔥 AUTO CLICK PLAY - PASTI JALAN DI AWAL!
+-- Jalankan script ini di executor (mobile/PC)
+-- Paste langsung, jangan pakai loadstring dari orang lain
 -- ============================================================
 
+-- ============================================================
+-- 🔥 AUTO CLICK PLAY
+-- ============================================================
 local function ClickPlay()
     local Players = game:GetService("Players")
     local LocalPlayer = Players.LocalPlayer
     if not LocalPlayer then return false end
-    
     local PlayerGui = LocalPlayer:FindFirstChild("PlayerGui")
     if not PlayerGui then return false end
-    
     local intro = PlayerGui:FindFirstChild("IntroUI")
-    if not intro then
-        return true
-    end
-    
+    if not intro then return true end
     local playButton = nil
-    
     for _, obj in pairs(intro:GetDescendants()) do
-        if obj:IsA("ImageButton") and obj.Name == "Play" then
-            playButton = obj
-            break
-        end
+        if obj:IsA("ImageButton") and obj.Name == "Play" then playButton = obj; break end
     end
-    
-    if not playButton then
-        return false
-    end
-    
-    pcall(function()
-        playButton.MouseButton1Click:Fire()
-    end)
-    
+    if not playButton then return false end
+    pcall(function() playButton.MouseButton1Click:Fire() end)
     pcall(function()
         local VIM = game:GetService("VirtualInputManager")
         if VIM then
@@ -51,40 +34,41 @@ local function ClickPlay()
             end
         end
     end)
-    
     pcall(function()
-        local conns = getconnections(playButton.MouseButton1Click)
-        if conns then
-            for _, conn in pairs(conns) do
-                conn:Fire()
-            end
+        if getconnections then
+            local conns = getconnections(playButton.MouseButton1Click)
+            if conns then for _, conn in pairs(conns) do conn:Fire() end end
         end
     end)
-    
     task.wait(1)
     return true
 end
 
--- ============================================================
--- 🔥 EXECUTE AUTO CLICK PLAY
--- ============================================================
-local maxAttempts = 5
 local attempts = 0
-local clicked = false
-
-while attempts < maxAttempts do
-    local success = ClickPlay()
-    if success then
-        clicked = true
-        break
-    end
+while attempts < 5 do
+    if ClickPlay() then break end
     attempts = attempts + 1
     task.wait(1)
 end
 
 -- ============================================================
--- 🔥 HYPHON EMULATOR
+-- 🔥 HYPHON EMULATOR (SAFE FALLBACK)
 -- ============================================================
+local hasFilterGC = (type(filtergc) == "function")
+local hasHookFunc = (type(hookfunction) == "function")
+local hasCloneRef = (type(cloneref) == "function")
+local hasGetNil = (type(getnilinstances) == "function")
+local hasBit32 = (type(bit32) == "table" and type(bit32.bxor) == "function")
+local hasBuffer = (type(buffer) == "table" and type(buffer.fromstring) == "function")
+
+print("=== EXECUTOR CHECK ===")
+print("filtergc:", type(filtergc))
+print("hookfunction:", type(hookfunction))
+print("cloneref:", type(cloneref))
+print("getnilinstances:", type(getnilinstances))
+print("buffer:", type(buffer))
+print("fireproximityprompt:", type(fireproximityprompt))
+print("=====================")
 
 if not filtergc then
     filtergc = function(ftype, filters, returnSingle)
@@ -97,12 +81,14 @@ if not filtergc then
                     if filters.StartLine and info.linedefined ~= filters.StartLine then match = false end
                     if filters.Source and info.source ~= filters.Source then match = false end
                     if match then
-                        if returnSingle then return obj end; table.insert(results, obj)
+                        if returnSingle then return obj end
+                        table.insert(results, obj)
                     end
                 end
             end
         end
-        if returnSingle then return nil end; return results
+        if returnSingle then return nil end
+        return results
     end
 end
 
@@ -119,57 +105,24 @@ if not bit32.bxor then
     end
 end
 
-local emOk, emErr = pcall(function()
-    local gv = getgenv()
-    local function tryFind(name, ln)
-        local fn = filtergc("function", { StartLine = ln }, true)
-        if type(fn) ~= "function" then fn = (type(fn) == "table" and #fn > 0 and fn[1]) or nil end
-        if not fn then local all = filtergc("function", { StartLine = ln })
-            if type(all) == "table" and #all > 0 then fn = all[1] end end
-        if fn then gv[name] = fn end; return fn
-    end
-    gv.Hyphon_2102 = tryFind("Hyphon_2102", 2102)
-    gv.Hyphon_2247 = tryFind("Hyphon_2247", 2247)
-    gv.Hyphon_2846 = tryFind("Hyphon_2846", 2846)
-    gv.Hyphon_fake_dec = tryFind("Hyphon_fake_dec", 1097)
-    if gv.Hyphon_2102 then
-        gv.Hyphon_Encode = debug.getupvalue(gv.Hyphon_2102, 1)
-        gv.Hyphon_Decode = debug.getupvalue(gv.Hyphon_2102, 21)
-    end
-    gv.Hyphon_Script = nil
+if hasFilterGC and hasHookFunc then
     pcall(function()
-        for _, o in pairs(getnilinstances()) do
-            if o:IsA("Script") and o.Name:len() == 32 then gv.Hyphon_Script = o; break end
+        local gv = getgenv()
+        local function tryFind(name, ln)
+            local fn = filtergc("function", { StartLine = ln }, true)
+            if type(fn) ~= "function" then fn = (type(fn) == "table" and #fn > 0 and fn[1]) or nil end
+            if fn then gv[name] = fn end
+            return fn
         end
+        gv.Hyphon_2102 = tryFind("Hyphon_2102", 2102)
+        gv.Hyphon_2247 = tryFind("Hyphon_2247", 2247)
+        gv.Hyphon_2846 = tryFind("Hyphon_2846", 2846)
+        gv.Hyphon_fake_dec = tryFind("Hyphon_fake_dec", 1097)
     end)
-    if gv.Hyphon_2102 and gv.Hyphon_2247 and gv.Hyphon_2846 and gv.Hyphon_fake_dec then
-        pcall(function()
-            local HC = cloneref(game:GetService("MemoryStoreService")):FindFirstChild("Hyphon_Check")
-            local RF = debug.getupvalue(gv.Hyphon_2247, 6)
-            if HC then local o = hookfunction(HC.FireServer, function(s, ...) return o(s, ...) end) end
-            if RF then local o = hookfunction(RF.InvokeServer, function(s, ...)
-                local a = table.pack(...)
-                if type(a[1]) == "table" and a[1][1] then gv.T1 = a[1][1]; gv.T2 = a[1][2]; gv.T3 = a[1][6]; gv.T4 = a[1][11] end
-                return o(s, ...)
-            end) end
-        end)
-        if bit32 and bit32.bxor and gv.Hyphon_Script and checkcaller and getcallingscript then
-            pcall(function()
-                local o = hookfunction(bit32.bxor, function(a, b)
-                    if not checkcaller() and getcallingscript() == gv.Hyphon_Script then return task.wait(9e9) end
-                    return o(a, b)
-                end)
-            end)
-        end
-    end
-    pcall(function()
-        for _, Object in pairs(getgc(true)) do
-            if typeof(Object) == "table" and typeof(rawget(Object, "Homeless")) == "table" then
-                if rawget(Object.Homeless, "MaxDistance") then Object.Homeless.MaxDistance = 9e9 end
-            end
-        end
-    end)
-end)
+    print("✅ HYPHON EMULATOR BYPASS ACTIVE")
+else
+    print("⚠️ HYPHON EMULATOR: SKIPPED (executor tidak support)")
+end
 
 getgenv().HyphonReady = true
 getgenv().Emulator_Set = true
@@ -181,7 +134,7 @@ pcall(function()
 end)
 
 task.spawn(function()
-    while getgenv().FULLY_MS_V1 do
+    while true do
         pcall(function()
             local coregui = game:GetService("CoreGui")
             local playerGui = game:GetService("Players").LocalPlayer and game:GetService("Players").LocalPlayer.PlayerGui
@@ -189,7 +142,6 @@ task.spawn(function()
                 local name = gui.Name or ""
                 if name:find("Kick") or name:find("Ban") or name:find("Disconnect") or
                    name:find("Error") or name:find("Moderation") or name:find("Warning") or
-                   name:find("Alert") or name:find("Popup") or name:find("Notice") or
                    name:find("Detection") or name:find("Anti") or name:find("Handshake") then
                     gui:Destroy()
                 end
@@ -209,8 +161,6 @@ task.spawn(function()
     end
 end)
 
-print("✅ HYPHON EMULATOR BYPASS ACTIVE")
-
 -- ============================================================
 -- 📦 SERVICES
 -- ============================================================
@@ -223,20 +173,15 @@ local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
 local LogService = game:GetService("LogService")
 local TeleportService = game:GetService("TeleportService")
+local SoundService = game:GetService("SoundService")
 
 local LocalPlayer = Players.LocalPlayer
 local Player = LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
 
--- ============================================================
--- 📦 REMOTE EVENT
--- ============================================================
 local RemoteEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("ReliableRemoteEvent")
 local RESPAWN_WARP = Vector3.new(999999, 9999999, 999999)
 
--- ============================================================
--- 🏢 APARTMENT NAMES & COORDINATES
--- ============================================================
 local APRT_NAMES = {
     "CompactWalkupAPT1", "CompactWalkupAPT2", "CompactWalkupAPT3",
     "CompactWalkupAPT4", "CompactWalkupAPT5", "CompactWalkupAPT6",
@@ -262,22 +207,11 @@ local FarmSettings = {
 }
 
 local FarmState = {
-    Cycles = 0,
-    Status = "Idle",
-    Sold = 0,
-    MarshmallowsMade = 0,
-    OwnedAprt = nil,
-    TotalIncome = 0,
-    TotalExpense = 0,
-    PreviousCash = 0,
-    CurrentCash = 0,
-    CashInitialized = false,
-    BatchProgress = "0/0",
-    CurrentBatch = 0,
-    Step = "Idle",
-    Runtime = 0,
-    StartTime = os.time(),
-    Profit = 0,
+    Cycles = 0, Status = "Idle", Sold = 0, MarshmallowsMade = 0,
+    OwnedAprt = nil, TotalIncome = 0, TotalExpense = 0,
+    PreviousCash = 0, CurrentCash = 0, CashInitialized = false,
+    BatchProgress = "0/0", CurrentBatch = 0, Step = "Idle",
+    Runtime = 0, StartTime = os.time(), Profit = 0,
 }
 
 local FarmRunning = false
@@ -286,144 +220,8 @@ local FarmThread = nil
 local StartTime = os.time()
 
 -- ============================================================
--- 🔧 KONFIGURASI XRAY
+-- 🩸 USERNAME MERAH
 -- ============================================================
-local CONFIG = {
-    Enabled = true,
-    MaxDistance = 10,
-    Transparency = 0.95,
-}
-
-local function GetCleanedObjects()
-    local objects = {}
-    local map = Workspace:FindFirstChild("Map")
-    if not map then return objects end
-    local apartments = map:FindFirstChild("Apartments")
-    if not apartments then return objects end
-    for _, apt in pairs(apartments:GetChildren()) do
-        if apt:IsA("Model") or apt:IsA("Folder") then
-            local interior = apt:FindFirstChild("Interior") or apt
-            interior = apt:FindFirstChild("floor") or apt
-            for _, obj in pairs(interior:GetDescendants()) do
-                if obj:IsA("BasePart") then
-                    if obj.Name == "Cooking Pot" then continue end
-                    local parent = obj.Parent
-                    local isBoard = false
-                    while parent do
-                        if parent.Name == "Board" then isBoard = true; break end
-                        parent = parent.Parent
-                    end
-                    if isBoard then continue end
-                    local parent2 = obj.Parent
-                    local isPlayer = false
-                    while parent2 do
-                        if parent2:IsA("Model") and parent2:FindFirstChild("Humanoid") then isPlayer = true; break end
-                        parent2 = parent2.Parent
-                    end
-                    if isPlayer then continue end
-                    table.insert(objects, obj)
-                end
-            end
-        end
-    end
-    return objects
-end
-
-local objectCache = {}
-local transparencyCache = {}
-local allObjects = {}
-local cacheValid = false
-local objectCount = 0
-
-local function UpdateObjectCache()
-    allObjects = GetCleanedObjects()
-    cacheValid = true
-    objectCount = #allObjects
-    for _, obj in pairs(allObjects) do
-        if not transparencyCache[obj] then
-            pcall(function() transparencyCache[obj] = obj.Transparency or 0 end)
-        end
-    end
-end
-
-local updateCounter = 0
-local Camera = workspace.CurrentCamera
-
-local function UpdateXRay()
-    if not CONFIG.Enabled then
-        for obj, trans in pairs(transparencyCache) do
-            pcall(function() if obj and obj.Parent then obj.Transparency = trans end end)
-        end
-        return
-    end
-    if not cacheValid then UpdateObjectCache(); return end
-    if not Camera then return end
-    local cameraPos = Camera.CFrame.Position
-    local maxDist = CONFIG.MaxDistance
-    local targetTrans = CONFIG.Transparency
-    for _, obj in pairs(allObjects) do
-        if not obj or not obj.Parent then
-            transparencyCache[obj] = nil
-        else
-            local dist = (obj.Position - cameraPos).Magnitude
-            local originalTrans = transparencyCache[obj] or 0
-            local newTrans = originalTrans
-            if dist < maxDist then
-                local factor = 1 - (dist / maxDist)
-                newTrans = math.min(originalTrans + (targetTrans * factor), 1)
-            end
-            pcall(function()
-                if obj.Transparency ~= newTrans then obj.Transparency = newTrans end
-            end)
-        end
-    end
-end
-
-local xrayConnection = nil
-
-local function StartXRay()
-    if xrayConnection then return end
-    CONFIG.Enabled = true
-    cacheValid = false
-    UpdateObjectCache()
-    xrayConnection = RunService.Heartbeat:Connect(function()
-        updateCounter = updateCounter + 1
-        if updateCounter >= 2 then
-            updateCounter = 0
-            pcall(UpdateXRay)
-        end
-    end)
-end
-
-local function StopXRay()
-    CONFIG.Enabled = false
-    if xrayConnection then xrayConnection:Disconnect(); xrayConnection = nil end
-    for obj, trans in pairs(transparencyCache) do
-        pcall(function() if obj and obj.Parent then obj.Transparency = trans end end)
-    end
-    print("🔮 X-Ray: OFF")
-end
-
-local function RefreshCache()
-    cacheValid = false
-    print("🔄 Refreshing X-Ray cache...")
-end
-
-local function SetupAutoRefresh()
-    local map = Workspace:FindFirstChild("Map")
-    if map then
-        local apartments = map:FindFirstChild("Apartments")
-        if apartments then
-            apartments.ChildAdded:Connect(function() task.wait(0.5); RefreshCache() end)
-            apartments.ChildRemoved:Connect(function() task.wait(0.5); RefreshCache() end)
-        end
-    end
-end
-
--- ============================================================
--- 🩸 USERNAME MERAH - 707 KILLER
--- ============================================================
-local RGBEnabled = true
 local CurrentDisplayName = "707 KILLER"
 local MERAH_USERNAME = Color3.fromRGB(220, 40, 40)
 
@@ -461,20 +259,14 @@ local function ApplyName()
     SetDisplayName(CurrentDisplayName, MERAH_USERNAME)
 end
 
-local function StartRGBName()
+ApplyName()
+Player.CharacterAdded:Connect(function()
+    task.wait(1)
     ApplyName()
-    Player.CharacterAdded:Connect(function()
-        task.wait(1)
-        ApplyName()
-    end)
-end
-
-local function StopRGBName()
-    SetDisplayName(nil, MERAH_USERNAME)
-end
+end)
 
 -- ============================================================
--- 💰 CASH DETECTION
+-- 💰 CASH
 -- ============================================================
 local function GetCurrentCash()
     local totalCash = 0
@@ -493,46 +285,7 @@ local function GetCurrentCash()
             end
         end
     end
-    for _, child in pairs(Player:GetChildren()) do
-        if child:IsA("NumberValue") or child:IsA("IntValue") or child:IsA("StringValue") then
-            pcall(function()
-                local val = child.Value
-                if type(val) == "number" then totalCash = totalCash + val
-                elseif type(val) == "string" then
-                    local num = tonumber(val)
-                    if num then totalCash = totalCash + num end
-                end
-            end)
-        end
-    end
-    local stats = Player:FindFirstChild("Stats")
-    if stats then
-        for _, child in pairs(stats:GetChildren()) do
-            if child:IsA("NumberValue") or child:IsA("IntValue") or child:IsA("StringValue") then
-                pcall(function()
-                    local val = child.Value
-                    if type(val) == "number" then totalCash = totalCash + val
-                    elseif type(val) == "string" then
-                        local num = tonumber(val)
-                        if num then totalCash = totalCash + num end
-                    end
-                end)
-            end
-        end
-    end
     return math.floor(totalCash)
-end
-
-local function FormatMoney(amount)
-    if amount == 0 then return "$0" end
-    local formatted = tostring(math.floor(amount))
-    local reversed = formatted:reverse()
-    local withDots = ""
-    for i = 1, #reversed do
-        if i > 1 and (i - 1) % 3 == 0 then withDots = withDots .. "." end
-        withDots = withDots .. reversed:sub(i, i)
-    end
-    return "$" .. withDots:reverse()
 end
 
 local function UpdateCashTracker()
@@ -553,7 +306,7 @@ local function UpdateCashTracker()
 end
 
 -- ============================================================
--- 🔥 TELEPORT FUNCTIONS
+-- 🔥 TELEPORT
 -- ============================================================
 local tpActive = false
 local tpCancelled = false
@@ -579,10 +332,6 @@ local function lerpChar(fromPos, toPos, speed)
         hrp2.AssemblyAngularVelocity = Vector3.zero
         local _, dt = RunService.Stepped:Wait()
         elapsed = elapsed + dt
-    end
-    if not tpCancelled then
-        local hrp3 = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-        if hrp3 then hrp3.CFrame = CFrame.new(toPos) * (hrp3.CFrame - hrp3.CFrame.Position) end
     end
 end
 
@@ -655,7 +404,7 @@ local function doSuicideTP(loc)
 end
 
 -- ============================================================
--- 🏢 APARTMENT FUNCTIONS
+-- 🏢 APARTMENT
 -- ============================================================
 local function GetAprtBoardText(board)
     local txt = ""
@@ -729,9 +478,6 @@ local function GetOwnedAprtTarget()
     return nil
 end
 
--- ============================================================
--- 🏠 ENSURE BUY APARTMENT
--- ============================================================
 local function EnsureBuyAprt()
     local entry, status = FindAprt()
     if not entry then return false end
@@ -740,8 +486,7 @@ local function EnsureBuyAprt()
         getgenv().FA_OWNED_APRT = entry.obj.Name
         return true
     end
-    
-    FarmState.Step = "🏠 Buying Apartment (Cost: $500)"
+    FarmState.Step = "🏠 Buying Apartment"
     local board = entry.board
     local backboard = board:FindFirstChild("backboard")
     local bp = backboard and backboard:FindFirstChildWhichIsA("ProximityPrompt", true)
@@ -750,7 +495,6 @@ local function EnsureBuyAprt()
     bp.MaxActivationDistance = 9e9
     bp.HoldDuration = 0
     bp.RequiresLineOfSight = false
-    
     doSuicideTP({x = backboard and backboard.Position.X or board.Position.X,
                  y = backboard and backboard.Position.Y + 3 or board.Position.Y + 3,
                  z = backboard and backboard.Position.Z or board.Position.Z})
@@ -772,7 +516,7 @@ local function EnsureBuyAprt()
 end
 
 -- ============================================================
--- 💰 BUY SYSTEM
+-- 💰 BUY
 -- ============================================================
 local function GetIngredientCount()
     local water, sugar, gelatin = 0, 0, 0
@@ -788,54 +532,50 @@ end
 
 local function BuyWater()
     pcall(function()
-        RemoteEvent:FireServer(buffer.fromstring("\024\019\003"))
+        if hasBuffer then
+            RemoteEvent:FireServer(buffer.fromstring("\024\019\003"))
+        else
+            RemoteEvent:FireServer("\024\019\003")
+        end
     end)
 end
 
 local function BuySugar()
     pcall(function()
-        RemoteEvent:FireServer(buffer.fromstring("\024\019\002"))
+        if hasBuffer then
+            RemoteEvent:FireServer(buffer.fromstring("\024\019\002"))
+        else
+            RemoteEvent:FireServer("\024\019\002")
+        end
     end)
 end
 
 local function BuyGelatin()
     pcall(function()
-        RemoteEvent:FireServer(buffer.fromstring("\024\019\001"))
+        if hasBuffer then
+            RemoteEvent:FireServer(buffer.fromstring("\024\019\001"))
+        else
+            RemoteEvent:FireServer("\024\019\001")
+        end
     end)
 end
 
 local function BuyAll(amount)
     amount = amount or FarmSettings.Amount
-    
-    FarmState.Step = "🛒 Buying Ingredients (Cost: $" .. (amount * FarmSettings.IngredientCost) .. ")"
-    
-    local water, sugar, gelatin = GetIngredientCount()
-    
+    FarmState.Step = "🛒 Buying Ingredients"
     for i = 1, amount do
-        if StopRequest then return end
-        
+        if StopRequest then return false end
         local w, s, g = GetIngredientCount()
-        
-        if w < i then
-            BuyWater()
-            task.wait(0.45)
-        end
-        if s < i then
-            BuySugar()
-            task.wait(0.45)
-        end
-        if g < i then
-            BuyGelatin()
-            task.wait(0.45)
-        end
+        if w < i then BuyWater(); task.wait(0.45) end
+        if s < i then BuySugar(); task.wait(0.45) end
+        if g < i then BuyGelatin(); task.wait(0.45) end
     end
-    
-    local finalW, finalS, finalG = GetIngredientCount()
-    if finalW >= amount and finalS >= amount and finalG >= amount then
+    task.wait(1)
+    local fw, fs, fg = GetIngredientCount()
+    if fw >= amount and fs >= amount and fg >= amount then
         FarmState.TotalExpense = FarmState.TotalExpense + (amount * FarmSettings.IngredientCost)
         return true
     else
-        print("⚠️ [BUY] Failed! Retrying...")
         return false
     end
 end
@@ -856,10 +596,9 @@ local function findLamont()
 end
 
 -- ============================================================
--- 🔧 NOCLIP PERMANENT
+-- 🔧 NOCLIP
 -- ============================================================
 local noclip_connection = nil
-
 local function EnableNoClipPermanent()
     if noclip_connection then return end
     noclip_connection = RunService.RenderStepped:Connect(function()
@@ -875,42 +614,20 @@ local function EnableNoClipPermanent()
     end)
 end
 
-local function DisableNoClipPermanent()
-    if noclip_connection then
-        noclip_connection:Disconnect()
-        noclip_connection = nil
-    end
-    pcall(function()
-        local char = Player.Character
-        if char then
-            for _, part in pairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    pcall(function() part.CanCollide = true end)
-                end
-            end
-        end
-    end)
-end
-
 -- ============================================================
--- 🔥 QUICK TELEPORT KE COOKING POT
+-- 🔥 QUICK TELEPORT TO POT
 -- ============================================================
 local function QuickTeleportToPot(Pot)
     local char = Player.Character
     if not char then return false end
-    
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
-    
     local hum = char:FindFirstChildOfClass("Humanoid")
     if not hum then return false end
-    
     local cookPos = Pot.CFrame - Vector3.new(0, FarmSettings.OffsetY, 0)
-    
     hrp.CFrame = cookPos
     hrp.AssemblyLinearVelocity = Vector3.zero
     hrp.AssemblyAngularVelocity = Vector3.zero
-    
     for _, part in pairs(char:GetDescendants()) do
         if part:IsA("BasePart") and part ~= hrp then
             pcall(function()
@@ -920,17 +637,12 @@ local function QuickTeleportToPot(Pot)
             end)
         end
     end
-    
     hum.PlatformStand = true
     hum.AutoRotate = true
     hum.WalkSpeed = 0
-    
     for _, v in pairs(hrp:GetChildren()) do
-        if v.Name == "FlyLock" then
-            v:Destroy()
-        end
+        if v.Name == "FlyLock" then v:Destroy() end
     end
-    
     local bp = Instance.new("BodyPosition")
     bp.Name = "FlyLock"
     bp.Parent = hrp
@@ -938,7 +650,6 @@ local function QuickTeleportToPot(Pot)
     bp.P = 2000
     bp.D = 100
     bp.Position = cookPos.Position
-    
     local bg = Instance.new("BodyGyro")
     bg.Name = "FlyLock"
     bg.Parent = hrp
@@ -946,26 +657,21 @@ local function QuickTeleportToPot(Pot)
     bg.P = 2000
     bg.D = 100
     bg.CFrame = hrp.CFrame
-    
     return true
 end
 
 local function DisableFlyLock()
     local char = Player.Character
     if not char then return end
-    
     local hum = char:FindFirstChildOfClass("Humanoid")
     if hum then
         hum.PlatformStand = false
         hum.WalkSpeed = 16
     end
-    
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if hrp then
         for _, v in pairs(hrp:GetChildren()) do
-            if v.Name == "FlyLock" then
-                v:Destroy()
-            end
+            if v.Name == "FlyLock" then v:Destroy() end
         end
     end
 end
@@ -975,16 +681,19 @@ end
 -- ============================================================
 local function af_FirePrompt(prompt)
     if not prompt or not prompt.Parent then return end
-    pcall(function()
-        local od, ol = prompt.MaxActivationDistance, prompt.RequiresLineOfSight
-        prompt.MaxActivationDistance = 9999
-        prompt.RequiresLineOfSight = false
-        task.wait(0.05)
-        fireproximityprompt(prompt)
-        task.wait(0.1)
-        prompt.MaxActivationDistance = od
-        prompt.RequiresLineOfSight = ol
-    end)
+    if type(fireproximityprompt) == "function" then
+        pcall(function()
+            local od = prompt.MaxActivationDistance
+            local ol = prompt.RequiresLineOfSight
+            prompt.MaxActivationDistance = 9999
+            prompt.RequiresLineOfSight = false
+            task.wait(0.05)
+            fireproximityprompt(prompt)
+            task.wait(0.1)
+            prompt.MaxActivationDistance = od
+            prompt.RequiresLineOfSight = ol
+        end)
+    end
 end
 
 local function af_Equip(toolName)
@@ -1003,9 +712,7 @@ local function af_Tween(cf)
     local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
     local dist = (hrp.Position - cf.Position).Magnitude
-    local tw = TweenService:Create(hrp, 
-        TweenInfo.new(math.max(dist / 20, 0.05), Enum.EasingStyle.Linear), 
-        { CFrame = cf })
+    local tw = TweenService:Create(hrp, TweenInfo.new(math.max(dist / 20, 0.05), Enum.EasingStyle.Linear), { CFrame = cf })
     tw:Play()
     tw.Completed:Wait()
 end
@@ -1015,7 +722,6 @@ end
 -- ============================================================
 local function CookMarshmallow(amount, skipBuy)
     amount = amount or FarmSettings.Amount
-    
     FarmState.BatchProgress = "0/" .. amount
     FarmState.CurrentBatch = 0
     
@@ -1023,91 +729,62 @@ local function CookMarshmallow(amount, skipBuy)
         local char = Player.Character
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
         local isNearStore = false
-        
         if hrp then
             local dist = (hrp.Position - Vector3.new(510, 4, 602)).Magnitude
-            if dist < 20 then
-                isNearStore = true
-            end
+            if dist < 20 then isNearStore = true end
         end
-        
         if not isNearStore then
             FarmState.Step = "🚗 Going to Store"
             doSuicideTP({ x = 510, y = 4, z = 602 })
             task.wait(1)
         end
-        
         FarmState.Step = "🛒 Buying Ingredients"
         local buySuccess = false
         for retry = 1, 10 do
             buySuccess = BuyAll(amount)
-            if buySuccess then 
-                break 
-            end
-            print("⚠️ [BUY] Retry " .. retry .. "/10...")
+            if buySuccess then break end
             task.wait(2)
             doSuicideTP({ x = 510, y = 4, z = 602 })
             task.wait(1)
         end
-        
-        if not buySuccess then
-            print("⚠️ [COOK] Skip cycle, waiting...")
-            task.wait(5)
-            return true
-        end
+        if not buySuccess then task.wait(5); return true end
         task.wait(0.5)
     end
     
     FarmState.Step = "🚗 Going to Apartment"
     local targetPos, entry = GetOwnedAprtTarget()
-    if not targetPos then
-        print("⚠️ [COOK] No apartment found, skipping...")
-        return true
-    end
+    if not targetPos then return true end
     af_TP(CFrame.new(targetPos.X, targetPos.Y + 3, targetPos.Z))
     task.wait(1)
-    
     local House = entry and entry.obj
     if not House then
         local _, newEntry = GetOwnedAprtTarget()
         House = newEntry and newEntry.obj
     end
-    if not House then
-        print("⚠️ [COOK] House not found, skipping...")
-        return true
-    end
-    
+    if not House then return true end
     local Interior = House:FindFirstChild("Interior") or House
     for _, v in pairs(Interior:GetChildren()) do
         if v.Name == "Floor" then pcall(function() v.CanCollide = false end) end
     end
-    
     local Pot = Interior:FindFirstChild("Cooking Pot", true)
     local PotPrompt = nil
     if Pot then
         local att = Pot:FindFirstChild("Attachment")
         PotPrompt = att and att:FindFirstChildOfClass("ProximityPrompt") or Pot:FindFirstChildWhichIsA("ProximityPrompt", true)
     end
-    if not Pot or not PotPrompt then
-        print("⚠️ [COOK] Pot not found, skipping...")
-        return true
-    end
-    
+    if not Pot or not PotPrompt then return true end
     EnableNoClipPermanent()
     QuickTeleportToPot(Pot)
-    
     for i = 1, amount do
         if StopRequest then return false end
         FarmState.CurrentBatch = i
         FarmState.BatchProgress = i .. "/" .. amount
         
-        FarmState.Step = "💧 Pouring Water (" .. i .. "/" .. amount .. ")"
+        FarmState.Step = "💧 Water " .. i .. "/" .. amount
         if not Player.Character:FindFirstChild("Water") then af_Equip("Water") end
         task.wait(1)
         af_FirePrompt(PotPrompt)
         task.wait(2.5)
-        
-        FarmState.Step = "⏳ Waiting Water (" .. i .. "/" .. amount .. ")"
         local timeout = 0
         while timeout < 21 do
             if StopRequest then return false end
@@ -1117,14 +794,12 @@ local function CookMarshmallow(amount, skipBuy)
             timeout = timeout + 0.5
         end
         
-        FarmState.Step = "🧂 Adding Sugar (" .. i .. "/" .. amount .. ")"
+        FarmState.Step = "🧂 Sugar " .. i .. "/" .. amount
         if not Player.Character:FindFirstChild("Sugar Block Bag") then af_Equip("Sugar Block Bag") end
         task.wait(1)
         af_FirePrompt(PotPrompt)
         task.wait(2.5)
         af_Unequip()
-        
-        FarmState.Step = "⏳ Waiting Sugar (" .. i .. "/" .. amount .. ")"
         timeout = 0
         while timeout < 1 do
             if StopRequest then return false end
@@ -1134,14 +809,12 @@ local function CookMarshmallow(amount, skipBuy)
             timeout = timeout + 0.5
         end
         
-        FarmState.Step = "🧪 Adding Gelatin (" .. i .. "/" .. amount .. ")"
+        FarmState.Step = "🧪 Gelatin " .. i .. "/" .. amount
         af_Unequip()
         task.wait(1)
         if not Player.Character:FindFirstChild("Gelatin") then af_Equip("Gelatin") end
         af_FirePrompt(PotPrompt)
         task.wait(2.5)
-        
-        FarmState.Step = "⏳ Waiting Gelatin (" .. i .. "/" .. amount .. ")"
         timeout = 0
         while timeout < 46 do
             if StopRequest then return false end
@@ -1151,7 +824,7 @@ local function CookMarshmallow(amount, skipBuy)
             timeout = timeout + 0.5
         end
         
-        FarmState.Step = "🍽️ Collecting Marshmallow (" .. i .. "/" .. amount .. ")"
+        FarmState.Step = "🍽️ Collect " .. i .. "/" .. amount
         if not Player.Character:FindFirstChild("Empty Bag") then af_Equip("Empty Bag") end
         task.wait(1)
         af_FirePrompt(PotPrompt)
@@ -1161,16 +834,15 @@ local function CookMarshmallow(amount, skipBuy)
         FarmState.MarshmallowsMade = FarmState.MarshmallowsMade + 1
         UpdateCashTracker()
     end
-    
     DisableFlyLock()
     return true
 end
 
 -- ============================================================
--- 💰 SELL MARSHMALLOW
+-- 💰 SELL
 -- ============================================================
 local function SellMarshmallow()
-    FarmState.Step = "💰 Selling Marshmallows"
+    FarmState.Step = "💰 Selling"
     af_TP(CFrame.new(510, 4, 602))
     local timeout = 0
     while not findLamont() and timeout < 10 do
@@ -1195,13 +867,12 @@ local function SellMarshmallow()
             end
         end
     end
-    
     UpdateCashTracker()
     return sold > 0
 end
 
 -- ============================================================
--- 🔄 FULL CYCLE
+-- 🔄 CYCLE
 -- ============================================================
 local CurrentCycle = 0
 local isFirstCycle = true
@@ -1209,31 +880,17 @@ local isFirstCycle = true
 local function FullCycle()
     FarmState.BatchProgress = "0/" .. FarmSettings.Amount
     FarmState.CurrentBatch = 0
-
     if isFirstCycle then
-        FarmState.Step = "🏠 Buying Apartment (Cost: $500)"
-        if not EnsureBuyAprt() then
-            print("⚠️ [CYCLE] Failed to buy apartment, retrying...")
-            task.wait(5)
-            return true
-        end
+        FarmState.Step = "🏠 Buying Apartment"
+        if not EnsureBuyAprt() then task.wait(5); return true end
         task.wait(1)
-        FarmState.Step = "🔒 Locking Door"
-        task.wait(0.5)
         isFirstCycle = false
     end
-
     local cookSuccess = CookMarshmallow(FarmSettings.Amount, false)
-    if not cookSuccess then
-        print("⚠️ [CYCLE] Cook failed, skipping...")
-        task.wait(5)
-        return true
-    end
-    
+    if not cookSuccess then task.wait(5); return true end
     DisableFlyLock()
     SellMarshmallow()
     task.wait(0.5)
-
     CurrentCycle = CurrentCycle + 1
     FarmState.Cycles = CurrentCycle
     UpdateCashTracker()
@@ -1252,8 +909,6 @@ local function StartFullyFarm()
     FarmState.Cycles = 0
     FarmState.Sold = 0
     FarmState.MarshmallowsMade = 0
-    FarmState.BatchProgress = "0/" .. FarmSettings.Amount
-    FarmState.CurrentBatch = 0
     FarmState.CashInitialized = false
     FarmState.CurrentCash = 0
     FarmState.PreviousCash = 0
@@ -1261,135 +916,31 @@ local function StartFullyFarm()
     FarmState.TotalExpense = 0
     FarmState.Step = "Starting"
     FarmState.StartTime = os.time()
-    StartTime = os.time()
-    
-    StartRGBName()
-    
     FarmThread = task.spawn(function()
         while FarmRunning and not StopRequest do
             FullCycle()
             task.wait(1)
         end
         FarmRunning = false
-        FarmState.Status = "Stopped"
-        FarmState.Step = "Idle"
-        StopRGBName()
     end)
 end
 
 local function StopFullyFarm()
     StopRequest = true
     FarmRunning = false
-    FarmState.Status = "Stopped"
-    FarmState.Step = "Idle"
-    StopRGBName()
     if FarmThread then task.cancel(FarmThread); FarmThread = nil end
 end
 
 _G.StartFullyFarm = StartFullyFarm
 _G.StopFullyFarm = StopFullyFarm
-
--- ============================================================
--- 🔄 AUTO REJOIN SYSTEM
--- ============================================================
-local AutoRejoinConfig = {
-    Enabled = true,
-    ScriptUrl = "https://pastefy.app/82E6hkS0/raw",
-    GameId = 10179538382,
-}
-
-local IsDeathTeleport = false
-
-local function MarkDeathTeleport()
-    IsDeathTeleport = true
-end
-
-_G.MarkDeathTeleport = MarkDeathTeleport
-
-local function DoRejoin()
-    if not AutoRejoinConfig.Enabled then return end
-    if IsDeathTeleport then 
-        IsDeathTeleport = false
-        return 
-    end
-    
-    print("🔄 [REJOIN] Rejoining...")
-    FarmState.Step = "Rejoining"
-    FarmRunning = false
-    
-    getgenv().FULLY_MS_AFTER_REJOIN = true
-    
-    queue_on_teleport([[
-        queue_on_teleport("task.wait(30)\ngetgenv().FULLY_MS_AFTER_REJOIN = true\ngetgenv().FULLY_MS_V1 = nil\nloadstring(game:HttpGet(']] .. AutoRejoinConfig.ScriptUrl .. [['))()")
-    ]])
-    
-    TeleportService:Teleport(AutoRejoinConfig.GameId)
-end
-
-task.spawn(function()
-    local conn
-    conn = LogService.MessageOut:Connect(function(msg, mtype)
-        if mtype == Enum.MessageType.MessageError then
-            if msg:find("Kicked") or msg:find("Disconnected") or msg:find("Idle") or 
-               msg:find("Removed") or msg:find("Connection lost") or msg:find("Ban") then
-                if conn then conn:Disconnect() end
-                task.spawn(DoRejoin)
-            end
-        end
-    end)
-end)
-
-local function SetupDeathDetection()
-    local function OnCharacterAdded(char)
-        local hum = char:WaitForChild("Humanoid", 5)
-        if not hum then return end
-        hum.Died:Connect(function()
-            if IsDeathTeleport then
-                IsDeathTeleport = false
-                return
-            end
-            print("💀 [REJOIN] Natural death detected! Rejoining...")
-            task.spawn(DoRejoin)
-        end)
-    end
-    local char = Player.Character
-    if char then task.spawn(function() OnCharacterAdded(char) end) end
-    Player.CharacterAdded:Connect(OnCharacterAdded)
-end
-
-SetupDeathDetection()
-
--- ============================================================
--- 🚀 AUTO EXECUTE
--- ============================================================
-task.spawn(function()
-    task.wait(3)
-    if getgenv().FULLY_MS_AFTER_REJOIN then
-        print("🔄 [REJOIN] Auto starting farm...")
-        getgenv().FULLY_MS_AFTER_REJOIN = nil
-        
-        local clickAttempts = 0
-        while clickAttempts < 10 do
-            local success = ClickPlay()
-            if success then
-                break
-            end
-            clickAttempts = clickAttempts + 1
-            task.wait(2)
-        end
-        
-        task.wait(2)
-        StartFullyFarm()
-    else
-        print("📌 707 KILLER READY - Use F3 to open UI")
-    end
-end)
+_G.FarmState = FarmState
+_G.FarmRunning = function() return FarmRunning end
 
 -- ============================================================
 -- 🛡️ ANTI AFK
 -- ============================================================
 task.spawn(function()
-    while getgenv().FULLY_MS_V1 do
+    while true do
         pcall(function()
             game:GetService("VirtualUser"):CaptureController()
             game:GetService("VirtualUser"):ClickButton2(Vector2.new())
@@ -1398,28 +949,51 @@ task.spawn(function()
     end
 end)
 
-Player.Idled:Connect(function()
-    if FarmRunning then
-        game:GetService("VirtualUser"):CaptureController()
-        game:GetService("VirtualUser"):ClickButton2(Vector2.new())
-    end
-end)
+-- ============================================================
+-- 🩸 UI 707 KILLER
+-- ============================================================
+task.wait(0.5)
 
--- ============================================================
--- 🩸 PALET WARNA
--- ============================================================
+local function HapusUILama(container)
+    if not container then return end
+    for _, gui in pairs(container:GetChildren()) do
+        if gui:IsA("ScreenGui") then
+            local n = gui.Name or ""
+            if n:find("707") or n:find("FULLY") or n:find("JENOWA") or 
+               n:find("DARK") or n:find("ANGEL") or n:find("KILLER") or
+               n:find("MS_UI") or n:find("MS_V1") then
+                pcall(function() gui:Destroy() end)
+            end
+        end
+    end
+end
+
+HapusUILama(CoreGui)
+HapusUILama(PlayerGui)
+
 local DARAH_AKSEN   = Color3.fromRGB(139, 0, 0)
-local DARAH_HOVER   = Color3.fromRGB(180, 20, 20)
 local DARAH_TERANG  = Color3.fromRGB(220, 40, 40)
 local HITAM_LATAR   = Color3.fromRGB(8, 8, 10)
 local HITAM_PANEL   = Color3.fromRGB(16, 16, 20)
 local HITAM_ELEMEN  = Color3.fromRGB(26, 26, 32)
 local PUTIH_UTAMA   = Color3.fromRGB(240, 240, 245)
 local PUTIH_SEKUNDER= Color3.fromRGB(200, 200, 210)
+local ABU_SAKLAR    = Color3.fromRGB(120, 120, 130)
 
--- ============================================================
--- 🩸 FUNGSI SHADOW MERAH
--- ============================================================
+local TOMBOL_IMAGE_ID = "rbxassetid://95839868456804"
+local BG_IMAGE_ID = "rbxassetid://95839868456804"
+local LAGU_ID = "rbxassetid://101828065022988"
+local LOGO_TENGAH_ID = "rbxassetid://92238054868227"
+local FOTO_HUJAN_ID = "rbxassetid://95839868456804"
+
+local BackgroundMusic = Instance.new("Sound")
+BackgroundMusic.Name = "707_KILLER_Music"
+BackgroundMusic.SoundId = LAGU_ID
+BackgroundMusic.Volume = 1.5
+BackgroundMusic.Looped = true
+BackgroundMusic.Parent = SoundService
+pcall(function() BackgroundMusic:Play() end)
+
 local function AddShadow(parent, transparency)
     local shadow = Instance.new("ImageLabel")
     shadow.Name = "Shadow"
@@ -1434,243 +1008,433 @@ local function AddShadow(parent, transparency)
     return shadow
 end
 
--- ============================================================
--- 🩸 CREATE UI — BACKGROUND HITAM
--- ============================================================
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "707_KILLER_UI"
+ScreenGui.Name = "707_KILLER_UI_NEW"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.IgnoreGuiInset = true
 ScreenGui.Parent = CoreGui
 
+-- WELCOME FRAME
+local WelcomeFrame = Instance.new("Frame")
+WelcomeFrame.Size = UDim2.new(1, 0, 1, 0)
+WelcomeFrame.BackgroundColor3 = HITAM_LATAR
+WelcomeFrame.BackgroundTransparency = 0
+WelcomeFrame.BorderSizePixel = 0
+WelcomeFrame.ZIndex = 200
+WelcomeFrame.Parent = ScreenGui
+
+local WelcomeStroke = Instance.new("UIStroke")
+WelcomeStroke.Thickness = 3
+WelcomeStroke.Color = DARAH_AKSEN
+WelcomeStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+WelcomeStroke.Parent = WelcomeFrame
+
+local WelcomeLogo = Instance.new("ImageLabel")
+WelcomeLogo.Size = UDim2.new(0, 200, 0, 200)
+WelcomeLogo.Position = UDim2.new(0.5, -100, 0.5, -100)
+WelcomeLogo.AnchorPoint = Vector2.new(0.5, 0.5)
+WelcomeLogo.BackgroundTransparency = 1
+WelcomeLogo.Image = LOGO_TENGAH_ID
+WelcomeLogo.ImageTransparency = 1
+WelcomeLogo.ScaleType = Enum.ScaleType.Fit
+WelcomeLogo.ZIndex = 201
+WelcomeLogo.Parent = WelcomeFrame
+
+local WelcomeLine = Instance.new("Frame")
+WelcomeLine.Size = UDim2.new(0.6, 0, 0, 3)
+WelcomeLine.Position = UDim2.new(0.2, 0, 0.72, 0)
+WelcomeLine.BackgroundColor3 = DARAH_AKSEN
+WelcomeLine.BorderSizePixel = 0
+WelcomeLine.ZIndex = 201
+WelcomeLine.Parent = WelcomeFrame
+
+local WelcomeSub = Instance.new("TextLabel")
+WelcomeSub.Size = UDim2.new(1, -40, 0, 40)
+WelcomeSub.Position = UDim2.new(0, 20, 0.76, 0)
+WelcomeSub.BackgroundTransparency = 1
+WelcomeSub.Text = "SELAMAT DATANG MEMBER 707"
+WelcomeSub.Font = Enum.Font.GothamBold
+WelcomeSub.TextSize = 22
+WelcomeSub.TextColor3 = PUTIH_UTAMA
+WelcomeSub.TextXAlignment = Enum.TextXAlignment.Center
+WelcomeSub.ZIndex = 201
+WelcomeSub.Parent = WelcomeFrame
+
+local WelcomeLoading = Instance.new("TextLabel")
+WelcomeLoading.Size = UDim2.new(1, -40, 0, 30)
+WelcomeLoading.Position = UDim2.new(0, 20, 0.84, 0)
+WelcomeLoading.BackgroundTransparency = 1
+WelcomeLoading.Text = "Memuat sistem..."
+WelcomeLoading.Font = Enum.Font.Gotham
+WelcomeLoading.TextSize = 14
+WelcomeLoading.TextColor3 = PUTIH_SEKUNDER
+WelcomeLoading.TextXAlignment = Enum.TextXAlignment.Center
+WelcomeLoading.ZIndex = 201
+WelcomeLoading.Parent = WelcomeFrame
+
+local RainContainer = Instance.new("Frame")
+RainContainer.Size = UDim2.new(1, 0, 1, 0)
+RainContainer.BackgroundTransparency = 1
+RainContainer.ClipsDescendants = true
+RainContainer.ZIndex = 202
+RainContainer.Parent = WelcomeFrame
+
+local function BuatTetes()
+    local drop = Instance.new("ImageLabel")
+    drop.BackgroundTransparency = 1
+    drop.Image = FOTO_HUJAN_ID
+    drop.ImageTransparency = 0.5
+    drop.ScaleType = Enum.ScaleType.Fit
+    local sizeRandom = math.random(60, 120)
+    drop.Size = UDim2.new(0, sizeRandom, 0, sizeRandom)
+    drop.Position = UDim2.new(math.random(0, 100) / 100, 0, -0.2, 0)
+    drop.ZIndex = 202
+    drop.Parent = RainContainer
+    local fallTime = math.random(30, 80) / 10
+    TweenService:Create(drop, TweenInfo.new(fallTime, Enum.EasingStyle.Linear), {
+        Position = UDim2.new(drop.Position.X.Scale, 0, 1.2, 0)
+    }):Play()
+    task.delay(fallTime, function() drop:Destroy() end)
+end
+
+task.spawn(function()
+    while WelcomeFrame.Parent do
+        for i = 1, 4 do BuatTetes(); task.wait(0.15) end
+        task.wait(0.3)
+    end
+end)
+
+WelcomeFrame.BackgroundTransparency = 1
+TweenService:Create(WelcomeFrame, TweenInfo.new(0.5, Enum.EasingStyle.Sine), {BackgroundTransparency = 0}):Play()
+task.wait(0.3)
+TweenService:Create(WelcomeLogo, TweenInfo.new(0.8, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+    Size = UDim2.new(0, 350, 0, 350),
+    Position = UDim2.new(0.5, -175, 0.5, -175),
+    ImageTransparency = 0.1
+}):Play()
+task.wait(1.0)
+TweenService:Create(WelcomeSub, TweenInfo.new(1.0, Enum.EasingStyle.Sine), {TextTransparency = 0}):Play()
+TweenService:Create(WelcomeLoading, TweenInfo.new(1.0, Enum.EasingStyle.Sine), {TextTransparency = 0}):Play()
+
+-- MAIN FRAME
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 420, 0, 220)
-MainFrame.Position = UDim2.new(0.5, -210, 0.5, -140)
+MainFrame.Size = UDim2.new(0, 300, 0, 400)
+MainFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
 MainFrame.BackgroundColor3 = HITAM_LATAR
+MainFrame.BackgroundTransparency = 0.2
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
-MainFrame.ClipsDescendants = false
+MainFrame.Visible = false
 MainFrame.ZIndex = 1
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 14)
 
 local BloodStroke = Instance.new("UIStroke")
-BloodStroke.Name = "BloodStroke"
 BloodStroke.Thickness = 2
-BloodStroke.Transparency = 0
 BloodStroke.Color = DARAH_AKSEN
 BloodStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 BloodStroke.Parent = MainFrame
 
 MainFrame.Parent = ScreenGui
 
+local BackgroundImage = Instance.new("ImageLabel")
+BackgroundImage.Size = UDim2.new(1, 0, 1, 0)
+BackgroundImage.BackgroundTransparency = 1
+BackgroundImage.Image = BG_IMAGE_ID
+BackgroundImage.ImageTransparency = 0.55
+BackgroundImage.ScaleType = Enum.ScaleType.Crop
+BackgroundImage.ZIndex = 0
+BackgroundImage.Parent = MainFrame
+Instance.new("UICorner", BackgroundImage).CornerRadius = UDim.new(0, 14)
+
 AddShadow(MainFrame, 0.5)
 
--- ============================================================
--- 🩸 TOP BAR
--- ============================================================
+task.spawn(function()
+    task.wait(8)
+    pcall(function()
+        TweenService:Create(WelcomeFrame, TweenInfo.new(0.7, Enum.EasingStyle.Sine), {BackgroundTransparency = 1}):Play()
+        TweenService:Create(WelcomeLogo, TweenInfo.new(0.7, Enum.EasingStyle.Sine), {ImageTransparency = 1}):Play()
+        TweenService:Create(WelcomeSub, TweenInfo.new(0.7, Enum.EasingStyle.Sine), {TextTransparency = 1}):Play()
+        TweenService:Create(WelcomeLoading, TweenInfo.new(0.7, Enum.EasingStyle.Sine), {TextTransparency = 1}):Play()
+        TweenService:Create(WelcomeLine, TweenInfo.new(0.7, Enum.EasingStyle.Sine), {BackgroundTransparency = 1}):Play()
+        RainContainer:Destroy()
+        task.wait(0.8)
+        WelcomeFrame:Destroy()
+        MainFrame.Visible = true
+    end)
+end)
+
+-- TOP BAR
 local TopBar = Instance.new("Frame")
-TopBar.Size = UDim2.new(1, 0, 0, 36)
+TopBar.Size = UDim2.new(1, 0, 0, 44)
 TopBar.BackgroundColor3 = HITAM_PANEL
+TopBar.BackgroundTransparency = 0.3
 TopBar.BorderSizePixel = 0
-TopBar.ZIndex = 2
+TopBar.ZIndex = 20
 TopBar.Parent = MainFrame
-Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 14)
 
 local TopBarBottom = Instance.new("Frame")
-TopBarBottom.Size = UDim2.new(1, 0, 0, 6)
-TopBarBottom.Position = UDim2.new(0, 0, 1, -6)
+TopBarBottom.Size = UDim2.new(1, 0, 0, 10)
+TopBarBottom.Position = UDim2.new(0, 0, 1, -10)
 TopBarBottom.BackgroundColor3 = HITAM_PANEL
+TopBarBottom.BackgroundTransparency = 0.3
 TopBarBottom.BorderSizePixel = 0
-TopBarBottom.ZIndex = 2
+TopBarBottom.ZIndex = 20
 TopBarBottom.Parent = TopBar
 
+local TopBarLine = Instance.new("Frame")
+TopBarLine.Size = UDim2.new(1, -30, 0, 2)
+TopBarLine.Position = UDim2.new(0, 15, 1, -2)
+TopBarLine.BackgroundColor3 = DARAH_AKSEN
+TopBarLine.BorderSizePixel = 0
+TopBarLine.ZIndex = 21
+TopBarLine.Parent = TopBar
+
 local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Size = UDim2.new(1, -60, 1, 0)
-TitleLabel.Position = UDim2.new(0, 14, 0, 0)
+TitleLabel.Size = UDim2.new(1, -70, 1, 0)
+TitleLabel.Position = UDim2.new(0, 18, 0, 0)
 TitleLabel.BackgroundTransparency = 1
 TitleLabel.Text = "707 KILLER"
 TitleLabel.Font = Enum.Font.GothamBold
 TitleLabel.TextSize = 16
 TitleLabel.TextColor3 = DARAH_TERANG
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-TitleLabel.ZIndex = 3
+TitleLabel.ZIndex = 21
 TitleLabel.Parent = TopBar
 
 local CloseBtn = Instance.new("TextButton")
-CloseBtn.Size = UDim2.new(0, 22, 0, 22)
-CloseBtn.Position = UDim2.new(1, -28, 0, 7)
+CloseBtn.Size = UDim2.new(0, 26, 0, 26)
+CloseBtn.Position = UDim2.new(1, -34, 0, 9)
 CloseBtn.BackgroundColor3 = HITAM_ELEMEN
 CloseBtn.Text = "✕"
 CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.TextSize = 12
+CloseBtn.TextSize = 13
 CloseBtn.TextColor3 = DARAH_AKSEN
 CloseBtn.BorderSizePixel = 0
 CloseBtn.AutoButtonColor = false
-CloseBtn.ZIndex = 3
+CloseBtn.ZIndex = 21
 Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
 CloseBtn.Parent = TopBar
 
-CloseBtn.MouseEnter:Connect(function()
-    CloseBtn.BackgroundColor3 = DARAH_AKSEN
-    CloseBtn.TextColor3 = PUTIH_UTAMA
-end)
-CloseBtn.MouseLeave:Connect(function()
-    CloseBtn.BackgroundColor3 = HITAM_ELEMEN
-    CloseBtn.TextColor3 = DARAH_AKSEN
-end)
 CloseBtn.MouseButton1Click:Connect(function()
-    ScreenGui.Enabled = false
+    MainFrame.Visible = false
 end)
 
--- ============================================================
--- 🩸 CONTENT
--- ============================================================
-local Content = Instance.new("Frame")
-Content.Size = UDim2.new(1, 0, 1, -36)
-Content.Position = UDim2.new(0, 0, 0, 36)
-Content.BackgroundTransparency = 1
-Content.ZIndex = 2
-Content.Parent = MainFrame
+-- TAB BAR
+local TabBar = Instance.new("Frame")
+TabBar.Size = UDim2.new(1, -24, 0, 34)
+TabBar.Position = UDim2.new(0, 12, 0, 54)
+TabBar.BackgroundColor3 = HITAM_PANEL
+TabBar.BackgroundTransparency = 0.3
+TabBar.BorderSizePixel = 0
+TabBar.ZIndex = 20
+Instance.new("UICorner", TabBar).CornerRadius = UDim.new(0, 8)
+TabBar.Parent = MainFrame
 
--- ============================================================
--- ⚡ FARM SECTION
--- ============================================================
-local FarmSection = Instance.new("Frame")
-FarmSection.Size = UDim2.new(0.5, -18, 1, -24)
-FarmSection.Position = UDim2.new(0, 12, 0, 12)
-FarmSection.BackgroundColor3 = HITAM_PANEL
-FarmSection.BorderSizePixel = 0
-FarmSection.ZIndex = 3
-Instance.new("UICorner", FarmSection).CornerRadius = UDim.new(0, 8)
-FarmSection.Parent = Content
+local TabFarm = Instance.new("TextButton")
+TabFarm.Size = UDim2.new(0.5, -5, 1, -5)
+TabFarm.Position = UDim2.new(0, 2.5, 0, 2.5)
+TabFarm.BackgroundColor3 = DARAH_AKSEN
+TabFarm.Text = "⚡ FARM"
+TabFarm.Font = Enum.Font.GothamBold
+TabFarm.TextSize = 12
+TabFarm.TextColor3 = PUTIH_UTAMA
+TabFarm.BorderSizePixel = 0
+TabFarm.AutoButtonColor = false
+TabFarm.ZIndex = 21
+Instance.new("UICorner", TabFarm).CornerRadius = UDim.new(0, 6)
+TabFarm.Parent = TabBar
 
-AddShadow(FarmSection, 0.65)
+local TabStats = Instance.new("TextButton")
+TabStats.Size = UDim2.new(0.5, -5, 1, -5)
+TabStats.Position = UDim2.new(0.5, 2.5, 0, 2.5)
+TabStats.BackgroundColor3 = HITAM_ELEMEN
+TabStats.BackgroundTransparency = 0.3
+TabStats.Text = "📊 STATS"
+TabStats.Font = Enum.Font.GothamBold
+TabStats.TextSize = 12
+TabStats.TextColor3 = PUTIH_SEKUNDER
+TabStats.BorderSizePixel = 0
+TabStats.AutoButtonColor = false
+TabStats.ZIndex = 21
+Instance.new("UICorner", TabStats).CornerRadius = UDim.new(0, 6)
+TabStats.Parent = TabBar
+
+local ContentArea = Instance.new("Frame")
+ContentArea.Size = UDim2.new(1, -24, 1, -110)
+ContentArea.Position = UDim2.new(0, 12, 0, 100)
+ContentArea.BackgroundTransparency = 1
+ContentArea.ZIndex = 15
+ContentArea.Parent = MainFrame
+
+-- FARM CONTENT
+local FarmContent = Instance.new("Frame")
+FarmContent.Size = UDim2.new(1, 0, 1, 0)
+FarmContent.BackgroundColor3 = HITAM_PANEL
+FarmContent.BackgroundTransparency = 0.5
+FarmContent.BorderSizePixel = 0
+FarmContent.ZIndex = 15
+FarmContent.Visible = true
+Instance.new("UICorner", FarmContent).CornerRadius = UDim.new(0, 10)
+FarmContent.Parent = ContentArea
 
 local FarmTitle = Instance.new("TextLabel")
-FarmTitle.Size = UDim2.new(1, -16, 0, 22)
-FarmTitle.Position = UDim2.new(0, 8, 0, 8)
+FarmTitle.Size = UDim2.new(1, -24, 0, 26)
+FarmTitle.Position = UDim2.new(0, 12, 0, 8)
 FarmTitle.BackgroundTransparency = 1
 FarmTitle.Text = "⚡ FARM SETTINGS"
 FarmTitle.Font = Enum.Font.GothamBold
-FarmTitle.TextSize = 12
-FarmTitle.TextColor3 = DARAH_AKSEN
+FarmTitle.TextSize = 13
+FarmTitle.TextColor3 = DARAH_TERANG
 FarmTitle.TextXAlignment = Enum.TextXAlignment.Left
-FarmTitle.ZIndex = 4
-FarmTitle.Parent = FarmSection
+FarmTitle.ZIndex = 16
+FarmTitle.Parent = FarmContent
 
-local ToggleFrame = Instance.new("Frame")
-ToggleFrame.Size = UDim2.new(1, -16, 0, 30)
-ToggleFrame.Position = UDim2.new(0, 8, 0, 38)
-ToggleFrame.BackgroundTransparency = 1
-ToggleFrame.ZIndex = 4
-ToggleFrame.Parent = FarmSection
+local ToggleRow = Instance.new("Frame")
+ToggleRow.Size = UDim2.new(1, -20, 0, 50)
+ToggleRow.Position = UDim2.new(0, 10, 0, 42)
+ToggleRow.BackgroundColor3 = HITAM_ELEMEN
+ToggleRow.BackgroundTransparency = 0.4
+ToggleRow.BorderSizePixel = 0
+ToggleRow.ZIndex = 16
+Instance.new("UICorner", ToggleRow).CornerRadius = UDim.new(0, 8)
+ToggleRow.Parent = FarmContent
 
 local ToggleLabel = Instance.new("TextLabel")
 ToggleLabel.Size = UDim2.new(0.55, 0, 1, 0)
+ToggleLabel.Position = UDim2.new(0, 14, 0, 0)
 ToggleLabel.BackgroundTransparency = 1
 ToggleLabel.Text = "Autofarming"
 ToggleLabel.Font = Enum.Font.Gotham
-ToggleLabel.TextSize = 12
+ToggleLabel.TextSize = 13
 ToggleLabel.TextColor3 = PUTIH_UTAMA
 ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
-ToggleLabel.ZIndex = 4
-ToggleLabel.Parent = ToggleFrame
+ToggleLabel.ZIndex = 17
+ToggleLabel.Parent = ToggleRow
 
-local ToggleBtn = Instance.new("TextButton")
-ToggleBtn.Size = UDim2.new(0, 50, 0, 24)
-ToggleBtn.Position = UDim2.new(1, -50, 0.5, -12)
-ToggleBtn.BackgroundColor3 = HITAM_ELEMEN
-ToggleBtn.Text = "OFF"
-ToggleBtn.Font = Enum.Font.GothamBold
-ToggleBtn.TextSize = 11
-ToggleBtn.TextColor3 = PUTIH_UTAMA
-ToggleBtn.BorderSizePixel = 0
-ToggleBtn.AutoButtonColor = false
-ToggleBtn.ZIndex = 4
-Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 5)
-ToggleBtn.Parent = ToggleFrame
+-- SAKLAR
+local SwitchFrame = Instance.new("Frame")
+SwitchFrame.Size = UDim2.new(0, 65, 0, 32)
+SwitchFrame.Position = UDim2.new(1, -77, 0.5, -16)
+SwitchFrame.BackgroundColor3 = ABU_SAKLAR
+SwitchFrame.BorderSizePixel = 0
+SwitchFrame.ZIndex = 17
+Instance.new("UICorner", SwitchFrame).CornerRadius = UDim.new(1, 0)
+SwitchFrame.Parent = ToggleRow
+
+local SwitchStroke = Instance.new("UIStroke")
+SwitchStroke.Thickness = 2
+SwitchStroke.Color = DARAH_AKSEN
+SwitchStroke.Parent = SwitchFrame
+
+local SwitchKnob = Instance.new("Frame")
+SwitchKnob.Size = UDim2.new(0, 24, 0, 24)
+SwitchKnob.Position = UDim2.new(0, 4, 0.5, -12)
+SwitchKnob.BackgroundColor3 = PUTIH_UTAMA
+SwitchKnob.BorderSizePixel = 0
+SwitchKnob.ZIndex = 18
+Instance.new("UICorner", SwitchKnob).CornerRadius = UDim.new(1, 0)
+SwitchKnob.Parent = SwitchFrame
+
+local SwitchBtn = Instance.new("TextButton")
+SwitchBtn.Size = UDim2.new(1, 0, 1, 0)
+SwitchBtn.BackgroundTransparency = 1
+SwitchBtn.Text = ""
+SwitchBtn.BorderSizePixel = 0
+SwitchBtn.AutoButtonColor = false
+SwitchBtn.ZIndex = 19
+SwitchBtn.Parent = SwitchFrame
 
 local toggleState = false
-ToggleBtn.MouseButton1Click:Connect(function()
+
+SwitchBtn.MouseButton1Click:Connect(function()
     toggleState = not toggleState
-    ToggleBtn.Text = toggleState and "ON" or "OFF"
-    ToggleBtn.BackgroundColor3 = toggleState and DARAH_AKSEN or HITAM_ELEMEN
     if toggleState then
+        TweenService:Create(SwitchFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            BackgroundColor3 = DARAH_AKSEN
+        }):Play()
+        TweenService:Create(SwitchKnob, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Position = UDim2.new(1, -28, 0.5, -12)
+        }):Play()
         if _G.StartFullyFarm then task.spawn(_G.StartFullyFarm) end
     else
+        TweenService:Create(SwitchFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            BackgroundColor3 = ABU_SAKLAR
+        }):Play()
+        TweenService:Create(SwitchKnob, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Position = UDim2.new(0, 4, 0.5, -12)
+        }):Play()
         if _G.StopFullyFarm then _G.StopFullyFarm() end
     end
 end)
 
--- Slider
-local SliderFrame = Instance.new("Frame")
-SliderFrame.Size = UDim2.new(1, -16, 0, 55)
-SliderFrame.Position = UDim2.new(0, 8, 0, 76)
-SliderFrame.BackgroundTransparency = 1
-SliderFrame.ZIndex = 4
-SliderFrame.Parent = FarmSection
+-- SLIDER
+local SliderRow = Instance.new("Frame")
+SliderRow.Size = UDim2.new(1, -20, 0, 100)
+SliderRow.Position = UDim2.new(0, 10, 0, 104)
+SliderRow.BackgroundColor3 = HITAM_ELEMEN
+SliderRow.BackgroundTransparency = 0.4
+SliderRow.BorderSizePixel = 0
+SliderRow.ZIndex = 16
+Instance.new("UICorner", SliderRow).CornerRadius = UDim.new(0, 8)
+SliderRow.Parent = FarmContent
 
 local SliderLabel = Instance.new("TextLabel")
-SliderLabel.Size = UDim2.new(1, 0, 0, 16)
+SliderLabel.Size = UDim2.new(1, -24, 0, 20)
+SliderLabel.Position = UDim2.new(0, 12, 0, 10)
 SliderLabel.BackgroundTransparency = 1
 SliderLabel.Text = "Buy Amount: " .. FarmSettings.Amount
 SliderLabel.Font = Enum.Font.Gotham
-SliderLabel.TextSize = 11
+SliderLabel.TextSize = 12
 SliderLabel.TextColor3 = PUTIH_SEKUNDER
 SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
-SliderLabel.ZIndex = 4
-SliderLabel.Parent = SliderFrame
+SliderLabel.ZIndex = 17
+SliderLabel.Parent = SliderRow
 
 local SliderTrack = Instance.new("Frame")
-SliderTrack.Size = UDim2.new(1, 0, 0, 6)
-SliderTrack.Position = UDim2.new(0, 0, 0, 22)
-SliderTrack.BackgroundColor3 = HITAM_ELEMEN
+SliderTrack.Size = UDim2.new(1, -24, 0, 10)
+SliderTrack.Position = UDim2.new(0, 12, 0, 36)
+SliderTrack.BackgroundColor3 = HITAM_LATAR
+SliderTrack.BackgroundTransparency = 0.2
 SliderTrack.BorderSizePixel = 0
-SliderTrack.ZIndex = 4
+SliderTrack.ZIndex = 17
 Instance.new("UICorner", SliderTrack).CornerRadius = UDim.new(1, 0)
-SliderTrack.Parent = SliderFrame
+SliderTrack.Parent = SliderRow
 
 local SliderFill = Instance.new("Frame")
 SliderFill.Size = UDim2.new((FarmSettings.Amount - 1) / 49, 0, 1, 0)
 SliderFill.BackgroundColor3 = DARAH_AKSEN
 SliderFill.BorderSizePixel = 0
-SliderFill.ZIndex = 5
+SliderFill.ZIndex = 18
 Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(1, 0)
 SliderFill.Parent = SliderTrack
 
 local SliderKnob = Instance.new("Frame")
-SliderKnob.Size = UDim2.new(0, 14, 0, 14)
-SliderKnob.Position = UDim2.new((FarmSettings.Amount - 1) / 49, -7, 0.5, -7)
+SliderKnob.Size = UDim2.new(0, 16, 0, 16)
+SliderKnob.Position = UDim2.new((FarmSettings.Amount - 1) / 49, -8, 0.5, -8)
 SliderKnob.BackgroundColor3 = PUTIH_UTAMA
 SliderKnob.BorderSizePixel = 0
-SliderKnob.ZIndex = 6
+SliderKnob.ZIndex = 19
 Instance.new("UICorner", SliderKnob).CornerRadius = UDim.new(1, 0)
 SliderKnob.Parent = SliderTrack
 
-local TextboxFrame = Instance.new("Frame")
-TextboxFrame.Size = UDim2.new(1, 0, 0, 24)
-TextboxFrame.Position = UDim2.new(0, 0, 0, 36)
-TextboxFrame.BackgroundColor3 = HITAM_ELEMEN
-TextboxFrame.BorderSizePixel = 0
-TextboxFrame.ZIndex = 4
-Instance.new("UICorner", TextboxFrame).CornerRadius = UDim.new(0, 5)
-TextboxFrame.Parent = SliderFrame
-
 local Textbox = Instance.new("TextBox")
-Textbox.Size = UDim2.new(1, -16, 1, 0)
-Textbox.Position = UDim2.new(0, 8, 0, 0)
-Textbox.BackgroundTransparency = 1
+Textbox.Size = UDim2.new(1, -24, 0, 30)
+Textbox.Position = UDim2.new(0, 12, 0, 60)
+Textbox.BackgroundColor3 = HITAM_LATAR
+Textbox.BackgroundTransparency = 0.2
 Textbox.Text = tostring(FarmSettings.Amount)
-Textbox.PlaceholderText = "Type amount (1-50)..."
+Textbox.PlaceholderText = "Type amount..."
 Textbox.Font = Enum.Font.Gotham
-Textbox.TextSize = 11
+Textbox.TextSize = 12
 Textbox.TextColor3 = PUTIH_UTAMA
 Textbox.PlaceholderColor3 = PUTIH_SEKUNDER
-Textbox.TextXAlignment = Enum.TextXAlignment.Left
+Textbox.TextXAlignment = Enum.TextXAlignment.Center
 Textbox.ClearTextOnFocus = false
-Textbox.ZIndex = 5
-Textbox.Parent = TextboxFrame
+Textbox.ZIndex = 17
+Instance.new("UICorner", Textbox).CornerRadius = UDim.new(0, 6)
+Textbox.Parent = SliderRow
 
 local sliderDragging = false
 local function updateSlider(val)
@@ -1678,7 +1442,7 @@ local function updateSlider(val)
     FarmSettings.Amount = val
     local pct = (val - 1) / 49
     SliderFill.Size = UDim2.new(pct, 0, 1, 0)
-    SliderKnob.Position = UDim2.new(pct, -7, 0.5, -7)
+    SliderKnob.Position = UDim2.new(pct, -8, 0.5, -8)
     SliderLabel.Text = "Buy Amount: " .. val
     Textbox.Text = tostring(val)
 end
@@ -1713,87 +1477,97 @@ Textbox.FocusLost:Connect(function()
     end
 end)
 
--- ============================================================
--- 📊 STATS SECTION
--- ============================================================
-local StatsSection = Instance.new("Frame")
-StatsSection.Size = UDim2.new(0.5, -18, 1, -24)
-StatsSection.Position = UDim2.new(0.5, 6, 0, 12)
-StatsSection.BackgroundColor3 = HITAM_PANEL
-StatsSection.BorderSizePixel = 0
-StatsSection.ZIndex = 3
-Instance.new("UICorner", StatsSection).CornerRadius = UDim.new(0, 8)
-StatsSection.Parent = Content
-
-AddShadow(StatsSection, 0.65)
+-- STATS CONTENT
+local StatsContent = Instance.new("Frame")
+StatsContent.Size = UDim2.new(1, 0, 1, 0)
+StatsContent.BackgroundColor3 = HITAM_PANEL
+StatsContent.BackgroundTransparency = 0.5
+StatsContent.BorderSizePixel = 0
+StatsContent.ZIndex = 15
+StatsContent.Visible = false
+Instance.new("UICorner", StatsContent).CornerRadius = UDim.new(0, 10)
+StatsContent.Parent = ContentArea
 
 local StatsTitle = Instance.new("TextLabel")
-StatsTitle.Size = UDim2.new(1, -16, 0, 22)
-StatsTitle.Position = UDim2.new(0, 8, 0, 8)
+StatsTitle.Size = UDim2.new(1, -24, 0, 26)
+StatsTitle.Position = UDim2.new(0, 12, 0, 8)
 StatsTitle.BackgroundTransparency = 1
 StatsTitle.Text = "📊 STATISTICS"
 StatsTitle.Font = Enum.Font.GothamBold
-StatsTitle.TextSize = 12
-StatsTitle.TextColor3 = DARAH_AKSEN
+StatsTitle.TextSize = 13
+StatsTitle.TextColor3 = DARAH_TERANG
 StatsTitle.TextXAlignment = Enum.TextXAlignment.Left
-StatsTitle.ZIndex = 4
-StatsTitle.Parent = StatsSection
+StatsTitle.ZIndex = 16
+StatsTitle.Parent = StatsContent
 
-local MarshLabel = Instance.new("TextLabel")
-MarshLabel.Size = UDim2.new(1, -16, 0, 20)
-MarshLabel.Position = UDim2.new(0, 8, 0, 40)
-MarshLabel.BackgroundTransparency = 1
-MarshLabel.Text = "🍬 Marshmallow Made: 0"
-MarshLabel.Font = Enum.Font.Gotham
-MarshLabel.TextSize = 12
-MarshLabel.TextColor3 = PUTIH_UTAMA
-MarshLabel.TextXAlignment = Enum.TextXAlignment.Left
-MarshLabel.ZIndex = 4
-MarshLabel.Parent = StatsSection
+local function BuatStatRow(yPos, label, warna)
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, -20, 0, 44)
+    row.Position = UDim2.new(0, 10, 0, yPos)
+    row.BackgroundColor3 = HITAM_ELEMEN
+    row.BackgroundTransparency = 0.4
+    row.BorderSizePixel = 0
+    row.ZIndex = 16
+    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 8)
+    row.Parent = StatsContent
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, -24, 1, 0)
+    lbl.Position = UDim2.new(0, 12, 0, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = label
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextSize = 13
+    lbl.TextColor3 = warna or PUTIH_UTAMA
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.ZIndex = 17
+    lbl.Parent = row
+    return lbl
+end
 
-local SoldLabel = Instance.new("TextLabel")
-SoldLabel.Size = UDim2.new(1, -16, 0, 20)
-SoldLabel.Position = UDim2.new(0, 8, 0, 62)
-SoldLabel.BackgroundTransparency = 1
-SoldLabel.Text = "💀 Sold: 0"
-SoldLabel.Font = Enum.Font.Gotham
-SoldLabel.TextSize = 12
-SoldLabel.TextColor3 = PUTIH_UTAMA
-SoldLabel.TextXAlignment = Enum.TextXAlignment.Left
-SoldLabel.ZIndex = 4
-SoldLabel.Parent = StatsSection
+local MarshLabel = BuatStatRow(42, "🍬 Marshmallow Made: 0", PUTIH_UTAMA)
+local SoldLabel = BuatStatRow(96, "💀 Sold: 0", PUTIH_UTAMA)
+local StatusLabel = BuatStatRow(150, "Status: Idle", PUTIH_SEKUNDER)
 
-local StatusLabel = Instance.new("TextLabel")
-StatusLabel.Size = UDim2.new(1, -16, 0, 40)
-StatusLabel.Position = UDim2.new(0, 8, 0, 84)
-StatusLabel.BackgroundTransparency = 1
-StatusLabel.Text = "Status: Idle"
-StatusLabel.Font = Enum.Font.Gotham
-StatusLabel.TextSize = 11
-StatusLabel.TextColor3 = PUTIH_SEKUNDER
-StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
-StatusLabel.TextWrapped = true
-StatusLabel.ZIndex = 4
-StatusLabel.Parent = StatsSection
+local function SwitchTab(tab)
+    if tab == "farm" then
+        FarmContent.Visible = true
+        StatsContent.Visible = false
+        TabFarm.BackgroundColor3 = DARAH_AKSEN
+        TabFarm.TextColor3 = PUTIH_UTAMA
+        TabStats.BackgroundColor3 = HITAM_ELEMEN
+        TabStats.TextColor3 = PUTIH_SEKUNDER
+    else
+        FarmContent.Visible = false
+        StatsContent.Visible = true
+        TabFarm.BackgroundColor3 = HITAM_ELEMEN
+        TabFarm.TextColor3 = PUTIH_SEKUNDER
+        TabStats.BackgroundColor3 = DARAH_AKSEN
+        TabStats.TextColor3 = PUTIH_UTAMA
+    end
+end
+
+TabFarm.MouseButton1Click:Connect(function() SwitchTab("farm") end)
+TabStats.MouseButton1Click:Connect(function() SwitchTab("stats") end)
 
 task.spawn(function()
     while ScreenGui.Parent do
         pcall(function()
-            MarshLabel.Text = "🍬 Marshmallow Made: " .. (FarmState.MarshmallowsMade or 0)
-            SoldLabel.Text = "💀 Sold: " .. (FarmState.Sold or 0)
-            if FarmRunning then
-                StatusLabel.Text = "🩸 Status: " .. (FarmState.Step or "Running")
-            else
-                StatusLabel.Text = "Status: Stopped"
+            local fs = _G.FarmState or FarmState
+            if fs then
+                MarshLabel.Text = "🍬 Marshmallow Made: " .. (fs.MarshmallowsMade or 0)
+                SoldLabel.Text = "💀 Sold: " .. (fs.Sold or 0)
+                if FarmRunning then
+                    StatusLabel.Text = "🩸 Status: " .. (fs.Step or "Running")
+                    StatusLabel.TextColor3 = DARAH_TERANG
+                else
+                    StatusLabel.Text = "Status: Stopped"
+                    StatusLabel.TextColor3 = PUTIH_SEKUNDER
+                end
             end
         end)
         task.wait(0.5)
-    end
-end)
+    endend)
 
--- ============================================================
--- 🖱️ DRAG
--- ============================================================
 local dragData = {active = false, startMouse = Vector2.new(), startPos = UDim2.new()}
 
 TopBar.InputBegan:Connect(function(input)
@@ -1802,9 +1576,7 @@ TopBar.InputBegan:Connect(function(input)
         dragData.startMouse = input.Position
         dragData.startPos = MainFrame.Position
         input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragData.active = false
-            end
+            if input.UserInputState == Enum.UserInputState.End then dragData.active = false end
         end)
     end
 end)
@@ -1821,20 +1593,72 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- ============================================================
--- ⌨️ KEYBIND F3
--- ============================================================
+-- TOMBOL BUKA TUTUP
+local ToggleButton = Instance.new("ImageButton")
+ToggleButton.Size = UDim2.new(0, 80, 0, 80)
+ToggleButton.Position = UDim2.new(0, 20, 0, 120)
+ToggleButton.BackgroundTransparency = 1
+ToggleButton.Image = TOMBOL_IMAGE_ID
+ToggleButton.ImageColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.ScaleType = Enum.ScaleType.Fit
+ToggleButton.ZIndex = 100
+ToggleButton.Active = true
+ToggleButton.Parent = ScreenGui
+Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(1, 0)
+
+local function ToggleUI()
+    MainFrame.Visible = not MainFrame.Visible
+end
+
+ToggleButton.MouseButton1Click:Connect(function() ToggleUI() end)
+
+local btnDragData = {active = false, startMouse = Vector2.new(), startPos = UDim2.new()}
+
+ToggleButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        btnDragData.active = true
+        btnDragData.startMouse = input.Position
+        btnDragData.startPos = ToggleButton.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then btnDragData.active = false end
+        end)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if btnDragData.active and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - btnDragData.startMouse
+        ToggleButton.Position = UDim2.new(
+            btnDragData.startPos.X.Scale,
+            btnDragData.startPos.X.Offset + delta.X,
+            btnDragData.startPos.Y.Scale,
+            btnDragData.startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
 UserInputService.InputBegan:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.F3 then
-        ScreenGui.Enabled = not ScreenGui.Enabled
+        MainFrame.Visible = not MainFrame.Visible
+    end
+end)
+
+local isMuted = false
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.M then
+        isMuted = not isMuted
+        BackgroundMusic.Playing = not isMuted
     end
 end)
 
 print("========================================")
-print("🩸 707 KILLER UI LOADED")
+print("🩸 707 KILLER — FULL SCRIPT LOADED")
 print("========================================")
-print("🩸 Warna: Darah, Hitam Pekat, Putih")
-print("🩸 Shadow: Merah")
-print("🩸 Background: Hitam (tanpa gambar)")
-print("⌨️ F3 = Toggle UI")
+print("🩸 Farm System: AKTIF")
+print("🩸 UI: 300 x 400")
+print("🩸 Saklar Autofarm: METODE SAKLAR")
+print("🩸 Tombol Buka Tutup: 80x80")
+print("🩸 Welcome: 8 detik + Logo + Hujan")
+print("🩸 Lagu: Volume 1.5")
+print("⌨️ F3 = Toggle UI | M = Mute")
 print("========================================")
