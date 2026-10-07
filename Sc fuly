@@ -1,12 +1,12 @@
 -- ============================================================
 -- 🏭 JENOWA STORE - MULTIFARM ULTIMATE
--- ANTI-KICK EDITION (ERROR 267 FIX)
+-- LITE EDITION (ANTI FREEZE + ANTI KICK)
 -- ============================================================
 
 print("🚀 LOADING JENOWA STORE...")
 
 -- ============================================================
--- 🛡️ BYPASS RINGAN (TIDAK AGRESIF)
+-- 🛡️ BYPASS RINGAN
 -- ============================================================
 if not filtergc then
     filtergc = function(ftype, filters, returnSingle)
@@ -47,12 +47,11 @@ local LP = Players.LocalPlayer
 local PlayerGui = LP:WaitForChild("PlayerGui")
 
 -- ============================================================
--- 📍 KONSTANTA (RESPAWN WARP DITURUNKAN)
+-- 📍 KONSTANTA
 -- ============================================================
-local RESPAWN_WARP = Vector3.new(0, 100, 0)  -- Turun dari 500 ke 100
-local WALK_SPEED = 16  -- Pakai speed normal (bukan 1)
+local RESPAWN_WARP = Vector3.new(0, 100, 0)
+local WALK_SPEED = 16
 local APART_OFFSET = 0.2
-local TELEPORT_DELAY = 2  -- Jeda antar teleport
 
 -- ============================================================
 -- 🔧 STATE
@@ -125,28 +124,39 @@ local function IsAlive()
 end
 
 -- ============================================================
--- 🛡️ NOCLIP (LEBIH LEMBUT)
+-- 🛡️ NOCLIP (LITE - 10fps)
 -- ============================================================
-local noclip_active = false
-
-local function EnableNoclip()
-    if noclip_active then return end
-    noclip_active = true
-    RunService:BindToRenderStep("jenowa_noclip", 400, function()
-        if not noclip_active then return end
-        local c = LP.Character
-        if not c then return end
-        local hum = c:FindFirstChildOfClass("Humanoid")
-        if not hum or hum.Health <= 0 then return end
-        for _, p in pairs(c:GetDescendants()) do
-            if p:IsA("BasePart") then
-                pcall(function() p.CanCollide = false end)
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        pcall(function()
+            local c = LP.Character
+            if not c then return end
+            local hum = c:FindFirstChildOfClass("Humanoid")
+            if not hum or hum.Health <= 0 then return end
+            for _, p in pairs(c:GetChildren()) do
+                if p:IsA("BasePart") then
+                    p.CanCollide = false
+                end
             end
-        end
-    end)
-end
+        end)
+    end
+end)
 
-EnableNoclip()
+-- ============================================================
+-- 🚶 WALKSPEED FORCE (2s)
+-- ============================================================
+task.spawn(function()
+    while true do
+        task.wait(2)
+        pcall(function()
+            local hum = GetHumanoid()
+            if hum and hum.WalkSpeed ~= WALK_SPEED then
+                hum.WalkSpeed = WALK_SPEED
+            end
+        end)
+    end
+end)
 
 -- ============================================================
 -- 🏍️ VEHICLE DETECTION
@@ -165,7 +175,7 @@ local function IsOnBike()
 end
 
 -- ============================================================
--- 🔒 BIKE LOCK (TANPA WELD, LOOP 0.5s)
+-- 🔒 BIKE LOCK (1s)
 -- ============================================================
 local function CleanupBikeLock()
     BikeLock.Enabled = false
@@ -179,7 +189,7 @@ local function StartBikeLock(seat)
     
     BikeLock.Thread = task.spawn(function()
         while BikeLock.Enabled do
-            task.wait(0.5)  -- dari 0.1 → 0.5
+            task.wait(1)
             
             if not LP.Character then break end
             
@@ -188,7 +198,6 @@ local function StartBikeLock(seat)
             if hum.Health <= 0 then break end
             if not seat or not seat.Parent then break end
             
-            -- Hanya paksa sit, TANPA weld paksa
             if not hum.SeatPart then
                 pcall(function()
                     hum.Sit = true
@@ -212,7 +221,7 @@ local function ForceDismount()
 end
 
 -- ============================================================
--- 🚀 TELEPORT PAKAI TWEEN (BUKAN SET CFRAME)
+-- 🚀 TELEPORT TWEEN
 -- ============================================================
 local function TweenTeleport(targetPos, duration)
     duration = duration or 1.5
@@ -224,9 +233,8 @@ local function TweenTeleport(targetPos, duration)
     local startCF = hrp.CFrame
     local endCF = CFrame.new(targetPos) * (startCF - startCF.Position)
     
-    -- Anchor karakter
     local parts = {}
-    for _, p in pairs(char:GetDescendants()) do
+    for _, p in pairs(char:GetChildren()) do
         if p:IsA("BasePart") then
             parts[p] = p.Anchored
             p.Anchored = true
@@ -239,7 +247,6 @@ local function TweenTeleport(targetPos, duration)
     tw:Play()
     tw.Completed:Wait()
     
-    -- Unanchor
     for p, orig in pairs(parts) do
         if p and p.Parent then
             p.Anchored = orig
@@ -251,7 +258,7 @@ local function TweenTeleport(targetPos, duration)
 end
 
 -- ============================================================
--- 🚀 TELEPORT DEATH (PAKAI TWEEN, JANGAN SET CFRAME LANGSUNG)
+-- 🚀 TELEPORT DEATH
 -- ============================================================
 local function TeleportDeath(targetPos)
     if not LP.Character then return false end
@@ -260,19 +267,9 @@ local function TeleportDeath(targetPos)
     local hum = GetHumanoid()
     if not root or not hum then return false end
     
-    -- Tween ke RESPAWN_WARP
-    local char = LP.Character
-    local parts = {}
-    for _, p in pairs(char:GetDescendants()) do
-        if p:IsA("BasePart") then
-            parts[p] = p.Anchored
-            p.Anchored = true
-        end
-    end
-    
-    local endCF = CFrame.new(RESPAWN_WARP)
     pcall(function()
-        root.CFrame = endCF
+        root.CFrame = CFrame.new(RESPAWN_WARP)
+        root.Velocity = Vector3.zero
     end)
     
     task.wait(0.3)
@@ -281,7 +278,6 @@ local function TeleportDeath(targetPos)
         hum.Health = 0
     end)
     
-    -- Tunggu respawn
     local startT = os.clock()
     local respawned = false
     
@@ -297,27 +293,23 @@ local function TeleportDeath(targetPos)
             respawned = true
             break
         end
-        task.wait(0.2)
+        task.wait(0.3)
     end
     
     if conn then pcall(function() conn:Disconnect() end) end
     
-    if not respawned then
-        print("⚠️ Respawn timeout")
-        return false
-    end
+    if not respawned then return false end
     
     task.wait(1)
     
     local newRoot = GetRoot()
     if not newRoot then return false end
     
-    -- Tween ke target
-    local newChar = LP.Character
-    local newParts = {}
-    for _, p in pairs(newChar:GetDescendants()) do
+    local char = LP.Character
+    local parts = {}
+    for _, p in pairs(char:GetChildren()) do
         if p:IsA("BasePart") then
-            newParts[p] = p.Anchored
+            parts[p] = p.Anchored
             p.Anchored = true
         end
     end
@@ -331,7 +323,7 @@ local function TeleportDeath(targetPos)
     tw:Play()
     tw.Completed:Wait()
     
-    for p, orig in pairs(newParts) do
+    for p, orig in pairs(parts) do
         if p and p.Parent then
             p.Anchored = orig
             p.AssemblyLinearVelocity = Vector3.zero
@@ -343,7 +335,7 @@ local function TeleportDeath(targetPos)
 end
 
 -- ============================================================
--- 🔥 TWEEN TELEPORT VEHICLE
+-- 🔥 TWEEN VEHICLE TELEPORT
 -- ============================================================
 local isTeleporting = false
 
@@ -364,12 +356,10 @@ local function TweenTeleportVehicle(targetPos)
             or vehicle:FindFirstChildWhichIsA("BasePart")
         if not primaryPart then error("No primary part") end
         
-        local startPos = primaryPart.Position
         local finalVector = Vector3.new(targetPos.X, targetPos.Y + 3, targetPos.Z)
         
-        -- Pakai tween sederhana (tidak 3 step)
         local vehicleParts = {}
-        for _, part in pairs(vehicle:GetDescendants()) do
+        for _, part in pairs(vehicle:GetChildren()) do
             if part:IsA("BasePart") then
                 vehicleParts[part] = part.Anchored
                 part.Anchored = true
@@ -377,28 +367,23 @@ local function TweenTeleportVehicle(targetPos)
         end
         
         local charParts = {}
-        for _, part in pairs(char:GetDescendants()) do
+        for _, part in pairs(char:GetChildren()) do
             if part:IsA("BasePart") then
                 charParts[part] = part.Anchored
                 part.Anchored = true
             end
         end
         
-        -- Tween vehicle
         local vehicleCF = primaryPart.CFrame
         local vehicleOffset = vehicleCF - vehicleCF.Position
         local targetCF = CFrame.new(finalVector) * vehicleOffset
         
-        local charOffset = vehicleCF:ToObjectSpace(hrp.CFrame)
-        local charTargetCF = targetCF * charOffset
-        
-        local tw1 = TweenService:Create(primaryPart, 
+        local tw = TweenService:Create(primaryPart, 
             TweenInfo.new(3, Enum.EasingStyle.Linear),
             { CFrame = targetCF })
-        tw1:Play()
-        tw1.Completed:Wait()
+        tw:Play()
+        tw.Completed:Wait()
         
-        -- Unanchor
         for part, orig in pairs(vehicleParts) do
             if part and part.Parent then
                 part.Anchored = orig
@@ -418,22 +403,18 @@ local function TweenTeleportVehicle(targetPos)
 end
 
 -- ============================================================
--- 🚀 TELEPORT AUTO DETECT (SKIP KALAU DEKAT)
+-- 🚀 TELEPORT AUTO DETECT
 -- ============================================================
 local function TeleportTo(targetPos)
-    -- Cek jarak dulu — kalau < 15 stud, skip teleport
     local root = GetRoot()
     if root then
         local dist = (root.Position - targetPos).Magnitude
-        if dist < 15 then
-            return true
-        end
+        if dist < 15 then return true end
     end
     
     if IsOnBike() then
         local ok = TweenTeleportVehicle(targetPos)
         if ok then return true end
-        
         ForceDismount()
         task.wait(1)
     end
@@ -442,7 +423,7 @@ local function TeleportTo(targetPos)
 end
 
 -- ============================================================
--- 🛡️ SAFE TELEPORT (RETRY 1x, JEDA PANJANG)
+-- 🛡️ SAFE TELEPORT
 -- ============================================================
 local function SafeTeleport(targetPos, label)
     label = label or "target"
@@ -488,9 +469,10 @@ local function ClickButton(btn)
         local pos = btn.AbsolutePosition
         local size = btn.AbsoluteSize
         local center = pos + size / 2
-        VirtualInputManager:SendMouseButtonEvent(center.X, center.Y, 0, true, game, 0)
+        local vim = game:GetService("VirtualInputManager")
+        vim:SendMouseButtonEvent(center.X, center.Y, 0, true, game, 0)
         task.wait(0.1)
-        VirtualInputManager:SendMouseButtonEvent(center.X, center.Y, 0, false, game, 0)
+        vim:SendMouseButtonEvent(center.X, center.Y, 0, false, game, 0)
     end)
     if ok then task.wait(0.5) end
     return ok
@@ -561,7 +543,7 @@ local function IsSpawnPrompt(prompt)
 end
 
 -- ============================================================
--- 🏍️ SPAWN + SIT ON BIKE (NON-AGGRESSIVE)
+-- 🏍️ SPAWN + SIT ON BIKE
 -- ============================================================
 local function SpawnAndSitOnBike()
     local h = LP.Character and LP.Character:FindFirstChild("Humanoid")
@@ -584,7 +566,6 @@ local function SpawnAndSitOnBike()
         CloseAllDialogs()
         task.wait(1)
         
-        -- HANYA 2 FORMAT, JEDA 3s
         local spawnFormats = {
             function() RPC:FireServer(BUY_DIRTBIKE, "Spawn", "DirtBike") end,
             function() RPC:FireServer(BUY_DIRTBIKE, "Spawn") end,
@@ -654,9 +635,8 @@ local function SpawnAndSitOnBike()
     CloseAllDialogs()
     task.wait(1)
 
-    -- Anchor motor
     local vehicleParts = {}
-    for _, part in pairs(bike:GetDescendants()) do
+    for _, part in pairs(bike:GetChildren()) do
         if part:IsA("BasePart") then
             vehicleParts[part] = part.Anchored
             part.Anchored = true
@@ -664,16 +644,13 @@ local function SpawnAndSitOnBike()
     end
     task.wait(1)
 
-    -- Tween karakter ke motor
     local tp = ds.CFrame * CFrame.new(0, 3, 0)
     print("🐢 Tween ke motor...")
     TweenTeleport(tp.Position, 2)
     task.wait(1)
 
-    -- Cari prompt di DriveSeat
     local prom = ds:FindFirstChildWhichIsA("ProximityPrompt", true)
 
-    -- HANYA 2 RETRY, JEDA 1s
     local maxRetry = 2
     for attempt = 1, maxRetry do
         print("🔄 Attempt sit #" .. attempt)
@@ -700,7 +677,6 @@ local function SpawnAndSitOnBike()
         if hum and hum.SeatPart then
             print("✅ Berhasil duduk!")
             
-            -- Unanchor motor
             for part, orig in pairs(vehicleParts) do
                 if part and part.Parent then
                     part.Anchored = orig
@@ -740,7 +716,6 @@ local function SpawnAndSitOnBike()
         end
     end
 
-    -- Gagal — unanchor
     for part, orig in pairs(vehicleParts) do
         if part and part.Parent then
             part.Anchored = orig
@@ -770,7 +745,7 @@ pcall(function()
         pps.PromptShown:Connect(function(prompt)
             pcall(function()
                 if prompt and prompt.HoldDuration and prompt.HoldDuration > 0 then
-                    prompt.HoldDuration = 0.3  -- dari 0.1 jadi 0.3
+                    prompt.HoldDuration = 0.3
                 end
             end)
         end)
@@ -934,10 +909,7 @@ local function EnsureBuyAprt()
             end
             
             local tpOk = SafeTeleport(safePos, "Apartment")
-            if not tpOk then
-                print("⚠️ Gagal teleport ke apartment")
-                return false
-            end
+            if not tpOk then return false end
             
             task.wait(1)
             
@@ -946,7 +918,6 @@ local function EnsureBuyAprt()
             
             local checkTxt = GetAprtBoardText(board)
             if checkTxt ~= LP.Name then
-                print("⚠️ Retry...")
                 FirePrompt(bp)
                 task.wait(4)
             end
@@ -1505,10 +1476,10 @@ local function StartFarm()
             end)
             if not success then
                 print("⚠️ Cycle failed, retrying...")
-                task.wait(10)  -- dari 5 jadi 10
+                task.wait(10)
                 FarmCycle = FarmCycle - 1
             end
-            task.wait(5)  -- dari 2 jadi 5
+            task.wait(5)
         end
         CurrentStep = "Idle"
     end)
@@ -1637,11 +1608,14 @@ RGBStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 RGBStroke.Parent = MainFrame
 
 local rgbHue = 0
-RunService.RenderStepped:Connect(function()
-    pcall(function()
-        rgbHue = (rgbHue + 0.002) % 1
-        RGBStroke.Color = Color3.fromHSV(rgbHue, 0.9, 1)
-    end)
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        pcall(function()
+            rgbHue = (rgbHue + 0.02) % 1
+            RGBStroke.Color = Color3.fromHSV(rgbHue, 0.9, 1)
+        end)
+    end
 end)
 
 MainFrame.Parent = ScreenGui
@@ -1834,7 +1808,7 @@ local InfoLabel = Instance.new("TextLabel")
 InfoLabel.Size = UDim2.new(0.9, 0, 0, 30)
 InfoLabel.Position = UDim2.new(0.05, 0, 0, yPos)
 InfoLabel.BackgroundTransparency = 1
-InfoLabel.Text = "💡 Anti-Kick: Jeda 3s antar step"
+InfoLabel.Text = "💡 Anti-Freeze: 10fps + jeda 3s"
 InfoLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
 InfoLabel.Font = Enum.Font.Gotham
 InfoLabel.TextSize = 9
@@ -1926,6 +1900,7 @@ end)
 
 task.spawn(function()
     while ScreenGui.Parent do
+        task.wait(1.5)
         pcall(function()
             CycleLabel.Text = "🔄 Cycles: " .. FarmCycle
             StepLabel.Text = "⚡ Step: " .. CurrentStep
@@ -1940,7 +1915,6 @@ task.spawn(function()
                 BikeLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
             end
         end)
-        task.wait(1)
     end
 end)
 
@@ -1985,19 +1959,19 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Anti-AFK lebih sering (20s)
+-- Anti-AFK 30s
 task.spawn(function()
     while true do
+        task.wait(30)
         pcall(function()
             VirtualUser:CaptureController()
             VirtualUser:ClickButton2(Vector2.new())
         end)
-        task.wait(20)
     end
 end)
 
 print("========================================")
-print("🏭 JENOWA STORE - ANTI-KICK EDITION")
+print("🏭 JENOWA STORE - LITE EDITION")
 print("========================================")
 print("📍 F9 = Toggle UI")
 print("📍 F6 = Start Farm")
@@ -2005,5 +1979,5 @@ print("📍 F7 = Stop Farm")
 print("🎯 TP DEALER = Manual ke dealer")
 print("🛵 SPAWN + SIT = Auto teleport + spawn + duduk")
 print("🔒 BIKE LOCK = Anti turun dari motor")
-print("🚫 ANTI-KICK = Jeda 3s antar step")
+print("🚫 ANTI-FREEZE = 10fps + GetChildren")
 print("========================================")
