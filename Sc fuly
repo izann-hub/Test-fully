@@ -268,7 +268,7 @@ local function IsAlive()
 end
 
 -- ============================================================
--- 🛡️ NOCLIP PERMANEN + SPEED 25
+-- 🛡️ NOCLIP PERMANEN + SPEED 1
 -- ============================================================
 local noclip_active = false
 
@@ -329,7 +329,6 @@ local function ForceDismount()
     if hum.SeatPart then
         pcall(function()
             hum.Sit = false
-            hum.SeatPart = nil
         end)
         task.wait(0.5)
     end
@@ -541,14 +540,14 @@ local function TeleportDeath(targetPos)
 end
 
 -- ============================================================
--- 🔥 TWEEN KE BIKE
+-- 🔥 TWEEN KE BIKE (FIXED - RETURN CHARPARTS)
 -- ============================================================
 local function TweenToBike(targetPos, duration)
     duration = duration or 3
     
     local char = LP.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return false end
+    if not hrp then return false, nil end
     
     local startPos = hrp.Position
     local dist = (targetPos - startPos).Magnitude
@@ -587,26 +586,24 @@ local function TweenToBike(targetPos, duration)
     for _, t in ipairs(tweens) do t:Play() end
     if tweens[1] then tweens[1].Completed:Wait() end
     
-    for part, data in pairs(charParts) do
-        if part and part.Parent then
-            part.Anchored = data.Anchored
-            part.AssemblyLinearVelocity = Vector3.zero
-            part.AssemblyAngularVelocity = Vector3.zero
-        end
-    end
-    
-    return true
+    -- ❌ TIDAK UNANCHOR DI SINI — caller yang unanchor setelah sit
+    return true, charParts
 end
 
 -- ============================================================
--- 🚀 TELEPORT AUTO DETECT (FIXED)
+-- 🚀 TELEPORT AUTO DETECT (FIXED - RETRY 2x SEBELUM DISMOUNT)
 -- ============================================================
 local function TeleportTo(targetPos)
     if IsOnBike() then
         local ok = TweenTeleportVehicle(targetPos)
         if ok then return true end
         
-        print("⚠️ Tween vehicle gagal, paksa turun...")
+        print("⚠️ Tween vehicle gagal, retry...")
+        task.wait(0.5)
+        ok = TweenTeleportVehicle(targetPos)
+        if ok then return true end
+        
+        print("⚠️ Tween vehicle gagal 2x, paksa turun...")
         ForceDismount()
         task.wait(0.5)
     end
@@ -716,7 +713,46 @@ local function findClearSpot(target, radius)
 end
 
 -- ============================================================
--- 🏍️ SPAWN + SIT ON BIKE (FIXED - MULTI FORMAT RPC)
+-- 🧹 CLOSE DIALOGS
+-- ============================================================
+local function CloseAllDialogs()
+    pcall(function()
+        for _, gui in pairs(PlayerGui:GetChildren()) do
+            local name = tostring(gui.Name or ""):lower()
+            if name:find("dialog") or name:find("conversation") or name:find("npc") or 
+               name:find("interact") or name:find("talk") or name:find("chat") then
+                gui:Destroy()
+            end
+        end
+    end)
+end
+
+-- ============================================================
+-- 🎯 IS SPAWN PROMPT (FILTER)
+-- ============================================================
+local function IsSpawnPrompt(prompt)
+    if not prompt then return false end
+    local pName = tostring(prompt.Name or ""):lower()
+    local parent = prompt.Parent
+    local parentName = parent and tostring(parent.Name or ""):lower() or ""
+    local grandName = parent and parent.Parent and tostring(parent.Parent.Name or ""):lower() or ""
+    
+    -- Skip prompt jual mobil / dealer
+    if pName:find("sell") or pName:find("jual") then return false end
+    if parentName:find("car") and not parentName:find("bike") then return false end
+    if grandName:find("dealer") and not grandName:find("bike") and not grandName:find("vehicle") then return false end
+    
+    -- Cari prompt spawn
+    if pName:find("spawn") or pName:find("buy") or pName:find("beli") then return true end
+    if pName:find("bike") or pName:find("motor") or pName:find("vehicle") then return true end
+    if parentName:find("spawn") or parentName:find("bike") or parentName:find("vehicle") then return true end
+    if grandName:find("spawn") or grandName:find("bike") or grandName:find("vehicle") then return true end
+    
+    return false
+end
+
+-- ============================================================
+-- 🏍️ SPAWN + SIT ON BIKE (FIXED)
 -- ============================================================
 local function SpawnAndSitOnBike()
     local h = LP.Character and LP.Character:FindFirstChild("Humanoid")
@@ -728,11 +764,19 @@ local function SpawnAndSitOnBike()
 
     local bike = FindBike()
     
-    if not bike then
+    -- Kalau motor sudah ada, langsung tween & duduk
+    if bike then
+        print("✅ Bike sudah ada, langsung duduk...")
+    else
         print("🎯 Teleport ke Dealer untuk spawn motor...")
-        SafeTeleport(findClearSpot(Locations.Dealer, 5), "Dealer")
+        SafeTeleport(findClearSpot(Locations.Dealer, 8), "Dealer")
         task.wait(1)
         
+        -- Tutup dialog yang tidak sengaja terbuka
+        CloseAllDialogs()
+        task.wait(0.3)
+        
+        -- Coba spawn via RPC (5 format)
         local spawnFormats = {
             function() RPC:FireServer(BUY_DIRTBIKE, "Spawn", "DirtBike") end,
             function() RPC:FireServer("Spawn", "DirtBike", BUY_DIRTBIKE) end,
@@ -745,7 +789,6 @@ local function SpawnAndSitOnBike()
             print("🔄 Coba spawn format #" .. i)
             pcall(fmt)
             task.wait(1.5)
-            
             bike = FindBike()
             if bike then
                 print("✅ Motor muncul dengan format #" .. i)
@@ -753,21 +796,23 @@ local function SpawnAndSitOnBike()
             end
         end
         
+        -- Fallback: cari prompt SPAWN saja (bukan prompt jual)
         if not bike then
-            print("⚠️ RPC gagal, coba prompt dealer...")
+            print("⚠️ RPC gagal, cari prompt spawn...")
             for _, v in pairs(Workspace:GetDescendants()) do
-                if v:IsA("ProximityPrompt") then
+                if v:IsA("ProximityPrompt") and IsSpawnPrompt(v) then
                     local parent = v.Parent
                     if parent and parent:IsA("BasePart") then
                         local dist = (parent.Position - Locations.Dealer).Magnitude
-                        if dist < 30 then
+                        if dist < 50 then
+                            print("🎯 Fire spawn prompt:", v.Name)
                             pcall(function()
                                 v.MaxActivationDistance = 9999
                                 v.RequiresLineOfSight = false
                                 v.HoldDuration = 0
                                 fireproximityprompt(v)
                             end)
-                            task.wait(1)
+                            task.wait(1.5)
                             bike = FindBike()
                             if bike then break end
                         end
@@ -776,23 +821,26 @@ local function SpawnAndSitOnBike()
             end
         end
         
+        -- Tunggu motor muncul (max 10 detik)
         if not bike then
             local startT = os.clock()
-            while os.clock() - startT < 5 do
+            while os.clock() - startT < 10 do
                 bike = FindBike()
                 if bike then break end
-                task.wait(0.2)
+                task.wait(0.3)
             end
         end
     end
 
     if not bike then 
-        print("❌ Bike not found setelah semua percobaan")
+        print("❌ Bike tidak muncul setelah semua percobaan")
+        CloseAllDialogs()
         return false 
     end
     
     print("✅ Bike found:", bike.Name)
 
+    -- Cari DriveSeat
     local ds = bike:FindFirstChild("DriveSeat") 
         or bike:FindFirstChildWhichIsA("Seat")
         or bike:FindFirstChild("Seat", true)
@@ -804,6 +852,21 @@ local function SpawnAndSitOnBike()
     
     print("🪑 DriveSeat found:", ds.Name, ds.ClassName)
 
+    -- Tutup dialog lagi (kalau ada)
+    CloseAllDialogs()
+    task.wait(0.3)
+
+    -- Anchor motor
+    local vehicleParts = {}
+    for _, part in pairs(bike:GetDescendants()) do
+        if part:IsA("BasePart") then
+            vehicleParts[part] = part.Anchored
+            part.Anchored = true
+        end
+    end
+    task.wait(0.3)
+
+    -- Respawn karakter
     local c = LP.Character
     if c then
         local h2 = c:FindFirstChild("Humanoid")
@@ -819,81 +882,144 @@ local function SpawnAndSitOnBike()
 
     task.wait(2)
 
+    -- Tween ke motor
     local tp = ds.CFrame * CFrame.new(0, 3, 0)
     print("🐢 Tween pelan ke motor...")
-    TweenToBike(tp.Position, nil)
-    task.wait(0.5)
+    local _, charParts = TweenToBike(tp.Position, nil)
+    task.wait(0.3)
 
+    -- Cari prompt duduk di DriveSeat
     local prom = ds:FindFirstChildWhichIsA("ProximityPrompt", true)
     if not prom and ds:FindFirstChild("Attachment") then 
         prom = ds.Attachment:FindFirstChildWhichIsA("ProximityPrompt") 
     end
 
-    local maxRetry = 3
+    -- Multi-layer duduk
+    local maxRetry = 5
     for attempt = 1, maxRetry do
         print("🔄 Attempt sit #" .. attempt)
         
         local root = LP.Character:FindFirstChild("HumanoidRootPart")
         if root and ds then
-            root.CFrame = ds.CFrame * CFrame.new(0, 2.5, 0)
+            root.CFrame = ds.CFrame * CFrame.new(0, 0.5, 0)
             root.Velocity = Vector3.zero
         end
-        task.wait(0.3)
+        task.wait(0.2)
+        
+        local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+        if hum then
+            pcall(function()
+                hum.Sit = true
+                hum.Jump = false
+            end)
+        end
+        task.wait(0.4)
+        
+        hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+        if hum and hum.SeatPart then
+            print("✅ Berhasil duduk via humanoid.Sit!")
+            
+            if charParts then
+                for part, data in pairs(charParts) do
+                    if part and part.Parent then
+                        part.Anchored = data.Anchored
+                        part.AssemblyLinearVelocity = Vector3.zero
+                        part.AssemblyAngularVelocity = Vector3.zero
+                    end
+                end
+            end
+            
+            task.wait(0.3)
+            
+            for part, origAnchor in pairs(vehicleParts) do
+                if part and part.Parent then
+                    part.Anchored = origAnchor
+                end
+            end
+            
+            FarmState.BikeSitting = true
+            FarmState.BikeSpawned = true
+            
+            -- Loop kunci duduk
+            task.spawn(function()
+                while FarmRunning and FarmState.BikeSitting do
+                    task.wait(0.5)
+                    local h2 = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+                    if h2 and not h2.SeatPart then
+                        print("⚠️ Karakter turun! Paksa duduk lagi...")
+                        local r2 = LP.Character:FindFirstChild("HumanoidRootPart")
+                        if r2 and ds and ds.Parent then
+                            r2.CFrame = ds.CFrame * CFrame.new(0, 0.5, 0)
+                        end
+                        pcall(function() h2.Sit = true end)
+                    end
+                end
+            end)
+            
+            return true
+        end
         
         if prom then
             prom.HoldDuration = 0
             prom.RequiresLineOfSight = false
             prom.MaxActivationDistance = 9e9
             pcall(function() fireproximityprompt(prom) end)
-            task.wait(0.5)
-        end
-        
-        local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
-        if hum and hum.SeatPart then
-            print("✅ Berhasil duduk via prompt!")
-            FarmState.BikeSitting = true
-            FarmState.BikeSpawned = true
-            return true
-        end
-        
-        if hum then
-            pcall(function()
-                hum.Sit = true
-                hum.Jump = false
-            end)
             task.wait(0.4)
-        end
-        
-        hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
-        if hum and hum.SeatPart then
-            print("✅ Berhasil duduk via humanoid.Sit!")
-            FarmState.BikeSitting = true
-            FarmState.BikeSpawned = true
-            return true
-        end
-        
-        if ds and hum then
-            pcall(function()
-                ds:Sit(hum)
-            end)
-            task.wait(0.4)
-        end
-        
-        hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
-        if hum and hum.SeatPart then
-            print("✅ Berhasil duduk via Seat:Sit!")
-            FarmState.BikeSitting = true
-            FarmState.BikeSpawned = true
-            return true
-        end
-        
-        if root and ds then
-            root.CFrame = ds.CFrame * CFrame.new(0, 1.5, 0)
-            task.wait(0.3)
+            
+            hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+            if hum and hum.SeatPart then
+                print("✅ Berhasil duduk via prompt!")
+                
+                if charParts then
+                    for part, data in pairs(charParts) do
+                        if part and part.Parent then
+                            part.Anchored = data.Anchored
+                        end
+                    end
+                end
+                
+                for part, origAnchor in pairs(vehicleParts) do
+                    if part and part.Parent then
+                        part.Anchored = origAnchor
+                    end
+                end
+                
+                FarmState.BikeSitting = true
+                FarmState.BikeSpawned = true
+                
+                task.spawn(function()
+                    while FarmRunning and FarmState.BikeSitting do
+                        task.wait(0.5)
+                        local h2 = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+                        if h2 and not h2.SeatPart then
+                            local r2 = LP.Character:FindFirstChild("HumanoidRootPart")
+                            if r2 and ds and ds.Parent then
+                                r2.CFrame = ds.CFrame * CFrame.new(0, 0.5, 0)
+                            end
+                            pcall(function() h2.Sit = true end)
+                        end
+                    end
+                end)
+                
+                return true
+            end
         end
     end
 
-    print("❌ Gagal duduk setelah 3 percobaan")
+    if charParts then
+        for part, data in pairs(charParts) do
+            if part and part.Parent then
+                part.Anchored = data.Anchored
+            end
+        end
+    end
+    for part, origAnchor in pairs(vehicleParts) do
+        if part and part.Parent then
+            part.Anchored = origAnchor
+        end
+    end
+
+    print("❌ Gagal duduk setelah " .. maxRetry .. " percobaan")
     return false
 end
 
@@ -902,8 +1028,9 @@ end
 -- ============================================================
 local function TeleportToDealerOnly()
     print("💀 Teleport ke Dealer...")
-    SafeTeleport(findClearSpot(Locations.Dealer, 5), "Dealer")
+    SafeTeleport(findClearSpot(Locations.Dealer, 8), "Dealer")
     task.wait(0.5)
+    CloseAllDialogs()
     print("✅ Di Dealer! Silakan spawn motor manual.")
 end
 
@@ -1654,6 +1781,7 @@ end
 
 local function StopFarm()
     FarmRunning = false
+    FarmState.BikeSitting = false
     if FarmThread then
         pcall(function() task.cancel(FarmThread) end)
         FarmThread = nil
@@ -2143,6 +2271,6 @@ print("📍 F9 = Toggle UI")
 print("📍 F6 = Start Farm")
 print("📍 F7 = Stop Farm")
 print("🎯 TP DEALER = Manual ke dealer")
-print("🛵 SPAWN + SIT = Auto teleport dealer + spawn + duduk")
+print("🛵 SPAWN + SIT = Auto teleport + spawn + duduk")
 print("🚀 START = Langsung farm loop")
 print("========================================")
