@@ -206,6 +206,14 @@ local FarmState = {
     ServiceDone = false,
 }
 
+-- State Anti Turun Motor
+local BikeLock = {
+    Enabled = false,
+    Seat = nil,
+    Weld = nil,
+    Thread = nil,
+}
+
 -- ============================================================
 -- 📍 LOKASI
 -- ============================================================
@@ -321,9 +329,75 @@ local function IsOnBike()
 end
 
 -- ============================================================
+-- 🔒 BIKE LOCK — ANTI TURUN DARI MOTOR
+-- ============================================================
+local function CleanupBikeLock()
+    BikeLock.Enabled = false
+    
+    if BikeLock.Weld then
+        pcall(function() BikeLock.Weld:Destroy() end)
+        BikeLock.Weld = nil
+    end
+    
+    BikeLock.Seat = nil
+end
+
+local function StartBikeLock(seat)
+    CleanupBikeLock()
+    BikeLock.Seat = seat
+    BikeLock.Enabled = true
+    
+    BikeLock.Thread = task.spawn(function()
+        while BikeLock.Enabled do
+            task.wait(0.1)
+            
+            if not LP.Character then break end
+            
+            local hum = LP.Character:FindFirstChildOfClass("Humanoid")
+            local hrp = LP.Character:FindFirstChild("HumanoidRootPart")
+            if not hum or not hrp then break end
+            if hum.Health <= 0 then break end
+            if not seat or not seat.Parent then break end
+            
+            -- Paksa duduk
+            if not hum.SeatPart then
+                pcall(function()
+                    hum.Sit = true
+                end)
+            end
+            
+            -- Paksa posisi tepat di seat
+            if hum.SeatPart ~= seat then
+                pcall(function()
+                    hum.Sit = true
+                end)
+            end
+            
+            -- Paksa Jump false
+            if hum.Jump then
+                pcall(function() hum.Jump = false end)
+            end
+            
+            -- WeldConstraint — paksa nempel
+            if not BikeLock.Weld or not BikeLock.Weld.Parent then
+                pcall(function()
+                    local w = Instance.new("WeldConstraint")
+                    w.Name = "JenowaBikeLock"
+                    w.Part0 = hrp
+                    w.Part1 = seat
+                    w.Parent = hrp
+                    BikeLock.Weld = w
+                end)
+            end
+        end
+    end)
+end
+
+-- ============================================================
 -- 🛑 FORCE DISMOUNT
 -- ============================================================
 local function ForceDismount()
+    CleanupBikeLock()
     local hum = GetHumanoid()
     if not hum then return end
     if hum.SeatPart then
@@ -482,6 +556,8 @@ end
 local function TeleportDeath(targetPos)
     if not LP.Character then return false end
     
+    CleanupBikeLock()
+    
     local root = GetRoot()
     local hum = GetHumanoid()
     if not root or not hum then return false end
@@ -540,7 +616,7 @@ local function TeleportDeath(targetPos)
 end
 
 -- ============================================================
--- 🔥 TWEEN KE BIKE (FIXED - RETURN CHARPARTS)
+-- 🔥 TWEEN KE BIKE
 -- ============================================================
 local function TweenToBike(targetPos, duration)
     duration = duration or 3
@@ -586,12 +662,11 @@ local function TweenToBike(targetPos, duration)
     for _, t in ipairs(tweens) do t:Play() end
     if tweens[1] then tweens[1].Completed:Wait() end
     
-    -- ❌ TIDAK UNANCHOR DI SINI — caller yang unanchor setelah sit
     return true, charParts
 end
 
 -- ============================================================
--- 🚀 TELEPORT AUTO DETECT (FIXED - RETRY 2x SEBELUM DISMOUNT)
+-- 🚀 TELEPORT AUTO DETECT
 -- ============================================================
 local function TeleportTo(targetPos)
     if IsOnBike() then
@@ -612,7 +687,7 @@ local function TeleportTo(targetPos)
 end
 
 -- ============================================================
--- 🛡️ SAFE TELEPORT (WRAPPER RETRY)
+-- 🛡️ SAFE TELEPORT
 -- ============================================================
 local function SafeTeleport(targetPos, label)
     label = label or "target"
@@ -728,7 +803,7 @@ local function CloseAllDialogs()
 end
 
 -- ============================================================
--- 🎯 IS SPAWN PROMPT (FILTER)
+-- 🎯 IS SPAWN PROMPT
 -- ============================================================
 local function IsSpawnPrompt(prompt)
     if not prompt then return false end
@@ -737,12 +812,10 @@ local function IsSpawnPrompt(prompt)
     local parentName = parent and tostring(parent.Name or ""):lower() or ""
     local grandName = parent and parent.Parent and tostring(parent.Parent.Name or ""):lower() or ""
     
-    -- Skip prompt jual mobil / dealer
     if pName:find("sell") or pName:find("jual") then return false end
     if parentName:find("car") and not parentName:find("bike") then return false end
     if grandName:find("dealer") and not grandName:find("bike") and not grandName:find("vehicle") then return false end
     
-    -- Cari prompt spawn
     if pName:find("spawn") or pName:find("buy") or pName:find("beli") then return true end
     if pName:find("bike") or pName:find("motor") or pName:find("vehicle") then return true end
     if parentName:find("spawn") or parentName:find("bike") or parentName:find("vehicle") then return true end
@@ -752,19 +825,19 @@ local function IsSpawnPrompt(prompt)
 end
 
 -- ============================================================
--- 🏍️ SPAWN + SIT ON BIKE (FIXED)
+-- 🏍️ SPAWN + SIT ON BIKE (WITH BIKE LOCK)
 -- ============================================================
 local function SpawnAndSitOnBike()
     local h = LP.Character and LP.Character:FindFirstChild("Humanoid")
     if h and h.SeatPart then 
         print("✅ Already on bike!")
         FarmState.BikeSitting = true
+        StartBikeLock(h.SeatPart)
         return true 
     end
 
     local bike = FindBike()
     
-    -- Kalau motor sudah ada, langsung tween & duduk
     if bike then
         print("✅ Bike sudah ada, langsung duduk...")
     else
@@ -772,11 +845,9 @@ local function SpawnAndSitOnBike()
         SafeTeleport(findClearSpot(Locations.Dealer, 8), "Dealer")
         task.wait(1)
         
-        -- Tutup dialog yang tidak sengaja terbuka
         CloseAllDialogs()
         task.wait(0.3)
         
-        -- Coba spawn via RPC (5 format)
         local spawnFormats = {
             function() RPC:FireServer(BUY_DIRTBIKE, "Spawn", "DirtBike") end,
             function() RPC:FireServer("Spawn", "DirtBike", BUY_DIRTBIKE) end,
@@ -796,7 +867,6 @@ local function SpawnAndSitOnBike()
             end
         end
         
-        -- Fallback: cari prompt SPAWN saja (bukan prompt jual)
         if not bike then
             print("⚠️ RPC gagal, cari prompt spawn...")
             for _, v in pairs(Workspace:GetDescendants()) do
@@ -821,7 +891,6 @@ local function SpawnAndSitOnBike()
             end
         end
         
-        -- Tunggu motor muncul (max 10 detik)
         if not bike then
             local startT = os.clock()
             while os.clock() - startT < 10 do
@@ -840,7 +909,6 @@ local function SpawnAndSitOnBike()
     
     print("✅ Bike found:", bike.Name)
 
-    -- Cari DriveSeat
     local ds = bike:FindFirstChild("DriveSeat") 
         or bike:FindFirstChildWhichIsA("Seat")
         or bike:FindFirstChild("Seat", true)
@@ -852,11 +920,9 @@ local function SpawnAndSitOnBike()
     
     print("🪑 DriveSeat found:", ds.Name, ds.ClassName)
 
-    -- Tutup dialog lagi (kalau ada)
     CloseAllDialogs()
     task.wait(0.3)
 
-    -- Anchor motor
     local vehicleParts = {}
     for _, part in pairs(bike:GetDescendants()) do
         if part:IsA("BasePart") then
@@ -866,7 +932,6 @@ local function SpawnAndSitOnBike()
     end
     task.wait(0.3)
 
-    -- Respawn karakter
     local c = LP.Character
     if c then
         local h2 = c:FindFirstChild("Humanoid")
@@ -882,19 +947,16 @@ local function SpawnAndSitOnBike()
 
     task.wait(2)
 
-    -- Tween ke motor
     local tp = ds.CFrame * CFrame.new(0, 3, 0)
     print("🐢 Tween pelan ke motor...")
     local _, charParts = TweenToBike(tp.Position, nil)
     task.wait(0.3)
 
-    -- Cari prompt duduk di DriveSeat
     local prom = ds:FindFirstChildWhichIsA("ProximityPrompt", true)
     if not prom and ds:FindFirstChild("Attachment") then 
         prom = ds.Attachment:FindFirstChildWhichIsA("ProximityPrompt") 
     end
 
-    -- Multi-layer duduk
     local maxRetry = 5
     for attempt = 1, maxRetry do
         print("🔄 Attempt sit #" .. attempt)
@@ -940,21 +1002,8 @@ local function SpawnAndSitOnBike()
             FarmState.BikeSitting = true
             FarmState.BikeSpawned = true
             
-            -- Loop kunci duduk
-            task.spawn(function()
-                while FarmRunning and FarmState.BikeSitting do
-                    task.wait(0.5)
-                    local h2 = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
-                    if h2 and not h2.SeatPart then
-                        print("⚠️ Karakter turun! Paksa duduk lagi...")
-                        local r2 = LP.Character:FindFirstChild("HumanoidRootPart")
-                        if r2 and ds and ds.Parent then
-                            r2.CFrame = ds.CFrame * CFrame.new(0, 0.5, 0)
-                        end
-                        pcall(function() h2.Sit = true end)
-                    end
-                end
-            end)
+            -- 🔒 START BIKE LOCK — anti turun dari motor
+            StartBikeLock(ds)
             
             return true
         end
@@ -987,19 +1036,7 @@ local function SpawnAndSitOnBike()
                 FarmState.BikeSitting = true
                 FarmState.BikeSpawned = true
                 
-                task.spawn(function()
-                    while FarmRunning and FarmState.BikeSitting do
-                        task.wait(0.5)
-                        local h2 = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
-                        if h2 and not h2.SeatPart then
-                            local r2 = LP.Character:FindFirstChild("HumanoidRootPart")
-                            if r2 and ds and ds.Parent then
-                                r2.CFrame = ds.CFrame * CFrame.new(0, 0.5, 0)
-                            end
-                            pcall(function() h2.Sit = true end)
-                        end
-                    end
-                end)
+                StartBikeLock(ds)
                 
                 return true
             end
@@ -1782,6 +1819,7 @@ end
 local function StopFarm()
     FarmRunning = false
     FarmState.BikeSitting = false
+    CleanupBikeLock()
     if FarmThread then
         pcall(function() task.cancel(FarmThread) end)
         FarmThread = nil
@@ -2272,5 +2310,5 @@ print("📍 F6 = Start Farm")
 print("📍 F7 = Stop Farm")
 print("🎯 TP DEALER = Manual ke dealer")
 print("🛵 SPAWN + SIT = Auto teleport + spawn + duduk")
-print("🚀 START = Langsung farm loop")
+print("🔒 BIKE LOCK = Anti turun dari motor")
 print("========================================")
