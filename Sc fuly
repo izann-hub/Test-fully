@@ -1,5 +1,5 @@
 -- ============================================
--- JENOWA STORE | Bypass Hyphon + Insta-Interact + Hitbox Kepala
+-- JENOWA STORE | Bypass Hyphon + Insta-Interact + ESP
 -- Dark Angel | Perpustakaan Paralel
 -- Tema: Hitam / Putih / Abu
 -- ============================================
@@ -9,16 +9,18 @@ local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local PPS = game:GetService("ProximityPromptService")
 local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
 local SG = game:GetService("StarterGui")
 local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 
 -- ===================== STATE =====================
 local instaEnabled = false
-local hitboxEnabled = false
+local espEnabled = false
 local holdConnection = nil
 local modifiedPrompts = {}
-local originalHead = {}
+local espCache = {}
+local renderConnection = nil
 local playerConnections = {}
 
 -- ===================== BYPASS HYPHON EMULATOR =====================
@@ -26,7 +28,6 @@ task.spawn(function()
     task.wait(1)
     getgenv().FULLY_MS_V1 = true
 
-    -- ---- ClickPlay ----
     local function ClickPlay()
         local lp = Players.LocalPlayer
         if not lp then return false end
@@ -74,7 +75,6 @@ task.spawn(function()
         task.wait(1)
     end
 
-    -- ---- Fallback functions ----
     if not filtergc then
         filtergc = function(ftype, filters, returnSingle)
             local results = {}
@@ -110,7 +110,6 @@ task.spawn(function()
         end
     end
 
-    -- ---- Hyphon Emulator ----
     pcall(function()
         local gv = getgenv()
         local function tryFind(name, ln)
@@ -194,7 +193,6 @@ task.spawn(function()
         Players.Kick = function() return end
     end)
 
-    -- ---- Kick Popup Destroyer ----
     task.spawn(function()
         while getgenv().FULLY_MS_V1 do
             pcall(function()
@@ -330,37 +328,37 @@ instaStatus.Font = Enum.Font.Gotham
 instaStatus.TextXAlignment = Enum.TextXAlignment.Left
 instaStatus.Parent = body
 
--- Hitbox Kepala
-local hitboxBtn = Instance.new("TextButton")
-hitboxBtn.Size = UDim2.new(1, -40, 0, 42)
-hitboxBtn.Position = UDim2.new(0, 20, 0, 96)
-hitboxBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-hitboxBtn.Text = "HITBOX KEPALA: OFF"
-hitboxBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
-hitboxBtn.TextSize = 13
-hitboxBtn.Font = Enum.Font.GothamBold
-hitboxBtn.BorderSizePixel = 0
-hitboxBtn.Parent = body
+-- ESP
+local espBtn = Instance.new("TextButton")
+espBtn.Size = UDim2.new(1, -40, 0, 42)
+espBtn.Position = UDim2.new(0, 20, 0, 96)
+espBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+espBtn.Text = "ESP: OFF"
+espBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
+espBtn.TextSize = 13
+espBtn.Font = Enum.Font.GothamBold
+espBtn.BorderSizePixel = 0
+espBtn.Parent = body
 
-local hitboxCorner = Instance.new("UICorner")
-hitboxCorner.CornerRadius = UDim.new(0, 6)
-hitboxCorner.Parent = hitboxBtn
+local espCorner = Instance.new("UICorner")
+espCorner.CornerRadius = UDim.new(0, 6)
+espCorner.Parent = espBtn
 
-local hitboxStroke = Instance.new("UIStroke")
-hitboxStroke.Color = Color3.fromRGB(150, 150, 150)
-hitboxStroke.Thickness = 1
-hitboxStroke.Parent = hitboxBtn
+local espStroke = Instance.new("UIStroke")
+espStroke.Color = Color3.fromRGB(150, 150, 150)
+espStroke.Thickness = 1
+espStroke.Parent = espBtn
 
-local hitboxStatus = Instance.new("TextLabel")
-hitboxStatus.Size = UDim2.new(1, -40, 0, 16)
-hitboxStatus.Position = UDim2.new(0, 20, 0, 140)
-hitboxStatus.BackgroundTransparency = 1
-hitboxStatus.Text = "Status: Idle"
-hitboxStatus.TextColor3 = Color3.fromRGB(150, 150, 150)
-hitboxStatus.TextSize = 11
-hitboxStatus.Font = Enum.Font.Gotham
-hitboxStatus.TextXAlignment = Enum.TextXAlignment.Left
-hitboxStatus.Parent = body
+local espStatus = Instance.new("TextLabel")
+espStatus.Size = UDim2.new(1, -40, 0, 16)
+espStatus.Position = UDim2.new(0, 20, 0, 140)
+espStatus.BackgroundTransparency = 1
+espStatus.Text = "Status: Idle"
+espStatus.TextColor3 = Color3.fromRGB(150, 150, 150)
+espStatus.TextSize = 11
+espStatus.Font = Enum.Font.Gotham
+espStatus.TextXAlignment = Enum.TextXAlignment.Left
+espStatus.Parent = body
 
 -- Bypass status
 local bypassStatus = Instance.new("TextLabel")
@@ -432,88 +430,145 @@ local function removeInsta()
     modifiedPrompts = {}
 end
 
--- ===================== HITBOX KEPALA =====================
-local HITBOX_SIZE = Vector3.new(15, 15, 15)
+-- ===================== ESP =====================
+local Camera = Workspace.CurrentCamera
 
-local function expandHead(player)
+local function createESP(player)
     if player == LocalPlayer then return end
-    local char = player.Character
-    if not char then return end
-    local head = char:FindFirstChild("Head")
-    if not head or not head:IsA("BasePart") then return end
-    if not originalHead[player] then
-        originalHead[player] = {
-            Size = head.Size,
-            Transparency = head.Transparency,
-            CanCollide = head.CanCollide,
-            Massless = head.Massless
-        }
-    end
-    head.Size = HITBOX_SIZE
-    head.Transparency = 0.5
-    head.CanCollide = false
-    head.Massless = true
+    if espCache[player] then return end
+
+    local box = Drawing.new("Square")
+    box.Thickness = 1
+    box.Color = Color3.fromRGB(255, 255, 255)
+    box.Filled = false
+    box.Transparency = 1
+    box.Visible = false
+
+    local name = Drawing.new("Text")
+    name.Size = 14
+    name.Center = true
+    name.Outline = true
+    name.OutlineColor = Color3.fromRGB(0, 0, 0)
+    name.Color = Color3.fromRGB(255, 255, 255)
+    name.Font = 2
+    name.Visible = false
+
+    local dist = Drawing.new("Text")
+    dist.Size = 12
+    dist.Center = true
+    dist.Outline = true
+    dist.OutlineColor = Color3.fromRGB(0, 0, 0)
+    dist.Color = Color3.fromRGB(200, 200, 200)
+    dist.Font = 2
+    dist.Visible = false
+
+    espCache[player] = { Box = box, Name = name, Dist = dist }
 end
 
-local function restoreHead(player)
-    local data = originalHead[player]
+local function removeESP(player)
+    local data = espCache[player]
     if not data then return end
-    local char = player.Character
-    if not char then return end
-    local head = char:FindFirstChild("Head")
-    if head and head:IsA("BasePart") then
-        head.Size = data.Size
-        head.Transparency = data.Transparency
-        head.CanCollide = data.CanCollide
-        head.Massless = data.Massless
-    end
-    originalHead[player] = nil
+    if data.Box then data.Box:Remove() end
+    if data.Name then data.Name:Remove() end
+    if data.Dist then data.Dist:Remove() end
+    espCache[player] = nil
 end
 
-local function bindPlayer(player)
-    if player == LocalPlayer then return end
+local function clearAllESP()
+    for player, _ in pairs(espCache) do
+        removeESP(player)
+    end
+    espCache = {}
+end
 
-    local function onChar(char)
-        task.wait(0.5)
-        if hitboxEnabled then
-            expandHead(player)
+local function updateESP()
+    if not Camera then return end
+
+    for player, data in pairs(espCache) do
+        local char = player.Character
+        if not char then
+            data.Box.Visible = false
+            data.Name.Visible = false
+            data.Dist.Visible = false
+            continue
+        end
+
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        local head = char:FindFirstChild("Head")
+        local hum = char:FindFirstChildOfClass("Humanoid")
+
+        if not hrp or not head or not hum or hum.Health <= 0 then
+            data.Box.Visible = false
+            data.Name.Visible = false
+            data.Dist.Visible = false
+            continue
+        end
+
+        local headPos, headOnScreen = Camera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0))
+        local hrpPos, hrpOnScreen = Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3, 0))
+
+        if headOnScreen and hrpOnScreen then
+            local height = math.abs(headPos.Y - hrpPos.Y)
+            local width = height / 2
+
+            data.Box.Size = Vector2.new(width, height)
+            data.Box.Position = Vector2.new(headPos.X - width / 2, headPos.Y)
+            data.Box.Visible = true
+
+            data.Name.Text = player.Name
+            data.Name.Position = Vector2.new(headPos.X, headPos.Y - 18)
+            data.Name.Visible = true
+
+            local distance = (Camera.CFrame.Position - hrp.Position).Magnitude
+            data.Dist.Text = string.format("[%d]", math.floor(distance))
+            data.Dist.Position = Vector2.new(headPos.X, headPos.Y + height + 2)
+            data.Dist.Visible = true
+        else
+            data.Box.Visible = false
+            data.Name.Visible = false
+            data.Dist.Visible = false
         end
     end
+end
 
-    if player.Character then
-        task.spawn(function() onChar(player.Character) end)
+local function startESPRender()
+    if renderConnection then return end
+    renderConnection = RunService.RenderStepped:Connect(function()
+        pcall(updateESP)
+    end)
+end
+
+local function stopESPRender()
+    if renderConnection then
+        renderConnection:Disconnect()
+        renderConnection = nil
+    end
+end
+
+local function bindPlayerESP(player)
+    if player == LocalPlayer then return end
+
+    if espEnabled then
+        createESP(player)
     end
 
-    local conn = player.CharacterAdded:Connect(function(char)
-        onChar(char)
+    local conn = player.CharacterAdded:Connect(function()
+        if espEnabled then
+            task.wait(0.5)
+            createESP(player)
+        end
     end)
     table.insert(playerConnections, conn)
 end
 
-local function applyHitboxAll()
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            expandHead(player)
-        end
-    end
-end
-
-local function restoreHitboxAll()
-    for player, _ in pairs(originalHead) do
-        restoreHead(player)
-    end
-    originalHead = {}
-end
-
--- Bind semua player
 for _, player in ipairs(Players:GetPlayers()) do
-    bindPlayer(player)
+    bindPlayerESP(player)
 end
 
-Players.PlayerAdded:Connect(bindPlayer)
+Players.PlayerAdded:Connect(bindPlayerESP)
 
 Players.PlayerRemoving:Connect(function(player)
-    originalHead[player] = nil
+    removeESP(player)
 end)
 
 -- ===================== TOGGLE: INSTA =====================
@@ -538,26 +593,32 @@ instaBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- ===================== TOGGLE: HITBOX =====================
-hitboxBtn.MouseButton1Click:Connect(function()
-    hitboxEnabled = not hitboxEnabled
+-- ===================== TOGGLE: ESP =====================
+espBtn.MouseButton1Click:Connect(function()
+    espEnabled = not espEnabled
 
-    if hitboxEnabled then
-        applyHitboxAll()
-        hitboxBtn.Text = "HITBOX KEPALA: ON"
-        hitboxBtn.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
-        hitboxBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
-        hitboxStroke.Color = Color3.fromRGB(255, 255, 255)
-        hitboxStatus.Text = "Status: Active"
-        hitboxStatus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    if espEnabled then
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer then
+                createESP(player)
+            end
+        end
+        startESPRender()
+        espBtn.Text = "ESP: ON"
+        espBtn.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
+        espBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
+        espStroke.Color = Color3.fromRGB(255, 255, 255)
+        espStatus.Text = "Status: Active"
+        espStatus.TextColor3 = Color3.fromRGB(255, 255, 255)
     else
-        restoreHitboxAll()
-        hitboxBtn.Text = "HITBOX KEPALA: OFF"
-        hitboxBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        hitboxBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
-        hitboxStroke.Color = Color3.fromRGB(150, 150, 150)
-        hitboxStatus.Text = "Status: Idle"
-        hitboxStatus.TextColor3 = Color3.fromRGB(150, 150, 150)
+        stopESPRender()
+        clearAllESP()
+        espBtn.Text = "ESP: OFF"
+        espBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        espBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
+        espStroke.Color = Color3.fromRGB(150, 150, 150)
+        espStatus.Text = "Status: Idle"
+        espStatus.TextColor3 = Color3.fromRGB(150, 150, 150)
     end
 end)
 
