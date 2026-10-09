@@ -1,5 +1,5 @@
 -- ============================================
--- JENOWA STORE | Insta-Interact + No Recoil + Bypass (FIXED)
+-- JENOWA STORE | Bypass Hyphon + Insta-Interact + Hitbox Kepala
 -- Dark Angel | Perpustakaan Paralel
 -- Tema: Hitam / Putih / Abu
 -- ============================================
@@ -10,64 +10,220 @@ local UIS = game:GetService("UserInputService")
 local PPS = game:GetService("ProximityPromptService")
 local Workspace = game:GetService("Workspace")
 local SG = game:GetService("StarterGui")
+local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 
 -- ===================== STATE =====================
 local instaEnabled = false
-local recoilEnabled = false
+local hitboxEnabled = false
 local holdConnection = nil
 local modifiedPrompts = {}
-local defaultSettings = {}
-local charConnections = {}
+local originalHead = {}
+local playerConnections = {}
 
--- ===================== BYPASS (RINGAN) =====================
+-- ===================== BYPASS HYPHON EMULATOR =====================
 task.spawn(function()
     task.wait(1)
+    getgenv().FULLY_MS_V1 = true
 
-    local has = function(n) return type(_G[n]) == "function" end
-    if not (has("hookmetamethod") and has("getrawmetatable")) then return end
+    -- ---- ClickPlay ----
+    local function ClickPlay()
+        local lp = Players.LocalPlayer
+        if not lp then return false end
+        local pg = lp:FindFirstChild("PlayerGui")
+        if not pg then return false end
+        local intro = pg:FindFirstChild("IntroUI")
+        if not intro then return true end
 
-    -- Blok Kick
-    pcall(function()
-        local mt = getrawmetatable(game)
-        local oldNamecall = mt.__namecall
-        local wrap = newcclosure or function(f) return f end
-
-        setreadonly(mt, false)
-        mt.__namecall = wrap(function(self, ...)
-            local method = getnamecallmethod()
-            if method == "Kick" and self == LocalPlayer and not checkcaller() then
-                return
+        local playButton = nil
+        for _, obj in pairs(intro:GetDescendants()) do
+            if obj:IsA("ImageButton") and obj.Name == "Play" then
+                playButton = obj
+                break
             end
-            return oldNamecall(self, ...)
+        end
+        if not playButton then return false end
+
+        pcall(function() playButton.MouseButton1Click:Fire() end)
+        pcall(function()
+            local VIM = game:GetService("VirtualInputManager")
+            if VIM then
+                local pos = playButton.AbsolutePosition
+                local size = playButton.AbsoluteSize
+                if pos.X > 0 and pos.Y > 0 then
+                    VIM:SendMouseButtonEvent(pos.X + size.X/2, pos.Y + size.Y/2, 0, true, game, 0)
+                    task.wait(0.05)
+                    VIM:SendMouseButtonEvent(pos.X + size.X/2, pos.Y + size.Y/2, 0, false, game, 0)
+                end
+            end
         end)
-        setreadonly(mt, true)
-    end)
+        pcall(function()
+            local conns = getconnections(playButton.MouseButton1Click)
+            if conns then
+                for _, conn in pairs(conns) do conn:Fire() end
+            end
+        end)
+        task.wait(1)
+        return true
+    end
 
-    -- Neutralize Detected func (limit scan)
+    local attempts = 0
+    while attempts < 5 do
+        if ClickPlay() then break end
+        attempts = attempts + 1
+        task.wait(1)
+    end
+
+    -- ---- Fallback functions ----
+    if not filtergc then
+        filtergc = function(ftype, filters, returnSingle)
+            local results = {}
+            for _, obj in pairs(getgc(true)) do
+                if type(obj) == "function" then
+                    local ok, info = pcall(debug.getinfo, obj)
+                    if ok and info then
+                        local match = true
+                        if filters.StartLine and info.linedefined ~= filters.StartLine then match = false end
+                        if filters.Source and info.source ~= filters.Source then match = false end
+                        if match then
+                            if returnSingle then return obj end
+                            table.insert(results, obj)
+                        end
+                    end
+                end
+            end
+            if returnSingle then return nil end
+            return results
+        end
+    end
+
+    if not getnilinstances then getnilinstances = function() return {} end end
+    if not bit32 then bit32 = {} end
+    if not bit32.bxor then
+        bit32.bxor = function(a, b)
+            local result, bit = 0, 1
+            while a > 0 or b > 0 do
+                if (a % 2) ~= (b % 2) then result = result + bit end
+                a, b, bit = math.floor(a / 2), math.floor(b / 2), bit * 2
+            end
+            return result
+        end
+    end
+
+    -- ---- Hyphon Emulator ----
     pcall(function()
-        if not has("getgc") or not has("hookfunction") then return end
-        local count = 0
-        local target = nil
+        local gv = getgenv()
+        local function tryFind(name, ln)
+            local fn = filtergc("function", { StartLine = ln }, true)
+            if type(fn) ~= "function" then
+                fn = (type(fn) == "table" and #fn > 0 and fn[1]) or nil
+            end
+            if not fn then
+                local all = filtergc("function", { StartLine = ln })
+                if type(all) == "table" and #all > 0 then fn = all[1] end
+            end
+            if fn then gv[name] = fn end
+            return fn
+        end
+        gv.Hyphon_2102 = tryFind("Hyphon_2102", 2102)
+        gv.Hyphon_2247 = tryFind("Hyphon_2247", 2247)
+        gv.Hyphon_2846 = tryFind("Hyphon_2846", 2846)
+        gv.Hyphon_fake_dec = tryFind("Hyphon_fake_dec", 1097)
 
-        for _, v in next, getgc(true) do
-            count = count + 1
-            if count > 200 then break end
-            if typeof(v) == "table" then
-                local d = rawget(v, "Detected")
-                if typeof(d) == "function" then
-                    target = d
+        if gv.Hyphon_2102 then
+            gv.Hyphon_Encode = debug.getupvalue(gv.Hyphon_2102, 1)
+            gv.Hyphon_Decode = debug.getupvalue(gv.Hyphon_2102, 21)
+        end
+        gv.Hyphon_Script = nil
+        pcall(function()
+            for _, o in pairs(getnilinstances()) do
+                if o:IsA("Script") and o.Name:len() == 32 then
+                    gv.Hyphon_Script = o
                     break
                 end
             end
+        end)
+
+        if gv.Hyphon_2102 and gv.Hyphon_2247 and gv.Hyphon_2846 and gv.Hyphon_fake_dec then
+            pcall(function()
+                local HC = cloneref(game:GetService("MemoryStoreService")):FindFirstChild("Hyphon_Check")
+                local RF = debug.getupvalue(gv.Hyphon_2247, 6)
+                if HC then
+                    local o = hookfunction(HC.FireServer, function(s, ...) return o(s, ...) end)
+                end
+                if RF then
+                    local o = hookfunction(RF.InvokeServer, function(s, ...)
+                        local a = table.pack(...)
+                        if type(a[1]) == "table" and a[1][1] then
+                            gv.T1 = a[1][1]; gv.T2 = a[1][2]
+                            gv.T3 = a[1][6]; gv.T4 = a[1][11]
+                        end
+                        return o(s, ...)
+                    end)
+                end
+            end)
+            if bit32 and bit32.bxor and gv.Hyphon_Script and checkcaller and getcallingscript then
+                pcall(function()
+                    local o = hookfunction(bit32.bxor, function(a, b)
+                        if not checkcaller() and getcallingscript() == gv.Hyphon_Script then
+                            return task.wait(9e9)
+                        end
+                        return o(a, b)
+                    end)
+                end)
+            end
         end
 
-        if target then
-            hookfunction(target, function(...)
-                task.wait(9e9)
+        pcall(function()
+            for _, Object in pairs(getgc(true)) do
+                if typeof(Object) == "table" and typeof(rawget(Object, "Homeless")) == "table" then
+                    if rawget(Object.Homeless, "MaxDistance") then
+                        Object.Homeless.MaxDistance = 9e9
+                    end
+                end
+            end
+        end)
+    end)
+
+    getgenv().HyphonReady = true
+    getgenv().Emulator_Set = true
+
+    pcall(function()
+        local player = Players.LocalPlayer
+        if player then player.Kick = function() return end end
+        Players.Kick = function() return end
+    end)
+
+    -- ---- Kick Popup Destroyer ----
+    task.spawn(function()
+        while getgenv().FULLY_MS_V1 do
+            pcall(function()
+                local playerGui = Players.LocalPlayer and Players.LocalPlayer.PlayerGui
+                local patterns = {
+                    "Kick", "Ban", "Disconnect", "Error", "Moderation",
+                    "Warning", "Alert", "Popup", "Notice", "Detection",
+                    "Anti", "Handshake"
+                }
+                for _, gui in pairs(CoreGui:GetChildren()) do
+                    local name = gui.Name or ""
+                    for _, pat in ipairs(patterns) do
+                        if name:find(pat) then gui:Destroy() break end
+                    end
+                end
+                if playerGui then
+                    for _, gui in pairs(playerGui:GetChildren()) do
+                        local name = gui.Name or ""
+                        for _, pat in ipairs(patterns) do
+                            if name:find(pat) then gui:Destroy() break end
+                        end
+                    end
+                end
             end)
+            task.wait(0.1)
         end
     end)
+
+    print("✅ HYPHON EMULATOR BYPASS ACTIVE")
 end)
 
 -- ===================== GUI ROOT =====================
@@ -174,37 +330,37 @@ instaStatus.Font = Enum.Font.Gotham
 instaStatus.TextXAlignment = Enum.TextXAlignment.Left
 instaStatus.Parent = body
 
--- No Recoil
-local recoilBtn = Instance.new("TextButton")
-recoilBtn.Size = UDim2.new(1, -40, 0, 42)
-recoilBtn.Position = UDim2.new(0, 20, 0, 96)
-recoilBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-recoilBtn.Text = "NO RECOIL: OFF"
-recoilBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
-recoilBtn.TextSize = 13
-recoilBtn.Font = Enum.Font.GothamBold
-recoilBtn.BorderSizePixel = 0
-recoilBtn.Parent = body
+-- Hitbox Kepala
+local hitboxBtn = Instance.new("TextButton")
+hitboxBtn.Size = UDim2.new(1, -40, 0, 42)
+hitboxBtn.Position = UDim2.new(0, 20, 0, 96)
+hitboxBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+hitboxBtn.Text = "HITBOX KEPALA: OFF"
+hitboxBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
+hitboxBtn.TextSize = 13
+hitboxBtn.Font = Enum.Font.GothamBold
+hitboxBtn.BorderSizePixel = 0
+hitboxBtn.Parent = body
 
-local recoilCorner = Instance.new("UICorner")
-recoilCorner.CornerRadius = UDim.new(0, 6)
-recoilCorner.Parent = recoilBtn
+local hitboxCorner = Instance.new("UICorner")
+hitboxCorner.CornerRadius = UDim.new(0, 6)
+hitboxCorner.Parent = hitboxBtn
 
-local recoilStroke = Instance.new("UIStroke")
-recoilStroke.Color = Color3.fromRGB(150, 150, 150)
-recoilStroke.Thickness = 1
-recoilStroke.Parent = recoilBtn
+local hitboxStroke = Instance.new("UIStroke")
+hitboxStroke.Color = Color3.fromRGB(150, 150, 150)
+hitboxStroke.Thickness = 1
+hitboxStroke.Parent = hitboxBtn
 
-local recoilStatus = Instance.new("TextLabel")
-recoilStatus.Size = UDim2.new(1, -40, 0, 16)
-recoilStatus.Position = UDim2.new(0, 20, 0, 140)
-recoilStatus.BackgroundTransparency = 1
-recoilStatus.Text = "Status: Idle"
-recoilStatus.TextColor3 = Color3.fromRGB(150, 150, 150)
-recoilStatus.TextSize = 11
-recoilStatus.Font = Enum.Font.Gotham
-recoilStatus.TextXAlignment = Enum.TextXAlignment.Left
-recoilStatus.Parent = body
+local hitboxStatus = Instance.new("TextLabel")
+hitboxStatus.Size = UDim2.new(1, -40, 0, 16)
+hitboxStatus.Position = UDim2.new(0, 20, 0, 140)
+hitboxStatus.BackgroundTransparency = 1
+hitboxStatus.Text = "Status: Idle"
+hitboxStatus.TextColor3 = Color3.fromRGB(150, 150, 150)
+hitboxStatus.TextSize = 11
+hitboxStatus.Font = Enum.Font.Gotham
+hitboxStatus.TextXAlignment = Enum.TextXAlignment.Left
+hitboxStatus.Parent = body
 
 -- Bypass status
 local bypassStatus = Instance.new("TextLabel")
@@ -276,89 +432,88 @@ local function removeInsta()
     modifiedPrompts = {}
 end
 
--- ===================== NO RECOIL =====================
-local function enableRecoil(tool)
-    if not tool:IsA("Tool") then return end
-    local settingModule = tool:FindFirstChild("Setting")
-    if not settingModule or not settingModule:IsA("ModuleScript") then return end
-    local success, settings = pcall(require, settingModule)
-    if not success or type(settings) ~= "table" then return end
+-- ===================== HITBOX KEPALA =====================
+local HITBOX_SIZE = Vector3.new(15, 15, 15)
 
-    if not defaultSettings[tool.Name] then
-        defaultSettings[tool.Name] = {
-            Accuracy = settings.Accuracy,
-            SpreadX = settings.SpreadX,
-            SpreadY = settings.SpreadY,
-            Range = settings.Range,
-            Recoil = settings.Recoil
+local function expandHead(player)
+    if player == LocalPlayer then return end
+    local char = player.Character
+    if not char then return end
+    local head = char:FindFirstChild("Head")
+    if not head or not head:IsA("BasePart") then return end
+    if not originalHead[player] then
+        originalHead[player] = {
+            Size = head.Size,
+            Transparency = head.Transparency,
+            CanCollide = head.CanCollide,
+            Massless = head.Massless
         }
     end
-
-    settings.Accuracy = 1
-    settings.SpreadX = 0
-    settings.SpreadY = 0
-    settings.Range = 50000
-    settings.Recoil = 0
+    head.Size = HITBOX_SIZE
+    head.Transparency = 0.5
+    head.CanCollide = false
+    head.Massless = true
 end
 
-local function disableRecoil(tool)
-    if not tool:IsA("Tool") then return end
-    local settingModule = tool:FindFirstChild("Setting")
-    if not settingModule or not settingModule:IsA("ModuleScript") then return end
-    local success, settings = pcall(require, settingModule)
-    if not success or type(settings) ~= "table" then return end
-    if not defaultSettings[tool.Name] then return end
-
-    local d = defaultSettings[tool.Name]
-    settings.Accuracy = d.Accuracy
-    settings.SpreadX = d.SpreadX
-    settings.SpreadY = d.SpreadY
-    settings.Range = d.Range
-    settings.Recoil = d.Recoil
+local function restoreHead(player)
+    local data = originalHead[player]
+    if not data then return end
+    local char = player.Character
+    if not char then return end
+    local head = char:FindFirstChild("Head")
+    if head and head:IsA("BasePart") then
+        head.Size = data.Size
+        head.Transparency = data.Transparency
+        head.CanCollide = data.CanCollide
+        head.Massless = data.Massless
+    end
+    originalHead[player] = nil
 end
 
-local function scanCharacter(character)
-    for _, child in ipairs(character:GetChildren()) do
-        if child:IsA("Tool") then
-            if recoilEnabled then
-                enableRecoil(child)
-            else
-                disableRecoil(child)
-            end
+local function bindPlayer(player)
+    if player == LocalPlayer then return end
+
+    local function onChar(char)
+        task.wait(0.5)
+        if hitboxEnabled then
+            expandHead(player)
         end
     end
-end
 
-local function bindCharacter(character)
-    for _, conn in ipairs(charConnections) do
-        if conn then conn:Disconnect() end
+    if player.Character then
+        task.spawn(function() onChar(player.Character) end)
     end
-    charConnections = {}
 
-    local childConn = character.ChildAdded:Connect(function(child)
-        if child:IsA("Tool") then
-            if recoilEnabled then
-                enableRecoil(child)
-            else
-                disableRecoil(child)
-            end
-        end
+    local conn = player.CharacterAdded:Connect(function(char)
+        onChar(char)
     end)
-    table.insert(charConnections, childConn)
-
-    scanCharacter(character)
+    table.insert(playerConnections, conn)
 end
 
-if LocalPlayer.Character then
-    bindCharacter(LocalPlayer.Character)
-end
-
-LocalPlayer.CharacterAdded:Connect(function(character)
-    task.wait(0.5)
-    bindCharacter(character)
-    if recoilEnabled then
-        scanCharacter(character)
+local function applyHitboxAll()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            expandHead(player)
+        end
     end
+end
+
+local function restoreHitboxAll()
+    for player, _ in pairs(originalHead) do
+        restoreHead(player)
+    end
+    originalHead = {}
+end
+
+-- Bind semua player
+for _, player in ipairs(Players:GetPlayers()) do
+    bindPlayer(player)
+end
+
+Players.PlayerAdded:Connect(bindPlayer)
+
+Players.PlayerRemoving:Connect(function(player)
+    originalHead[player] = nil
 end)
 
 -- ===================== TOGGLE: INSTA =====================
@@ -383,47 +538,44 @@ instaBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- ===================== TOGGLE: RECOIL =====================
-recoilBtn.MouseButton1Click:Connect(function()
-    recoilEnabled = not recoilEnabled
+-- ===================== TOGGLE: HITBOX =====================
+hitboxBtn.MouseButton1Click:Connect(function()
+    hitboxEnabled = not hitboxEnabled
 
-    if recoilEnabled then
-        if LocalPlayer.Character then
-            scanCharacter(LocalPlayer.Character)
-        end
-        recoilBtn.Text = "NO RECOIL: ON"
-        recoilBtn.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
-        recoilBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
-        recoilStroke.Color = Color3.fromRGB(255, 255, 255)
-        recoilStatus.Text = "Status: Active"
-        recoilStatus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    if hitboxEnabled then
+        applyHitboxAll()
+        hitboxBtn.Text = "HITBOX KEPALA: ON"
+        hitboxBtn.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
+        hitboxBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
+        hitboxStroke.Color = Color3.fromRGB(255, 255, 255)
+        hitboxStatus.Text = "Status: Active"
+        hitboxStatus.TextColor3 = Color3.fromRGB(255, 255, 255)
     else
-        if LocalPlayer.Character then
-            for _, child in ipairs(LocalPlayer.Character:GetChildren()) do
-                if child:IsA("Tool") then
-                    disableRecoil(child)
-                end
-            end
-        end
-        recoilBtn.Text = "NO RECOIL: OFF"
-        recoilBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        recoilBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
-        recoilStroke.Color = Color3.fromRGB(150, 150, 150)
-        recoilStatus.Text = "Status: Idle"
-        recoilStatus.TextColor3 = Color3.fromRGB(150, 150, 150)
+        restoreHitboxAll()
+        hitboxBtn.Text = "HITBOX KEPALA: OFF"
+        hitboxBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        hitboxBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
+        hitboxStroke.Color = Color3.fromRGB(150, 150, 150)
+        hitboxStatus.Text = "Status: Idle"
+        hitboxStatus.TextColor3 = Color3.fromRGB(150, 150, 150)
     end
 end)
 
 -- ===================== UPDATE STATUS BYPASS =====================
 task.spawn(function()
-    task.wait(2)
-    bypassStatus.Text = "Bypass: Active"
-    bypassStatus.TextColor3 = Color3.fromRGB(220, 220, 220)
+    task.wait(3)
+    if getgenv().HyphonReady then
+        bypassStatus.Text = "Bypass: Hyphon Active"
+        bypassStatus.TextColor3 = Color3.fromRGB(220, 220, 220)
+    else
+        bypassStatus.Text = "Bypass: Failed"
+        bypassStatus.TextColor3 = Color3.fromRGB(150, 150, 150)
+    end
 end)
 
 -- ===================== NOTIFIKASI =====================
 SG:SetCore("SendNotification", {
     Title = "JENOWA STORE",
-    Text = "Loaded. UI + 2 fitur aktif.",
+    Text = "Loaded. Bypass + 2 fitur aktif.",
     Duration = 3
 })
