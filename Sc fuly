@@ -1,642 +1,285 @@
 -- ============================================
--- JENOWA STORE | Bypass Hyphon + Insta-Interact + ESP
--- Dark Angel | Perpustakaan Paralel
--- Tema: Hitam / Putih / Abu
+-- SCRIPT TERBANG BERSAMA MOBIL
+-- Bahasa  : Lua
+-- Executor: CDID
+-- Tombol  : V = Naik, Z = Turun, OFF = Matikan
+-- UI      : Simpel
 -- ============================================
 
--- ===================== SERVICES =====================
-local Players = game:GetService("Players")
-local UIS = game:GetService("UserInputService")
-local PPS = game:GetService("ProximityPromptService")
-local Workspace = game:GetService("Workspace")
-local RunService = game:GetService("RunService")
-local SG = game:GetService("StarterGui")
-local CoreGui = game:GetService("CoreGui")
-local LocalPlayer = Players.LocalPlayer
+-- [ SERVICE ]
+local Players     = game:GetService("Players")
+local RunService  = game:GetService("RunService")
+local UIS         = game:GetService("UserInputService")
 
--- ===================== STATE =====================
-local instaEnabled = false
-local espEnabled = false
-local holdConnection = nil
-local modifiedPrompts = {}
-local espCache = {}
-local renderConnection = nil
-local playerConnections = {}
+-- [ LOCAL PLAYER ]
+local LP          = Players.LocalPlayer
+local CHAR        = LP.Character or LP.CharacterAdded:Wait()
+local HRP         = CHAR:WaitForChild("HumanoidRootPart")
 
--- ===================== BYPASS HYPHON EMULATOR =====================
-task.spawn(function()
-    task.wait(1)
-    getgenv().FULLY_MS_V1 = true
+-- [ KONFIGURASI ]
+local KECEPATAN   = 80
+local NAIK_SPEED  = 40
+local TURUN_SPEED = 40
+local OFFSET_X    = 0
+local OFFSET_Y    = -3
+local OFFSET_Z    = 0
+local MOBIL_NAMA  = "Vehicle"
 
-    local function ClickPlay()
-        local lp = Players.LocalPlayer
-        if not lp then return false end
-        local pg = lp:FindFirstChild("PlayerGui")
-        if not pg then return false end
-        local intro = pg:FindFirstChild("IntroUI")
-        if not intro then return true end
+-- [ CARI MOBIL ]
+local mobil = workspace:FindFirstChild(MOBIL_NAMA)
 
-        local playButton = nil
-        for _, obj in pairs(intro:GetDescendants()) do
-            if obj:IsA("ImageButton") and obj.Name == "Play" then
-                playButton = obj
-                break
-            end
-        end
-        if not playButton then return false end
-
-        pcall(function() playButton.MouseButton1Click:Fire() end)
-        pcall(function()
-            local VIM = game:GetService("VirtualInputManager")
-            if VIM then
-                local pos = playButton.AbsolutePosition
-                local size = playButton.AbsoluteSize
-                if pos.X > 0 and pos.Y > 0 then
-                    VIM:SendMouseButtonEvent(pos.X + size.X/2, pos.Y + size.Y/2, 0, true, game, 0)
-                    task.wait(0.05)
-                    VIM:SendMouseButtonEvent(pos.X + size.X/2, pos.Y + size.Y/2, 0, false, game, 0)
-                end
-            end
-        end)
-        pcall(function()
-            local conns = getconnections(playButton.MouseButton1Click)
-            if conns then
-                for _, conn in pairs(conns) do conn:Fire() end
-            end
-        end)
-        task.wait(1)
-        return true
-    end
-
-    local attempts = 0
-    while attempts < 5 do
-        if ClickPlay() then break end
-        attempts = attempts + 1
-        task.wait(1)
-    end
-
-    if not filtergc then
-        filtergc = function(ftype, filters, returnSingle)
-            local results = {}
-            for _, obj in pairs(getgc(true)) do
-                if type(obj) == "function" then
-                    local ok, info = pcall(debug.getinfo, obj)
-                    if ok and info then
-                        local match = true
-                        if filters.StartLine and info.linedefined ~= filters.StartLine then match = false end
-                        if filters.Source and info.source ~= filters.Source then match = false end
-                        if match then
-                            if returnSingle then return obj end
-                            table.insert(results, obj)
-                        end
-                    end
-                end
-            end
-            if returnSingle then return nil end
-            return results
+if not mobil then
+    for _, v in pairs(workspace:GetChildren()) do
+        if v:IsA("Model") and v:FindFirstChild("VehicleSeat") then
+            mobil = v
+            break
         end
     end
+end
 
-    if not getnilinstances then getnilinstances = function() return {} end end
-    if not bit32 then bit32 = {} end
-    if not bit32.bxor then
-        bit32.bxor = function(a, b)
-            local result, bit = 0, 1
-            while a > 0 or b > 0 do
-                if (a % 2) ~= (b % 2) then result = result + bit end
-                a, b, bit = math.floor(a / 2), math.floor(b / 2), bit * 2
-            end
-            return result
-        end
+if not mobil then
+    warn("[ERROR] Mobil tidak ditemukan")
+    return
+end
+
+-- [ CARI PART MOBIL ]
+local mobilPart
+
+for _, v in pairs(mobil:GetDescendants()) do
+    if v:IsA("BasePart") then
+        mobilPart = v
+        break
     end
+end
 
-    pcall(function()
-        local gv = getgenv()
-        local function tryFind(name, ln)
-            local fn = filtergc("function", { StartLine = ln }, true)
-            if type(fn) ~= "function" then
-                fn = (type(fn) == "table" and #fn > 0 and fn[1]) or nil
-            end
-            if not fn then
-                local all = filtergc("function", { StartLine = ln })
-                if type(all) == "table" and #all > 0 then fn = all[1] end
-            end
-            if fn then gv[name] = fn end
-            return fn
-        end
-        gv.Hyphon_2102 = tryFind("Hyphon_2102", 2102)
-        gv.Hyphon_2247 = tryFind("Hyphon_2247", 2247)
-        gv.Hyphon_2846 = tryFind("Hyphon_2846", 2846)
-        gv.Hyphon_fake_dec = tryFind("Hyphon_fake_dec", 1097)
+if not mobilPart then
+    warn("[ERROR] Part mobil tidak ditemukan")
+    return
+end
 
-        if gv.Hyphon_2102 then
-            gv.Hyphon_Encode = debug.getupvalue(gv.Hyphon_2102, 1)
-            gv.Hyphon_Decode = debug.getupvalue(gv.Hyphon_2102, 21)
-        end
-        gv.Hyphon_Script = nil
-        pcall(function()
-            for _, o in pairs(getnilinstances()) do
-                if o:IsA("Script") and o.Name:len() == 32 then
-                    gv.Hyphon_Script = o
-                    break
-                end
-            end
-        end)
+-- [ VARIABEL TOMBOL ]
+local naik  = false
+local turun = false
+local aktif = true
 
-        if gv.Hyphon_2102 and gv.Hyphon_2247 and gv.Hyphon_2846 and gv.Hyphon_fake_dec then
-            pcall(function()
-                local HC = cloneref(game:GetService("MemoryStoreService")):FindFirstChild("Hyphon_Check")
-                local RF = debug.getupvalue(gv.Hyphon_2247, 6)
-                if HC then
-                    local o = hookfunction(HC.FireServer, function(s, ...) return o(s, ...) end)
-                end
-                if RF then
-                    local o = hookfunction(RF.InvokeServer, function(s, ...)
-                        local a = table.pack(...)
-                        if type(a[1]) == "table" and a[1][1] then
-                            gv.T1 = a[1][1]; gv.T2 = a[1][2]
-                            gv.T3 = a[1][6]; gv.T4 = a[1][11]
-                        end
-                        return o(s, ...)
-                    end)
-                end
-            end)
-            if bit32 and bit32.bxor and gv.Hyphon_Script and checkcaller and getcallingscript then
-                pcall(function()
-                    local o = hookfunction(bit32.bxor, function(a, b)
-                        if not checkcaller() and getcallingscript() == gv.Hyphon_Script then
-                            return task.wait(9e9)
-                        end
-                        return o(a, b)
-                    end)
-                end)
-            end
-        end
+-- ============================================
+-- [ UI SIMPEL ]
+-- ============================================
 
-        pcall(function()
-            for _, Object in pairs(getgc(true)) do
-                if typeof(Object) == "table" and typeof(rawget(Object, "Homeless")) == "table" then
-                    if rawget(Object.Homeless, "MaxDistance") then
-                        Object.Homeless.MaxDistance = 9e9
-                    end
-                end
-            end
-        end)
-    end)
-
-    getgenv().HyphonReady = true
-    getgenv().Emulator_Set = true
-
-    pcall(function()
-        local player = Players.LocalPlayer
-        if player then player.Kick = function() return end end
-        Players.Kick = function() return end
-    end)
-
-    task.spawn(function()
-        while getgenv().FULLY_MS_V1 do
-            pcall(function()
-                local playerGui = Players.LocalPlayer and Players.LocalPlayer.PlayerGui
-                local patterns = {
-                    "Kick", "Ban", "Disconnect", "Error", "Moderation",
-                    "Warning", "Alert", "Popup", "Notice", "Detection",
-                    "Anti", "Handshake"
-                }
-                for _, gui in pairs(CoreGui:GetChildren()) do
-                    local name = gui.Name or ""
-                    for _, pat in ipairs(patterns) do
-                        if name:find(pat) then gui:Destroy() break end
-                    end
-                end
-                if playerGui then
-                    for _, gui in pairs(playerGui:GetChildren()) do
-                        local name = gui.Name or ""
-                        for _, pat in ipairs(patterns) do
-                            if name:find(pat) then gui:Destroy() break end
-                        end
-                    end
-                end
-            end)
-            task.wait(0.1)
-        end
-    end)
-
-    print("✅ HYPHON EMULATOR BYPASS ACTIVE")
-end)
-
--- ===================== GUI ROOT =====================
 local gui = Instance.new("ScreenGui")
-gui.Name = "JENOWA_STORE"
+gui.Name = "CDID_Terbang"
 gui.ResetOnSpawn = false
-gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+gui.Parent = LP:WaitForChild("PlayerGui")
 
-local main = Instance.new("Frame")
-main.Name = "Main"
-main.Size = UDim2.new(0, 280, 0, 260)
-main.Position = UDim2.new(0, 20, 0, 20)
-main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-main.BorderSizePixel = 0
-main.Active = true
-main.Draggable = true
-main.Parent = gui
+-- Frame utama
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 180, 0, 200)
+frame.Position = UDim2.new(0, 20, 0.4, 0)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+frame.Parent = gui
 
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 8)
-corner.Parent = main
+corner.Parent = frame
 
-local stroke = Instance.new("UIStroke")
-stroke.Color = Color3.fromRGB(180, 180, 180)
-stroke.Thickness = 1
-stroke.Parent = main
+-- Judul
+local judul = Instance.new("TextLabel")
+judul.Size = UDim2.new(1, 0, 0, 30)
+judul.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+judul.BorderSizePixel = 0
+judul.Text = "TERBANG + MOBIL"
+judul.TextColor3 = Color3.fromRGB(220, 220, 220)
+judul.Font = Enum.Font.GothamBold
+judul.TextSize = 14
+judul.Parent = frame
 
--- ===================== TITLE BAR =====================
-local titleBar = Instance.new("Frame")
-titleBar.Name = "TitleBar"
-titleBar.Size = UDim2.new(1, 0, 0, 32)
-titleBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-titleBar.BorderSizePixel = 0
-titleBar.Parent = main
+local cornerJudul = Instance.new("UICorner")
+cornerJudul.CornerRadius = UDim.new(0, 8)
+cornerJudul.Parent = judul
 
-local titleCorner = Instance.new("UICorner")
-titleCorner.CornerRadius = UDim.new(0, 8)
-titleCorner.Parent = titleBar
+-- Tombol Naik (V)
+local btnNaik = Instance.new("TextButton")
+btnNaik.Size = UDim2.new(1, -20, 0, 35)
+btnNaik.Position = UDim2.new(0, 10, 0, 40)
+btnNaik.BackgroundColor3 = Color3.fromRGB(50, 120, 60)
+btnNaik.BorderSizePixel = 0
+btnNaik.Text = "NAIK (V)"
+btnNaik.TextColor3 = Color3.fromRGB(255, 255, 255)
+btnNaik.Font = Enum.Font.GothamBold
+btnNaik.TextSize = 14
+btnNaik.Parent = frame
 
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -60, 1, 0)
-title.Position = UDim2.new(0, 12, 0, 0)
-title.BackgroundTransparency = 1
-title.Text = "JENOWA STORE"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.TextSize = 14
-title.Font = Enum.Font.GothamBold
-title.TextXAlignment = Enum.TextXAlignment.Left
-title.Parent = titleBar
+local cornerNaik = Instance.new("UICorner")
+cornerNaik.CornerRadius = UDim.new(0, 6)
+cornerNaik.Parent = btnNaik
 
-local minBtn = Instance.new("TextButton")
-minBtn.Size = UDim2.new(0, 24, 0, 24)
-minBtn.Position = UDim2.new(1, -30, 0, 4)
-minBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-minBtn.Text = "–"
-minBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-minBtn.TextSize = 16
-minBtn.Font = Enum.Font.GothamBold
-minBtn.BorderSizePixel = 0
-minBtn.Parent = titleBar
+-- Tombol Turun (Z)
+local btnTurun = Instance.new("TextButton")
+btnTurun.Size = UDim2.new(1, -20, 0, 35)
+btnTurun.Position = UDim2.new(0, 10, 0, 80)
+btnTurun.BackgroundColor3 = Color3.fromRGB(120, 50, 50)
+btnTurun.BorderSizePixel = 0
+btnTurun.Text = "TURUN (Z)"
+btnTurun.TextColor3 = Color3.fromRGB(255, 255, 255)
+btnTurun.Font = Enum.Font.GothamBold
+btnTurun.TextSize = 14
+btnTurun.Parent = frame
 
-local minCorner = Instance.new("UICorner")
-minCorner.CornerRadius = UDim.new(0, 6)
-minCorner.Parent = minBtn
+local cornerTurun = Instance.new("UICorner")
+cornerTurun.CornerRadius = UDim.new(0, 6)
+cornerTurun.Parent = btnTurun
 
--- ===================== BODY =====================
-local body = Instance.new("Frame")
-body.Name = "Body"
-body.Size = UDim2.new(1, 0, 1, -32)
-body.Position = UDim2.new(0, 0, 0, 32)
-body.BackgroundTransparency = 1
-body.Parent = main
+-- Tombol OFF
+local btnOff = Instance.new("TextButton")
+btnOff.Size = UDim2.new(1, -20, 0, 35)
+btnOff.Position = UDim2.new(0, 10, 0, 120)
+btnOff.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+btnOff.BorderSizePixel = 0
+btnOff.Text = "OFF"
+btnOff.TextColor3 = Color3.fromRGB(255, 255, 255)
+btnOff.Font = Enum.Font.GothamBold
+btnOff.TextSize = 14
+btnOff.Parent = frame
 
--- Insta-Interact
-local instaBtn = Instance.new("TextButton")
-instaBtn.Size = UDim2.new(1, -40, 0, 42)
-instaBtn.Position = UDim2.new(0, 20, 0, 16)
-instaBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-instaBtn.Text = "INSTA-INTERACT: OFF"
-instaBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
-instaBtn.TextSize = 13
-instaBtn.Font = Enum.Font.GothamBold
-instaBtn.BorderSizePixel = 0
-instaBtn.Parent = body
+local cornerOff = Instance.new("UICorner")
+cornerOff.CornerRadius = UDim.new(0, 6)
+cornerOff.Parent = btnOff
 
-local instaCorner = Instance.new("UICorner")
-instaCorner.CornerRadius = UDim.new(0, 6)
-instaCorner.Parent = instaBtn
+-- Status
+local status = Instance.new("TextLabel")
+status.Size = UDim2.new(1, -20, 0, 25)
+status.Position = UDim2.new(0, 10, 0, 160)
+status.BackgroundTransparency = 1
+status.Text = "Status: Aktif"
+status.TextColor3 = Color3.fromRGB(180, 180, 180)
+status.Font = Enum.Font.Gotham
+status.TextSize = 12
+status.Parent = frame
 
-local instaStroke = Instance.new("UIStroke")
-instaStroke.Color = Color3.fromRGB(150, 150, 150)
-instaStroke.Thickness = 1
-instaStroke.Parent = instaBtn
+-- ============================================
+-- [ EFEK TOMBOL UI ]
+-- ============================================
 
-local instaStatus = Instance.new("TextLabel")
-instaStatus.Size = UDim2.new(1, -40, 0, 16)
-instaStatus.Position = UDim2.new(0, 20, 0, 60)
-instaStatus.BackgroundTransparency = 1
-instaStatus.Text = "Status: Idle"
-instaStatus.TextColor3 = Color3.fromRGB(150, 150, 150)
-instaStatus.TextSize = 11
-instaStatus.Font = Enum.Font.Gotham
-instaStatus.TextXAlignment = Enum.TextXAlignment.Left
-instaStatus.Parent = body
+btnNaik.MouseButton1Down:Connect(function()
+    naik = true
+    btnNaik.BackgroundColor3 = Color3.fromRGB(80, 180, 90)
+end)
+btnNaik.MouseButton1Up:Connect(function()
+    naik = false
+    btnNaik.BackgroundColor3 = Color3.fromRGB(50, 120, 60)
+end)
+btnNaik.MouseLeave:Connect(function()
+    naik = false
+    btnNaik.BackgroundColor3 = Color3.fromRGB(50, 120, 60)
+end)
 
--- ESP
-local espBtn = Instance.new("TextButton")
-espBtn.Size = UDim2.new(1, -40, 0, 42)
-espBtn.Position = UDim2.new(0, 20, 0, 96)
-espBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-espBtn.Text = "ESP: OFF"
-espBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
-espBtn.TextSize = 13
-espBtn.Font = Enum.Font.GothamBold
-espBtn.BorderSizePixel = 0
-espBtn.Parent = body
+btnTurun.MouseButton1Down:Connect(function()
+    turun = true
+    btnTurun.BackgroundColor3 = Color3.fromRGB(180, 80, 80)
+end)
+btnTurun.MouseButton1Up:Connect(function()
+    turun = false
+    btnTurun.BackgroundColor3 = Color3.fromRGB(120, 50, 50)
+end)
+btnTurun.MouseLeave:Connect(function()
+    turun = false
+    btnTurun.BackgroundColor3 = Color3.fromRGB(120, 50, 50)
+end)
 
-local espCorner = Instance.new("UICorner")
-espCorner.CornerRadius = UDim.new(0, 6)
-espCorner.Parent = espBtn
+-- ============================================
+-- [ TOMBOL OFF ]
+-- ============================================
 
-local espStroke = Instance.new("UIStroke")
-espStroke.Color = Color3.fromRGB(150, 150, 150)
-espStroke.Thickness = 1
-espStroke.Parent = espBtn
+local fungsiTerbang
 
-local espStatus = Instance.new("TextLabel")
-espStatus.Size = UDim2.new(1, -40, 0, 16)
-espStatus.Position = UDim2.new(0, 20, 0, 140)
-espStatus.BackgroundTransparency = 1
-espStatus.Text = "Status: Idle"
-espStatus.TextColor3 = Color3.fromRGB(150, 150, 150)
-espStatus.TextSize = 11
-espStatus.Font = Enum.Font.Gotham
-espStatus.TextXAlignment = Enum.TextXAlignment.Left
-espStatus.Parent = body
+local function matikanScript()
+    aktif = false
+    naik  = false
+    turun = false
 
--- Bypass status
-local bypassStatus = Instance.new("TextLabel")
-bypassStatus.Size = UDim2.new(1, -40, 0, 16)
-bypassStatus.Position = UDim2.new(0, 20, 0, 168)
-bypassStatus.BackgroundTransparency = 1
-bypassStatus.Text = "Bypass: Loading..."
-bypassStatus.TextColor3 = Color3.fromRGB(150, 150, 150)
-bypassStatus.TextSize = 11
-bypassStatus.Font = Enum.Font.Gotham
-bypassStatus.TextXAlignment = Enum.TextXAlignment.Left
-bypassStatus.Parent = body
+    if fungsiTerbang then
+        fungsiTerbang:Disconnect()
+        fungsiTerbang = nil
+    end
 
--- Footer
-local footer = Instance.new("TextLabel")
-footer.Size = UDim2.new(1, -40, 0, 16)
-footer.Position = UDim2.new(0, 20, 0, 200)
-footer.BackgroundTransparency = 1
-footer.Text = "🪽 Dark Angel"
-footer.TextColor3 = Color3.fromRGB(120, 120, 120)
-footer.TextSize = 10
-footer.Font = Enum.Font.Gotham
-footer.TextXAlignment = Enum.TextXAlignment.Left
-footer.Parent = body
+    -- Kembalikan posisi
+    HRP.CFrame   = posAwalHRP
+    mobilPart.CFrame = posAwalMobil
 
--- ===================== MINIMIZE =====================
-local minimized = false
-minBtn.MouseButton1Click:Connect(function()
-    minimized = not minimized
-    if minimized then
-        main.Size = UDim2.new(0, 280, 0, 32)
-        body.Visible = false
-        minBtn.Text = "+"
-    else
-        main.Size = UDim2.new(0, 280, 0, 260)
-        body.Visible = true
-        minBtn.Text = "–"
+    status.Text = "Status: OFF"
+    status.TextColor3 = Color3.fromRGB(200, 80, 80)
+    btnOff.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    btnOff.Text = "OFF ✔"
+
+    print("[CDID] Script dimatikan")
+end
+
+btnOff.MouseButton1Click:Connect(matikanScript)
+
+-- ============================================
+-- [ INPUT KEYBOARD ]
+-- ============================================
+
+local connBegan = UIS.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.V then
+        naik = true
+    elseif input.KeyCode == Enum.KeyCode.Z then
+        turun = true
     end
 end)
 
--- ===================== INSTA-INTERACT =====================
-local function applyInsta()
-    for _, v in pairs(Workspace:GetDescendants()) do
-        if v:IsA("ProximityPrompt") then
-            if not modifiedPrompts[v] then
-                modifiedPrompts[v] = v.HoldDuration
-            end
-            v.HoldDuration = 0
-        end
-    end
-    holdConnection = PPS.PromptButtonHoldBegan:Connect(function(v)
-        if not modifiedPrompts[v] then
-            modifiedPrompts[v] = v.HoldDuration
-        end
-        v.HoldDuration = 0
-    end)
-end
-
-local function removeInsta()
-    if holdConnection then
-        holdConnection:Disconnect()
-        holdConnection = nil
-    end
-    for prompt, original in pairs(modifiedPrompts) do
-        if prompt and prompt.Parent then
-            prompt.HoldDuration = original
-        end
-    end
-    modifiedPrompts = {}
-end
-
--- ===================== ESP =====================
-local Camera = Workspace.CurrentCamera
-
-local function createESP(player)
-    if player == LocalPlayer then return end
-    if espCache[player] then return end
-
-    local box = Drawing.new("Square")
-    box.Thickness = 1
-    box.Color = Color3.fromRGB(255, 255, 255)
-    box.Filled = false
-    box.Transparency = 1
-    box.Visible = false
-
-    local name = Drawing.new("Text")
-    name.Size = 14
-    name.Center = true
-    name.Outline = true
-    name.OutlineColor = Color3.fromRGB(0, 0, 0)
-    name.Color = Color3.fromRGB(255, 255, 255)
-    name.Font = 2
-    name.Visible = false
-
-    local dist = Drawing.new("Text")
-    dist.Size = 12
-    dist.Center = true
-    dist.Outline = true
-    dist.OutlineColor = Color3.fromRGB(0, 0, 0)
-    dist.Color = Color3.fromRGB(200, 200, 200)
-    dist.Font = 2
-    dist.Visible = false
-
-    espCache[player] = { Box = box, Name = name, Dist = dist }
-end
-
-local function removeESP(player)
-    local data = espCache[player]
-    if not data then return end
-    if data.Box then data.Box:Remove() end
-    if data.Name then data.Name:Remove() end
-    if data.Dist then data.Dist:Remove() end
-    espCache[player] = nil
-end
-
-local function clearAllESP()
-    for player, _ in pairs(espCache) do
-        removeESP(player)
-    end
-    espCache = {}
-end
-
-local function updateESP()
-    if not Camera then return end
-
-    for player, data in pairs(espCache) do
-        local char = player.Character
-        if not char then
-            data.Box.Visible = false
-            data.Name.Visible = false
-            data.Dist.Visible = false
-            continue
-        end
-
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        local head = char:FindFirstChild("Head")
-        local hum = char:FindFirstChildOfClass("Humanoid")
-
-        if not hrp or not head or not hum or hum.Health <= 0 then
-            data.Box.Visible = false
-            data.Name.Visible = false
-            data.Dist.Visible = false
-            continue
-        end
-
-        local headPos, headOnScreen = Camera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0))
-        local hrpPos, hrpOnScreen = Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3, 0))
-
-        if headOnScreen and hrpOnScreen then
-            local height = math.abs(headPos.Y - hrpPos.Y)
-            local width = height / 2
-
-            data.Box.Size = Vector2.new(width, height)
-            data.Box.Position = Vector2.new(headPos.X - width / 2, headPos.Y)
-            data.Box.Visible = true
-
-            data.Name.Text = player.Name
-            data.Name.Position = Vector2.new(headPos.X, headPos.Y - 18)
-            data.Name.Visible = true
-
-            local distance = (Camera.CFrame.Position - hrp.Position).Magnitude
-            data.Dist.Text = string.format("[%d]", math.floor(distance))
-            data.Dist.Position = Vector2.new(headPos.X, headPos.Y + height + 2)
-            data.Dist.Visible = true
-        else
-            data.Box.Visible = false
-            data.Name.Visible = false
-            data.Dist.Visible = false
-        end
-    end
-end
-
-local function startESPRender()
-    if renderConnection then return end
-    renderConnection = RunService.RenderStepped:Connect(function()
-        pcall(updateESP)
-    end)
-end
-
-local function stopESPRender()
-    if renderConnection then
-        renderConnection:Disconnect()
-        renderConnection = nil
-    end
-end
-
-local function bindPlayerESP(player)
-    if player == LocalPlayer then return end
-
-    if espEnabled then
-        createESP(player)
-    end
-
-    local conn = player.CharacterAdded:Connect(function()
-        if espEnabled then
-            task.wait(0.5)
-            createESP(player)
-        end
-    end)
-    table.insert(playerConnections, conn)
-end
-
-for _, player in ipairs(Players:GetPlayers()) do
-    bindPlayerESP(player)
-end
-
-Players.PlayerAdded:Connect(bindPlayerESP)
-
-Players.PlayerRemoving:Connect(function(player)
-    removeESP(player)
-end)
-
--- ===================== TOGGLE: INSTA =====================
-instaBtn.MouseButton1Click:Connect(function()
-    instaEnabled = not instaEnabled
-    if instaEnabled then
-        applyInsta()
-        instaBtn.Text = "INSTA-INTERACT: ON"
-        instaBtn.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
-        instaBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
-        instaStroke.Color = Color3.fromRGB(255, 255, 255)
-        instaStatus.Text = "Status: Active"
-        instaStatus.TextColor3 = Color3.fromRGB(255, 255, 255)
-    else
-        removeInsta()
-        instaBtn.Text = "INSTA-INTERACT: OFF"
-        instaBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        instaBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
-        instaStroke.Color = Color3.fromRGB(150, 150, 150)
-        instaStatus.Text = "Status: Idle"
-        instaStatus.TextColor3 = Color3.fromRGB(150, 150, 150)
+local connEnded = UIS.InputEnded:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.V then
+        naik = false
+    elseif input.KeyCode == Enum.KeyCode.Z then
+        turun = false
     end
 end)
 
--- ===================== TOGGLE: ESP =====================
-espBtn.MouseButton1Click:Connect(function()
-    espEnabled = not espEnabled
+-- ============================================
+-- [ SIMPAN POSISI AWAL ]
+-- ============================================
 
-    if espEnabled then
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer then
-                createESP(player)
-            end
-        end
-        startESPRender()
-        espBtn.Text = "ESP: ON"
-        espBtn.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
-        espBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
-        espStroke.Color = Color3.fromRGB(255, 255, 255)
-        espStatus.Text = "Status: Active"
-        espStatus.TextColor3 = Color3.fromRGB(255, 255, 255)
-    else
-        stopESPRender()
-        clearAllESP()
-        espBtn.Text = "ESP: OFF"
-        espBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        espBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
-        espStroke.Color = Color3.fromRGB(150, 150, 150)
-        espStatus.Text = "Status: Idle"
-        espStatus.TextColor3 = Color3.fromRGB(150, 150, 150)
+local posAwalHRP   = HRP.CFrame
+local posAwalMobil = mobilPart.CFrame
+
+-- ============================================
+-- [ LOOP TERBANG ]
+-- ============================================
+
+fungsiTerbang = RunService.RenderStepped:Connect(function(dt)
+
+    if not aktif then return end
+
+    local arah = HRP.CFrame.LookVector
+    local vertikal = 0
+
+    if naik then
+        vertikal = NAIK_SPEED
+    elseif turun then
+        vertikal = -TURUN_SPEED
     end
+
+    HRP.CFrame = HRP.CFrame + Vector3.new(
+        arah.X * KECEPATAN * dt,
+        vertikal * dt,
+        arah.Z * KECEPATAN * dt
+    )
+
+    mobilPart.CFrame = HRP.CFrame * CFrame.new(
+        OFFSET_X,
+        OFFSET_Y,
+        OFFSET_Z
+    )
+
 end)
 
--- ===================== UPDATE STATUS BYPASS =====================
-task.spawn(function()
-    task.wait(3)
-    if getgenv().HyphonReady then
-        bypassStatus.Text = "Bypass: Hyphon Active"
-        bypassStatus.TextColor3 = Color3.fromRGB(220, 220, 220)
-    else
-        bypassStatus.Text = "Bypass: Failed"
-        bypassStatus.TextColor3 = Color3.fromRGB(150, 150, 150)
-    end
-end)
-
--- ===================== NOTIFIKASI =====================
-SG:SetCore("SendNotification", {
-    Title = "JENOWA STORE",
-    Text = "Loaded. Bypass + 2 fitur aktif.",
-    Duration = 3
-})
+-- [ INFO ]
+print("[CDID] Script terbang + UI aktif")
+print("[CDID] V = Naik, Z = Turun, OFF = Matikan")
+print("[CDID] Mobil : " .. mobil.Name)
