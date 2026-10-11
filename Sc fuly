@@ -1,22 +1,100 @@
 -- ============================================
--- SCRIPT TERBANG BERSAMA MOBIL
--- Bahasa  : Lua
+-- SCRIPT TERBANG BERSAMA MOBIL + UI + OFF
 -- Executor: CDID
--- Tombol  : V = Naik, Z = Turun, OFF = Matikan
--- UI      : Simpel
 -- ============================================
+
+task.wait(1)
 
 -- [ SERVICE ]
 local Players     = game:GetService("Players")
 local RunService  = game:GetService("RunService")
 local UIS         = game:GetService("UserInputService")
 
--- [ LOCAL PLAYER ]
-local LP          = Players.LocalPlayer
-local CHAR        = LP.Character or LP.CharacterAdded:Wait()
-local HRP         = CHAR:WaitForChild("HumanoidRootPart")
+local LP = Players.LocalPlayer
+if not LP then warn("[CDID] LP tidak ada") return end
 
+-- ============================================
+-- [ UI DULU — BIAR PASTI MUNCUL ]
+-- ============================================
+local gui = Instance.new("ScreenGui")
+gui.Name = "CDID_Terbang"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+
+-- coba parent ke CoreGui dulu, kalau gagal ke PlayerGui
+local sukses = pcall(function()
+    gui.Parent = game:GetService("CoreGui")
+end)
+if not sukses then
+    gui.Parent = LP:WaitForChild("PlayerGui")
+end
+
+print("[CDID] UI dibuat")
+
+-- Frame
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 190, 0, 240)
+frame.Position = UDim2.new(0, 20, 0.4, 0)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+frame.Parent = gui
+
+local c1 = Instance.new("UICorner")
+c1.CornerRadius = UDim.new(0, 8)
+c1.Parent = frame
+
+local judul = Instance.new("TextLabel")
+judul.Size = UDim2.new(1, 0, 0, 30)
+judul.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+judul.BorderSizePixel = 0
+judul.Text = "TERBANG + MOBIL"
+judul.TextColor3 = Color3.fromRGB(220, 220, 220)
+judul.Font = Enum.Font.GothamBold
+judul.TextSize = 14
+judul.Parent = frame
+
+local c2 = Instance.new("UICorner")
+c2.CornerRadius = UDim.new(0, 8)
+c2.Parent = judul
+
+local function buatTombol(teks, warna, y)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(1, -20, 0, 35)
+    b.Position = UDim2.new(0, 10, 0, y)
+    b.BackgroundColor3 = warna
+    b.BorderSizePixel = 0
+    b.Text = teks
+    b.TextColor3 = Color3.fromRGB(255, 255, 255)
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 13
+    b.Parent = frame
+
+    local cc = Instance.new("UICorner")
+    cc.CornerRadius = UDim.new(0, 6)
+    cc.Parent = b
+
+    return b
+end
+
+local btnNaik  = buatTombol("NAIK (V)",  Color3.fromRGB(50, 120, 60), 40)
+local btnTurun = buatTombol("TURUN (Z)", Color3.fromRGB(120, 50, 50), 80)
+local btnOff   = buatTombol("OFF",       Color3.fromRGB(90, 90, 90),  120)
+
+local status = Instance.new("TextLabel")
+status.Size = UDim2.new(1, -20, 0, 25)
+status.Position = UDim2.new(0, 10, 0, 160)
+status.BackgroundTransparency = 1
+status.Text = "Status: Mencari mobil..."
+status.TextColor3 = Color3.fromRGB(180, 180, 180)
+status.Font = Enum.Font.Gotham
+status.TextSize = 12
+status.Parent = frame
+
+-- ============================================
 -- [ KONFIGURASI ]
+-- ============================================
 local KECEPATAN   = 80
 local NAIK_SPEED  = 40
 local TURUN_SPEED = 40
@@ -25,7 +103,21 @@ local OFFSET_Y    = -3
 local OFFSET_Z    = 0
 local MOBIL_NAMA  = "Vehicle"
 
+-- ============================================
+-- [ CARI KARAKTER ]
+-- ============================================
+local CHAR = LP.Character or LP.CharacterAdded:Wait()
+local HRP  = CHAR:WaitForChild("HumanoidRootPart", 10)
+
+if not HRP then
+    status.Text = "Status: HRP tidak ada"
+    warn("[CDID] HRP tidak ada")
+    return
+end
+
+-- ============================================
 -- [ CARI MOBIL ]
+-- ============================================
 local mobil = workspace:FindFirstChild(MOBIL_NAMA)
 
 if not mobil then
@@ -38,131 +130,40 @@ if not mobil then
 end
 
 if not mobil then
-    warn("[ERROR] Mobil tidak ditemukan")
-    return
+    status.Text = "Status: Mobil tidak ada"
+    warn("[CDID] Mobil tidak ada — tekan NAIK untuk terbang saja")
 end
 
 -- [ CARI PART MOBIL ]
 local mobilPart
-
-for _, v in pairs(mobil:GetDescendants()) do
-    if v:IsA("BasePart") then
-        mobilPart = v
-        break
+if mobil then
+    for _, v in pairs(mobil:GetDescendants()) do
+        if v:IsA("BasePart") then
+            mobilPart = v
+            break
+        end
     end
+    if mobilPart then
+        status.Text = "Status: Aktif — " .. mobil.Name
+    end
+else
+    status.Text = "Status: Aktif (tanpa mobil)"
 end
 
-if not mobilPart then
-    warn("[ERROR] Part mobil tidak ditemukan")
-    return
-end
+-- [ SIMPAN POSISI AWAL ]
+local posAwalHRP   = HRP.CFrame
+local posAwalMobil = mobilPart and mobilPart.CFrame or nil
 
--- [ VARIABEL TOMBOL ]
+-- ============================================
+-- [ VARIABEL ]
+-- ============================================
 local naik  = false
 local turun = false
 local aktif = true
 
 -- ============================================
--- [ UI SIMPEL ]
+-- [ EFEK TOMBOL ]
 -- ============================================
-
-local gui = Instance.new("ScreenGui")
-gui.Name = "CDID_Terbang"
-gui.ResetOnSpawn = false
-gui.Parent = LP:WaitForChild("PlayerGui")
-
--- Frame utama
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 180, 0, 200)
-frame.Position = UDim2.new(0, 20, 0.4, 0)
-frame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-frame.BorderSizePixel = 0
-frame.Active = true
-frame.Draggable = true
-frame.Parent = gui
-
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 8)
-corner.Parent = frame
-
--- Judul
-local judul = Instance.new("TextLabel")
-judul.Size = UDim2.new(1, 0, 0, 30)
-judul.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-judul.BorderSizePixel = 0
-judul.Text = "TERBANG + MOBIL"
-judul.TextColor3 = Color3.fromRGB(220, 220, 220)
-judul.Font = Enum.Font.GothamBold
-judul.TextSize = 14
-judul.Parent = frame
-
-local cornerJudul = Instance.new("UICorner")
-cornerJudul.CornerRadius = UDim.new(0, 8)
-cornerJudul.Parent = judul
-
--- Tombol Naik (V)
-local btnNaik = Instance.new("TextButton")
-btnNaik.Size = UDim2.new(1, -20, 0, 35)
-btnNaik.Position = UDim2.new(0, 10, 0, 40)
-btnNaik.BackgroundColor3 = Color3.fromRGB(50, 120, 60)
-btnNaik.BorderSizePixel = 0
-btnNaik.Text = "NAIK (V)"
-btnNaik.TextColor3 = Color3.fromRGB(255, 255, 255)
-btnNaik.Font = Enum.Font.GothamBold
-btnNaik.TextSize = 14
-btnNaik.Parent = frame
-
-local cornerNaik = Instance.new("UICorner")
-cornerNaik.CornerRadius = UDim.new(0, 6)
-cornerNaik.Parent = btnNaik
-
--- Tombol Turun (Z)
-local btnTurun = Instance.new("TextButton")
-btnTurun.Size = UDim2.new(1, -20, 0, 35)
-btnTurun.Position = UDim2.new(0, 10, 0, 80)
-btnTurun.BackgroundColor3 = Color3.fromRGB(120, 50, 50)
-btnTurun.BorderSizePixel = 0
-btnTurun.Text = "TURUN (Z)"
-btnTurun.TextColor3 = Color3.fromRGB(255, 255, 255)
-btnTurun.Font = Enum.Font.GothamBold
-btnTurun.TextSize = 14
-btnTurun.Parent = frame
-
-local cornerTurun = Instance.new("UICorner")
-cornerTurun.CornerRadius = UDim.new(0, 6)
-cornerTurun.Parent = btnTurun
-
--- Tombol OFF
-local btnOff = Instance.new("TextButton")
-btnOff.Size = UDim2.new(1, -20, 0, 35)
-btnOff.Position = UDim2.new(0, 10, 0, 120)
-btnOff.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
-btnOff.BorderSizePixel = 0
-btnOff.Text = "OFF"
-btnOff.TextColor3 = Color3.fromRGB(255, 255, 255)
-btnOff.Font = Enum.Font.GothamBold
-btnOff.TextSize = 14
-btnOff.Parent = frame
-
-local cornerOff = Instance.new("UICorner")
-cornerOff.CornerRadius = UDim.new(0, 6)
-cornerOff.Parent = btnOff
-
--- Status
-local status = Instance.new("TextLabel")
-status.Size = UDim2.new(1, -20, 0, 25)
-status.Position = UDim2.new(0, 10, 0, 160)
-status.BackgroundTransparency = 1
-status.Text = "Status: Aktif"
-status.TextColor3 = Color3.fromRGB(180, 180, 180)
-status.Font = Enum.Font.Gotham
-status.TextSize = 12
-status.Parent = frame
-
--- ============================================
--- [ EFEK TOMBOL UI ]
--- ============================================
-
 btnNaik.MouseButton1Down:Connect(function()
     naik = true
     btnNaik.BackgroundColor3 = Color3.fromRGB(80, 180, 90)
@@ -190,12 +191,11 @@ btnTurun.MouseLeave:Connect(function()
 end)
 
 -- ============================================
--- [ TOMBOL OFF ]
+-- [ OFF ]
 -- ============================================
-
 local fungsiTerbang
 
-local function matikanScript()
+btnOff.MouseButton1Click:Connect(function()
     aktif = false
     naik  = false
     turun = false
@@ -205,9 +205,12 @@ local function matikanScript()
         fungsiTerbang = nil
     end
 
-    -- Kembalikan posisi
-    HRP.CFrame   = posAwalHRP
-    mobilPart.CFrame = posAwalMobil
+    if HRP and HRP.Parent then
+        HRP.CFrame = posAwalHRP
+    end
+    if mobilPart and mobilPart.Parent and posAwalMobil then
+        mobilPart.CFrame = posAwalMobil
+    end
 
     status.Text = "Status: OFF"
     status.TextColor3 = Color3.fromRGB(200, 80, 80)
@@ -215,55 +218,35 @@ local function matikanScript()
     btnOff.Text = "OFF ✔"
 
     print("[CDID] Script dimatikan")
-end
-
-btnOff.MouseButton1Click:Connect(matikanScript)
+end)
 
 -- ============================================
 -- [ INPUT KEYBOARD ]
 -- ============================================
-
-local connBegan = UIS.InputBegan:Connect(function(input, gp)
+UIS.InputBegan:Connect(function(input, gp)
     if gp then return end
-    if input.KeyCode == Enum.KeyCode.V then
-        naik = true
-    elseif input.KeyCode == Enum.KeyCode.Z then
-        turun = true
-    end
+    if input.KeyCode == Enum.KeyCode.V then naik = true
+    elseif input.KeyCode == Enum.KeyCode.Z then turun = true end
 end)
 
-local connEnded = UIS.InputEnded:Connect(function(input, gp)
+UIS.InputEnded:Connect(function(input, gp)
     if gp then return end
-    if input.KeyCode == Enum.KeyCode.V then
-        naik = false
-    elseif input.KeyCode == Enum.KeyCode.Z then
-        turun = false
-    end
+    if input.KeyCode == Enum.KeyCode.V then naik = false
+    elseif input.KeyCode == Enum.KeyCode.Z then turun = false end
 end)
-
--- ============================================
--- [ SIMPAN POSISI AWAL ]
--- ============================================
-
-local posAwalHRP   = HRP.CFrame
-local posAwalMobil = mobilPart.CFrame
 
 -- ============================================
 -- [ LOOP TERBANG ]
 -- ============================================
-
 fungsiTerbang = RunService.RenderStepped:Connect(function(dt)
-
     if not aktif then return end
+    if not HRP or not HRP.Parent then return end
 
     local arah = HRP.CFrame.LookVector
     local vertikal = 0
 
-    if naik then
-        vertikal = NAIK_SPEED
-    elseif turun then
-        vertikal = -TURUN_SPEED
-    end
+    if naik then vertikal = NAIK_SPEED
+    elseif turun then vertikal = -TURUN_SPEED end
 
     HRP.CFrame = HRP.CFrame + Vector3.new(
         arah.X * KECEPATAN * dt,
@@ -271,15 +254,12 @@ fungsiTerbang = RunService.RenderStepped:Connect(function(dt)
         arah.Z * KECEPATAN * dt
     )
 
-    mobilPart.CFrame = HRP.CFrame * CFrame.new(
-        OFFSET_X,
-        OFFSET_Y,
-        OFFSET_Z
-    )
-
+    if mobilPart and mobilPart.Parent then
+        mobilPart.CFrame = HRP.CFrame * CFrame.new(
+            OFFSET_X, OFFSET_Y, OFFSET_Z
+        )
+    end
 end)
 
--- [ INFO ]
-print("[CDID] Script terbang + UI aktif")
-print("[CDID] V = Naik, Z = Turun, OFF = Matikan")
-print("[CDID] Mobil : " .. mobil.Name)
+print("[CDID] Script aktif")
+print("[CDID] V = Naik, Z = Turun")
