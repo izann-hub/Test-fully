@@ -1,4 +1,4 @@
--- JENOWA STORE | Cursor + Crosshair Follow Mouse
+-- JENOWA STORE | Crosshair Slider
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -43,7 +43,7 @@ mouse.Icon = ""
 UIS.MouseIconEnabled = false
 
 --=============================================================
--- CROSSHAIR (nempel mouse)
+-- CROSSHAIR
 --=============================================================
 local crosshairState = {enabled = false, size = 12}
 
@@ -98,9 +98,21 @@ right.BackgroundColor3 = C_WHITE
 right.BorderSizePixel = 0
 right.Parent = customCross
 
---=============================================================
--- UPDATE POSISI (cursor + crosshair nempel mouse)
---=============================================================
+local function applyCrosshairSize(size)
+    crosshairState.size = size
+    local armLen = math.max(2, size * 0.5)
+    local thickness = 2
+    local gap = math.max(1, size * 0.25)
+    top.Size = UDim2.new(0, thickness, 0, armLen)
+    top.Position = UDim2.new(0.5, 0, 0.5, -gap)
+    bottom.Size = UDim2.new(0, thickness, 0, armLen)
+    bottom.Position = UDim2.new(0.5, 0, 0.5, gap)
+    left.Size = UDim2.new(0, armLen, 0, thickness)
+    left.Position = UDim2.new(0.5, -gap, 0.5, 0)
+    right.Size = UDim2.new(0, armLen, 0, thickness)
+    right.Position = UDim2.new(0.5, gap, 0.5, 0)
+end
+
 RS.RenderStepped:Connect(function()
     local pos = UIS:GetMouseLocation()
     Cursor.Position = UDim2.new(0, pos.X, 0, pos.Y)
@@ -115,7 +127,7 @@ end)
 --=============================================================
 local Main = Instance.new("Frame")
 Main.Name = "Main"
-Main.Size = UDim2.new(0, 320, 0, 220)
+Main.Size = UDim2.new(0, 340, 0, 240)
 Main.Position = UDim2.new(0.5, 0, 0.5, 0)
 Main.AnchorPoint = Vector2.new(0.5, 0.5)
 Main.BackgroundColor3 = C_BG
@@ -186,6 +198,9 @@ local Pad = Instance.new("UIPadding")
 Pad.PaddingTop = UDim.new(0, 6)
 Pad.Parent = Container
 
+--=============================================================
+-- AddToggle
+--=============================================================
 local function AddToggle(name, default, callback)
     default = default or false
     callback = callback or function() end
@@ -251,33 +266,166 @@ local function AddToggle(name, default, callback)
     return {Set = function(v) setState(v, true) end, Get = function() return state.value end}
 end
 
-local function applyCrosshairSize(size)
-    crosshairState.size = size
-    local armLen = math.max(2, size * 0.5)
-    local thickness = 2
-    local gap = math.max(1, size * 0.25)
-    top.Size = UDim2.new(0, thickness, 0, armLen)
-    top.Position = UDim2.new(0.5, 0, 0.5, -gap)
-    bottom.Size = UDim2.new(0, thickness, 0, armLen)
-    bottom.Position = UDim2.new(0.5, 0, 0.5, gap)
-    left.Size = UDim2.new(0, armLen, 0, thickness)
-    left.Position = UDim2.new(0.5, -gap, 0.5, 0)
-    right.Size = UDim2.new(0, armLen, 0, thickness)
-    right.Position = UDim2.new(0.5, gap, 0.5, 0)
+--=============================================================
+-- AddSlider
+--=============================================================
+local function AddSlider(name, min, max, default, callback)
+    min = min or 1
+    max = max or 100
+    default = default or min
+    callback = callback or function() end
+    local value = default
+
+    local Row = Instance.new("Frame")
+    Row.Name = name
+    Row.Size = UDim2.new(1, -6, 0, 60)
+    Row.BackgroundColor3 = C_ROW
+    Row.BorderSizePixel = 0
+    Row.Parent = Container
+    Instance.new("UICorner", Row).CornerRadius = UDim.new(0, 8)
+    local rs = Instance.new("UIStroke", Row)
+    rs.Color = C_WHITE rs.Thickness = 1 rs.Transparency = 0.85
+
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(1, -60, 0, 22)
+    Label.Position = UDim2.new(0, 14, 0, 6)
+    Label.BackgroundTransparency = 1
+    Label.Text = name
+    Label.Font = Enum.Font.Gotham
+    Label.TextSize = 14
+    Label.TextColor3 = C_TEXT
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = Row
+
+    local ValueLabel = Instance.new("TextLabel")
+    ValueLabel.Size = UDim2.new(0, 50, 0, 22)
+    ValueLabel.Position = UDim2.new(1, -60, 0, 6)
+    ValueLabel.BackgroundTransparency = 1
+    ValueLabel.Text = tostring(default)
+    ValueLabel.Font = Enum.Font.GothamBold
+    ValueLabel.TextSize = 14
+    ValueLabel.TextColor3 = C_WHITE
+    ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
+    ValueLabel.Parent = Row
+
+    local SliderBar = Instance.new("Frame")
+    SliderBar.Name = "SliderBar"
+    SliderBar.Size = UDim2.new(1, -28, 0, 8)
+    SliderBar.Position = UDim2.new(0, 14, 0, 38)
+    SliderBar.BackgroundColor3 = C_TRACK_OFF
+    SliderBar.BorderSizePixel = 0
+    SliderBar.Parent = Row
+    Instance.new("UICorner", SliderBar).CornerRadius = UDim.new(1, 0)
+
+    local Fill = Instance.new("Frame")
+    Fill.Name = "Fill"
+    Fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+    Fill.BackgroundColor3 = C_WHITE
+    Fill.BorderSizePixel = 0
+    Fill.Parent = SliderBar
+    Instance.new("UICorner", Fill).CornerRadius = UDim.new(1, 0)
+
+    local Knob = Instance.new("Frame")
+    Knob.Name = "Knob"
+    Knob.Size = UDim2.new(0, 16, 0, 16)
+    Knob.AnchorPoint = Vector2.new(0.5, 0.5)
+    Knob.Position = UDim2.new((default - min) / (max - min), 0, 0.5, 0)
+    Knob.BackgroundColor3 = C_WHITE
+    Knob.BorderSizePixel = 0
+    Knob.ZIndex = 2
+    Knob.Parent = SliderBar
+    Instance.new("UICorner", Knob).CornerRadius = UDim.new(1, 0)
+    local ks = Instance.new("UIStroke", Knob)
+    ks.Color = C_WHITE ks.Thickness = 1 ks.Transparency = 0
+
+    local dragging = false
+
+    local function updateFromInput(input)
+        local barPos = SliderBar.AbsolutePosition.X
+        local barSize = SliderBar.AbsoluteSize.X
+        local relative = math.clamp((input.Position.X - barPos) / barSize, 0, 1)
+        local newValue = math.floor(min + (max - min) * relative + 0.5)
+        value = newValue
+        Fill.Size = UDim2.new(relative, 0, 1, 0)
+        Knob.Position = UDim2.new(relative, 0, 0.5, 0)
+        ValueLabel.Text = tostring(newValue)
+        callback(newValue)
+    end
+
+    SliderBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            updateFromInput(input)
+        end
+    end)
+
+    UIS.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch) then
+            updateFromInput(input)
+        end
+    end)
+
+    UIS.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+
+    return {
+        Set = function(v)
+            v = math.clamp(v, min, max)
+            value = v
+            local rel = (v - min) / (max - min)
+            Fill.Size = UDim2.new(rel, 0, 1, 0)
+            Knob.Position = UDim2.new(rel, 0, 0.5, 0)
+            ValueLabel.Text = tostring(v)
+            callback(v)
+        end,
+        Get = function() return value end
+    }
 end
 
+--=============================================================
+-- KONTROL
+--=============================================================
 AddToggle("Crosshair Custom", false, function(s)
     crosshairState.enabled = s
     customCross.Visible = s
     if s then applyCrosshairSize(crosshairState.size) end
 end)
 
-AddToggle("Crosshair Gede", false, function(s)
-    if s then applyCrosshairSize(40) else applyCrosshairSize(12) end
+AddSlider("Ukuran Crosshair", 4, 120, 12, function(v)
+    applyCrosshairSize(v)
 end)
 
-AddToggle("Crosshair Jumbo", false, function(s)
-    if s then applyCrosshairSize(80) else applyCrosshairSize(12) end
+AddSlider("Ketebalan", 1, 8, 2, function(v)
+    local armLen = math.max(2, crosshairState.size * 0.5)
+    local gap = math.max(1, crosshairState.size * 0.25)
+    top.Size = UDim2.new(0, v, 0, armLen)
+    top.Position = UDim2.new(0.5, 0, 0.5, -gap)
+    bottom.Size = UDim2.new(0, v, 0, armLen)
+    bottom.Position = UDim2.new(0.5, 0, 0.5, gap)
+    left.Size = UDim2.new(0, armLen, 0, v)
+    left.Position = UDim2.new(0.5, -gap, 0.5, 0)
+    right.Size = UDim2.new(0, armLen, 0, v)
+    right.Position = UDim2.new(0.5, gap, 0.5, 0)
+end)
+
+AddSlider("Jarak Garis", 1, 30, 3, function(v)
+    local armLen = math.max(2, crosshairState.size * 0.5)
+    local thickness = top.Size.X.Offset
+    top.Position = UDim2.new(0.5, 0, 0.5, -v)
+    bottom.Position = UDim2.new(0.5, 0, 0.5, v)
+    left.Position = UDim2.new(0.5, -v, 0.5, 0)
+    right.Position = UDim2.new(0.5, v, 0.5, 0)
+end)
+
+AddSlider("Ukuran Titik", 0, 10, 3, function(v)
+    dot.Size = UDim2.new(0, v, 0, v)
+    dot.Visible = v > 0
 end)
 
 print("[JENOWA STORE] Loaded")
