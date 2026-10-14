@@ -1,265 +1,278 @@
--- ============================================
--- SCRIPT TERBANG BERSAMA MOBIL + UI + OFF
--- Executor: CDID
--- ============================================
+-- JENOWA STORE | Cursor + Crosshair Fix
 
-task.wait(1)
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UIS = game:GetService("UserInputService")
+local RS = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local mouse = LocalPlayer:GetMouse()
 
--- [ SERVICE ]
-local Players     = game:GetService("Players")
-local RunService  = game:GetService("RunService")
-local UIS         = game:GetService("UserInputService")
+local C_BG = Color3.fromRGB(25,25,25)
+local C_TITLE = Color3.fromRGB(15,15,15)
+local C_ROW = Color3.fromRGB(35,35,35)
+local C_TRACK_OFF = Color3.fromRGB(60,60,60)
+local C_WHITE = Color3.fromRGB(255,255,255)
+local C_TEXT = Color3.fromRGB(230,230,230)
+local C_CLOSE = Color3.fromRGB(200,50,50)
 
-local LP = Players.LocalPlayer
-if not LP then warn("[CDID] LP tidak ada") return end
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "JENOWA_STORE"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+local okGui = pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
+if not okGui then ScreenGui.Parent = PlayerGui end
 
--- ============================================
--- [ UI DULU — BIAR PASTI MUNCUL ]
--- ============================================
-local gui = Instance.new("ScreenGui")
-gui.Name = "CDID_Terbang"
-gui.ResetOnSpawn = false
-gui.IgnoreGuiInset = true
+--=============================================================
+-- CURSOR
+--=============================================================
+local Cursor = Instance.new("ImageLabel")
+Cursor.Name = "Cursor"
+Cursor.Size = UDim2.new(0, 32, 0, 32)
+Cursor.AnchorPoint = Vector2.new(0, 0)
+Cursor.Position = UDim2.new(0, 0, 0, 0)
+Cursor.BackgroundTransparency = 1
+Cursor.Image = "rbxassetid://134036635371962"
+Cursor.ImageTransparency = 0
+Cursor.ZIndex = 999
+Cursor.Visible = false
+Cursor.Parent = ScreenGui
 
--- coba parent ke CoreGui dulu, kalau gagal ke PlayerGui
-local sukses = pcall(function()
-    gui.Parent = game:GetService("CoreGui")
+mouse.Icon = ""
+UIS.MouseIconEnabled = false
+
+RS.RenderStepped:Connect(function()
+    local pos = UIS:GetMouseLocation()
+    Cursor.Position = UDim2.new(0, pos.X, 0, pos.Y)
+    Cursor.Visible = true
 end)
-if not sukses then
-    gui.Parent = LP:WaitForChild("PlayerGui")
-end
 
-print("[CDID] UI dibuat")
+--=============================================================
+-- UI
+--=============================================================
+local Main = Instance.new("Frame")
+Main.Name = "Main"
+Main.Size = UDim2.new(0, 320, 0, 220)
+Main.Position = UDim2.new(0.5, 0, 0.5, 0)
+Main.AnchorPoint = Vector2.new(0.5, 0.5)
+Main.BackgroundColor3 = C_BG
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Draggable = true
+Main.ZIndex = 2
+Main.Parent = ScreenGui
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
+local ms = Instance.new("UIStroke", Main)
+ms.Color = C_WHITE ms.Thickness = 1 ms.Transparency = 0.6
 
--- Frame
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 190, 0, 240)
-frame.Position = UDim2.new(0, 20, 0.4, 0)
-frame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-frame.BorderSizePixel = 0
-frame.Active = true
-frame.Draggable = true
-frame.Parent = gui
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, 0, 0, 40)
+TitleBar.BackgroundColor3 = C_TITLE
+TitleBar.BorderSizePixel = 0
+TitleBar.ZIndex = 3
+TitleBar.Parent = Main
+Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 12)
 
-local c1 = Instance.new("UICorner")
-c1.CornerRadius = UDim.new(0, 8)
-c1.Parent = frame
+local TitleFix = Instance.new("Frame")
+TitleFix.Size = UDim2.new(1, 0, 0, 12)
+TitleFix.Position = UDim2.new(0, 0, 1, -12)
+TitleFix.BackgroundColor3 = C_TITLE
+TitleFix.BorderSizePixel = 0
+TitleFix.ZIndex = 3
+TitleFix.Parent = TitleBar
 
-local judul = Instance.new("TextLabel")
-judul.Size = UDim2.new(1, 0, 0, 30)
-judul.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-judul.BorderSizePixel = 0
-judul.Text = "TERBANG + MOBIL"
-judul.TextColor3 = Color3.fromRGB(220, 220, 220)
-judul.Font = Enum.Font.GothamBold
-judul.TextSize = 14
-judul.Parent = frame
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -50, 1, 0)
+Title.Position = UDim2.new(0, 16, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "JENOWA STORE"
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 16
+Title.TextColor3 = C_WHITE
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.ZIndex = 4
+Title.Parent = TitleBar
 
-local c2 = Instance.new("UICorner")
-c2.CornerRadius = UDim.new(0, 8)
-c2.Parent = judul
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 26, 0, 26)
+CloseBtn.Position = UDim2.new(1, -34, 0, 7)
+CloseBtn.BackgroundColor3 = C_CLOSE
+CloseBtn.Text = "×"
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 18
+CloseBtn.TextColor3 = C_WHITE
+CloseBtn.AutoButtonColor = false
+CloseBtn.ZIndex = 4
+CloseBtn.Parent = TitleBar
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
+CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
 
-local function buatTombol(teks, warna, y)
-    local b = Instance.new("TextButton")
-    b.Size = UDim2.new(1, -20, 0, 35)
-    b.Position = UDim2.new(0, 10, 0, y)
-    b.BackgroundColor3 = warna
-    b.BorderSizePixel = 0
-    b.Text = teks
-    b.TextColor3 = Color3.fromRGB(255, 255, 255)
-    b.Font = Enum.Font.GothamBold
-    b.TextSize = 13
-    b.Parent = frame
+local Container = Instance.new("Frame")
+Container.Size = UDim2.new(1, -20, 1, -60)
+Container.Position = UDim2.new(0, 10, 0, 52)
+Container.BackgroundTransparency = 1
+Container.ZIndex = 3
+Container.Parent = Main
 
-    local cc = Instance.new("UICorner")
-    cc.CornerRadius = UDim.new(0, 6)
-    cc.Parent = b
+local Layout = Instance.new("UIListLayout")
+Layout.Padding = UDim.new(0, 8)
+Layout.SortOrder = Enum.SortOrder.LayoutOrder
+Layout.Parent = Container
 
-    return b
-end
+local Pad = Instance.new("UIPadding")
+Pad.PaddingTop = UDim.new(0, 6)
+Pad.Parent = Container
 
-local btnNaik  = buatTombol("NAIK (V)",  Color3.fromRGB(50, 120, 60), 40)
-local btnTurun = buatTombol("TURUN (Z)", Color3.fromRGB(120, 50, 50), 80)
-local btnOff   = buatTombol("OFF",       Color3.fromRGB(90, 90, 90),  120)
+local function AddToggle(name, default, callback)
+    default = default or false
+    callback = callback or function() end
+    local state = {value = default}
+    local Row = Instance.new("Frame")
+    Row.Name = name
+    Row.Size = UDim2.new(1, -6, 0, 46)
+    Row.BackgroundColor3 = C_ROW
+    Row.BorderSizePixel = 0
+    Row.Parent = Container
+    Instance.new("UICorner", Row).CornerRadius = UDim.new(0, 8)
+    local rs = Instance.new("UIStroke", Row)
+    rs.Color = C_WHITE rs.Thickness = 1 rs.Transparency = 0.85
 
-local status = Instance.new("TextLabel")
-status.Size = UDim2.new(1, -20, 0, 25)
-status.Position = UDim2.new(0, 10, 0, 160)
-status.BackgroundTransparency = 1
-status.Text = "Status: Mencari mobil..."
-status.TextColor3 = Color3.fromRGB(180, 180, 180)
-status.Font = Enum.Font.Gotham
-status.TextSize = 12
-status.Parent = frame
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(1, -80, 1, 0)
+    Label.Position = UDim2.new(0, 14, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = name
+    Label.Font = Enum.Font.Gotham
+    Label.TextSize = 14
+    Label.TextColor3 = C_TEXT
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = Row
 
--- ============================================
--- [ KONFIGURASI ]
--- ============================================
-local KECEPATAN   = 80
-local NAIK_SPEED  = 40
-local TURUN_SPEED = 40
-local OFFSET_X    = 0
-local OFFSET_Y    = -3
-local OFFSET_Z    = 0
-local MOBIL_NAMA  = "Vehicle"
+    local Track = Instance.new("TextButton")
+    Track.Size = UDim2.new(0, 50, 0, 26)
+    Track.Position = UDim2.new(1, -62, 0.5, -13)
+    Track.BackgroundColor3 = default and C_WHITE or C_TRACK_OFF
+    Track.BorderSizePixel = 0
+    Track.Text = ""
+    Track.AutoButtonColor = false
+    Track.Parent = Row
+    Instance.new("UICorner", Track).CornerRadius = UDim.new(1, 0)
 
--- ============================================
--- [ CARI KARAKTER ]
--- ============================================
-local CHAR = LP.Character or LP.CharacterAdded:Wait()
-local HRP  = CHAR:WaitForChild("HumanoidRootPart", 10)
+    local ts = Instance.new("UIStroke", Track)
+    ts.Color = C_WHITE ts.Thickness = 1 ts.Transparency = default and 0 or 0.7
 
-if not HRP then
-    status.Text = "Status: HRP tidak ada"
-    warn("[CDID] HRP tidak ada")
-    return
-end
+    local Knob = Instance.new("Frame")
+    Knob.Size = UDim2.new(0, 22, 0, 22)
+    Knob.Position = default and UDim2.new(1, -24, 0, 2) or UDim2.new(0, 2, 0, 2)
+    Knob.BackgroundColor3 = C_WHITE
+    Knob.BorderSizePixel = 0
+    Knob.ZIndex = 2
+    Knob.Parent = Track
+    Instance.new("UICorner", Knob).CornerRadius = UDim.new(1, 0)
 
--- ============================================
--- [ CARI MOBIL ]
--- ============================================
-local mobil = workspace:FindFirstChild(MOBIL_NAMA)
-
-if not mobil then
-    for _, v in pairs(workspace:GetChildren()) do
-        if v:IsA("Model") and v:FindFirstChild("VehicleSeat") then
-            mobil = v
-            break
+    local function setState(value, fire)
+        state.value = value
+        if value then
+            TweenService:Create(Track, TweenInfo.new(0.2), {BackgroundColor3 = C_WHITE}):Play()
+            TweenService:Create(ts, TweenInfo.new(0.2), {Transparency = 0}):Play()
+            TweenService:Create(Knob, TweenInfo.new(0.2), {Position = UDim2.new(1, -24, 0, 2)}):Play()
+        else
+            TweenService:Create(Track, TweenInfo.new(0.2), {BackgroundColor3 = C_TRACK_OFF}):Play()
+            TweenService:Create(ts, TweenInfo.new(0.2), {Transparency = 0.7}):Play()
+            TweenService:Create(Knob, TweenInfo.new(0.2), {Position = UDim2.new(0, 2, 0, 2)}):Play()
         end
+        if fire then callback(state.value) end
     end
+
+    Track.MouseButton1Click:Connect(function() setState(not state.value, true) end)
+    return {Set = function(v) setState(v, true) end, Get = function() return state.value end}
 end
 
-if not mobil then
-    status.Text = "Status: Mobil tidak ada"
-    warn("[CDID] Mobil tidak ada — tekan NAIK untuk terbang saja")
+--=============================================================
+-- CROSSHAIR
+--=============================================================
+local crosshairState = {enabled = false, size = 12}
+
+local customCross = Instance.new("Frame")
+customCross.Name = "CustomCrosshair"
+customCross.Size = UDim2.new(0, 12, 0, 12)
+customCross.AnchorPoint = Vector2.new(0.5, 0.5)
+customCross.Position = UDim2.new(0.5, 0, 0.5, 0)
+customCross.BackgroundTransparency = 1
+customCross.ZIndex = 998
+customCross.Visible = false
+customCross.Parent = ScreenGui
+
+local dot = Instance.new("Frame")
+dot.Size = UDim2.new(0, 4, 0, 4)
+dot.AnchorPoint = Vector2.new(0.5, 0.5)
+dot.Position = UDim2.new(0.5, 0, 0.5, 0)
+dot.BackgroundColor3 = C_WHITE
+dot.BorderSizePixel = 0
+dot.Parent = customCross
+Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
+
+local top = Instance.new("Frame")
+top.Size = UDim2.new(0, 2, 0, 6)
+top.AnchorPoint = Vector2.new(0.5, 1)
+top.Position = UDim2.new(0.5, 0, 0.5, -3)
+top.BackgroundColor3 = C_WHITE
+top.BorderSizePixel = 0
+top.Parent = customCross
+
+local bottom = Instance.new("Frame")
+bottom.Size = UDim2.new(0, 2, 0, 6)
+bottom.AnchorPoint = Vector2.new(0.5, 0)
+bottom.Position = UDim2.new(0.5, 0, 0.5, 3)
+bottom.BackgroundColor3 = C_WHITE
+bottom.BorderSizePixel = 0
+bottom.Parent = customCross
+
+local left = Instance.new("Frame")
+left.Size = UDim2.new(0, 6, 0, 2)
+left.AnchorPoint = Vector2.new(1, 0.5)
+left.Position = UDim2.new(0.5, -3, 0.5, 0)
+left.BackgroundColor3 = C_WHITE
+left.BorderSizePixel = 0
+left.Parent = customCross
+
+local right = Instance.new("Frame")
+right.Size = UDim2.new(0, 6, 0, 2)
+right.AnchorPoint = Vector2.new(0, 0.5)
+right.Position = UDim2.new(0.5, 3, 0.5, 0)
+right.BackgroundColor3 = C_WHITE
+right.BorderSizePixel = 0
+right.Parent = customCross
+
+local function applyCrosshairSize(size)
+    crosshairState.size = size
+    local armLen = math.max(2, size * 0.5)
+    local thickness = 2
+    local gap = math.max(1, size * 0.25)
+    top.Size = UDim2.new(0, thickness, 0, armLen)
+    top.Position = UDim2.new(0.5, 0, 0.5, -gap)
+    bottom.Size = UDim2.new(0, thickness, 0, armLen)
+    bottom.Position = UDim2.new(0.5, 0, 0.5, gap)
+    left.Size = UDim2.new(0, armLen, 0, thickness)
+    left.Position = UDim2.new(0.5, -gap, 0.5, 0)
+    right.Size = UDim2.new(0, armLen, 0, thickness)
+    right.Position = UDim2.new(0.5, gap, 0.5, 0)
+    print("[JENOWA] Crosshair size = "..tostring(size))
 end
 
--- [ CARI PART MOBIL ]
-local mobilPart
-if mobil then
-    for _, v in pairs(mobil:GetDescendants()) do
-        if v:IsA("BasePart") then
-            mobilPart = v
-            break
-        end
-    end
-    if mobilPart then
-        status.Text = "Status: Aktif — " .. mobil.Name
-    end
-else
-    status.Text = "Status: Aktif (tanpa mobil)"
-end
-
--- [ SIMPAN POSISI AWAL ]
-local posAwalHRP   = HRP.CFrame
-local posAwalMobil = mobilPart and mobilPart.CFrame or nil
-
--- ============================================
--- [ VARIABEL ]
--- ============================================
-local naik  = false
-local turun = false
-local aktif = true
-
--- ============================================
--- [ EFEK TOMBOL ]
--- ============================================
-btnNaik.MouseButton1Down:Connect(function()
-    naik = true
-    btnNaik.BackgroundColor3 = Color3.fromRGB(80, 180, 90)
-end)
-btnNaik.MouseButton1Up:Connect(function()
-    naik = false
-    btnNaik.BackgroundColor3 = Color3.fromRGB(50, 120, 60)
-end)
-btnNaik.MouseLeave:Connect(function()
-    naik = false
-    btnNaik.BackgroundColor3 = Color3.fromRGB(50, 120, 60)
+AddToggle("Crosshair Custom", false, function(s)
+    crosshairState.enabled = s
+    customCross.Visible = s
+    if s then applyCrosshairSize(crosshairState.size) end
 end)
 
-btnTurun.MouseButton1Down:Connect(function()
-    turun = true
-    btnTurun.BackgroundColor3 = Color3.fromRGB(180, 80, 80)
-end)
-btnTurun.MouseButton1Up:Connect(function()
-    turun = false
-    btnTurun.BackgroundColor3 = Color3.fromRGB(120, 50, 50)
-end)
-btnTurun.MouseLeave:Connect(function()
-    turun = false
-    btnTurun.BackgroundColor3 = Color3.fromRGB(120, 50, 50)
+AddToggle("Crosshair Gede", false, function(s)
+    if s then applyCrosshairSize(40) else applyCrosshairSize(12) end
 end)
 
--- ============================================
--- [ OFF ]
--- ============================================
-local fungsiTerbang
-
-btnOff.MouseButton1Click:Connect(function()
-    aktif = false
-    naik  = false
-    turun = false
-
-    if fungsiTerbang then
-        fungsiTerbang:Disconnect()
-        fungsiTerbang = nil
-    end
-
-    if HRP and HRP.Parent then
-        HRP.CFrame = posAwalHRP
-    end
-    if mobilPart and mobilPart.Parent and posAwalMobil then
-        mobilPart.CFrame = posAwalMobil
-    end
-
-    status.Text = "Status: OFF"
-    status.TextColor3 = Color3.fromRGB(200, 80, 80)
-    btnOff.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-    btnOff.Text = "OFF ✔"
-
-    print("[CDID] Script dimatikan")
+AddToggle("Crosshair Jumbo", false, function(s)
+    if s then applyCrosshairSize(80) else applyCrosshairSize(12) end
 end)
 
--- ============================================
--- [ INPUT KEYBOARD ]
--- ============================================
-UIS.InputBegan:Connect(function(input, gp)
-    if gp then return end
-    if input.KeyCode == Enum.KeyCode.V then naik = true
-    elseif input.KeyCode == Enum.KeyCode.Z then turun = true end
-end)
-
-UIS.InputEnded:Connect(function(input, gp)
-    if gp then return end
-    if input.KeyCode == Enum.KeyCode.V then naik = false
-    elseif input.KeyCode == Enum.KeyCode.Z then turun = false end
-end)
-
--- ============================================
--- [ LOOP TERBANG ]
--- ============================================
-fungsiTerbang = RunService.RenderStepped:Connect(function(dt)
-    if not aktif then return end
-    if not HRP or not HRP.Parent then return end
-
-    local arah = HRP.CFrame.LookVector
-    local vertikal = 0
-
-    if naik then vertikal = NAIK_SPEED
-    elseif turun then vertikal = -TURUN_SPEED end
-
-    HRP.CFrame = HRP.CFrame + Vector3.new(
-        arah.X * KECEPATAN * dt,
-        vertikal * dt,
-        arah.Z * KECEPATAN * dt
-    )
-
-    if mobilPart and mobilPart.Parent then
-        mobilPart.CFrame = HRP.CFrame * CFrame.new(
-            OFFSET_X, OFFSET_Y, OFFSET_Z
-        )
-    end
-end)
-
-print("[CDID] Script aktif")
-print("[CDID] V = Naik, Z = Turun")
+print("[JENOWA STORE] Loaded")
