@@ -1,4 +1,4 @@
--- JENOWA STORE | Cursor + Crosshair Fix
+-- JENOWA STORE | Cursor + Crosshair Follow Mouse
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -42,10 +42,72 @@ Cursor.Parent = ScreenGui
 mouse.Icon = ""
 UIS.MouseIconEnabled = false
 
+--=============================================================
+-- CROSSHAIR (nempel mouse)
+--=============================================================
+local crosshairState = {enabled = false, size = 12}
+
+local customCross = Instance.new("Frame")
+customCross.Name = "CustomCrosshair"
+customCross.Size = UDim2.new(0, 12, 0, 12)
+customCross.AnchorPoint = Vector2.new(0.5, 0.5)
+customCross.Position = UDim2.new(0, 0, 0, 0)
+customCross.BackgroundTransparency = 1
+customCross.ZIndex = 998
+customCross.Visible = false
+customCross.Parent = ScreenGui
+
+local dot = Instance.new("Frame")
+dot.Size = UDim2.new(0, 3, 0, 3)
+dot.AnchorPoint = Vector2.new(0.5, 0.5)
+dot.Position = UDim2.new(0.5, 0, 0.5, 0)
+dot.BackgroundColor3 = C_WHITE
+dot.BorderSizePixel = 0
+dot.Parent = customCross
+Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
+
+local top = Instance.new("Frame")
+top.Size = UDim2.new(0, 2, 0, 6)
+top.AnchorPoint = Vector2.new(0.5, 1)
+top.Position = UDim2.new(0.5, 0, 0.5, -3)
+top.BackgroundColor3 = C_WHITE
+top.BorderSizePixel = 0
+top.Parent = customCross
+
+local bottom = Instance.new("Frame")
+bottom.Size = UDim2.new(0, 2, 0, 6)
+bottom.AnchorPoint = Vector2.new(0.5, 0)
+bottom.Position = UDim2.new(0.5, 0, 0.5, 3)
+bottom.BackgroundColor3 = C_WHITE
+bottom.BorderSizePixel = 0
+bottom.Parent = customCross
+
+local left = Instance.new("Frame")
+left.Size = UDim2.new(0, 6, 0, 2)
+left.AnchorPoint = Vector2.new(1, 0.5)
+left.Position = UDim2.new(0.5, -3, 0.5, 0)
+left.BackgroundColor3 = C_WHITE
+left.BorderSizePixel = 0
+left.Parent = customCross
+
+local right = Instance.new("Frame")
+right.Size = UDim2.new(0, 6, 0, 2)
+right.AnchorPoint = Vector2.new(0, 0.5)
+right.Position = UDim2.new(0.5, 3, 0.5, 0)
+right.BackgroundColor3 = C_WHITE
+right.BorderSizePixel = 0
+right.Parent = customCross
+
+--=============================================================
+-- UPDATE POSISI (cursor + crosshair nempel mouse)
+--=============================================================
 RS.RenderStepped:Connect(function()
     local pos = UIS:GetMouseLocation()
     Cursor.Position = UDim2.new(0, pos.X, 0, pos.Y)
     Cursor.Visible = true
+    if crosshairState.enabled then
+        customCross.Position = UDim2.new(0, pos.X, 0, pos.Y)
+    end
 end)
 
 --=============================================================
@@ -189,62 +251,6 @@ local function AddToggle(name, default, callback)
     return {Set = function(v) setState(v, true) end, Get = function() return state.value end}
 end
 
---=============================================================
--- CROSSHAIR
---=============================================================
-local crosshairState = {enabled = false, size = 12}
-
-local customCross = Instance.new("Frame")
-customCross.Name = "CustomCrosshair"
-customCross.Size = UDim2.new(0, 12, 0, 12)
-customCross.AnchorPoint = Vector2.new(0.5, 0.5)
-customCross.Position = UDim2.new(0.5, 0, 0.5, 0)
-customCross.BackgroundTransparency = 1
-customCross.ZIndex = 998
-customCross.Visible = false
-customCross.Parent = ScreenGui
-
-local dot = Instance.new("Frame")
-dot.Size = UDim2.new(0, 4, 0, 4)
-dot.AnchorPoint = Vector2.new(0.5, 0.5)
-dot.Position = UDim2.new(0.5, 0, 0.5, 0)
-dot.BackgroundColor3 = C_WHITE
-dot.BorderSizePixel = 0
-dot.Parent = customCross
-Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
-
-local top = Instance.new("Frame")
-top.Size = UDim2.new(0, 2, 0, 6)
-top.AnchorPoint = Vector2.new(0.5, 1)
-top.Position = UDim2.new(0.5, 0, 0.5, -3)
-top.BackgroundColor3 = C_WHITE
-top.BorderSizePixel = 0
-top.Parent = customCross
-
-local bottom = Instance.new("Frame")
-bottom.Size = UDim2.new(0, 2, 0, 6)
-bottom.AnchorPoint = Vector2.new(0.5, 0)
-bottom.Position = UDim2.new(0.5, 0, 0.5, 3)
-bottom.BackgroundColor3 = C_WHITE
-bottom.BorderSizePixel = 0
-bottom.Parent = customCross
-
-local left = Instance.new("Frame")
-left.Size = UDim2.new(0, 6, 0, 2)
-left.AnchorPoint = Vector2.new(1, 0.5)
-left.Position = UDim2.new(0.5, -3, 0.5, 0)
-left.BackgroundColor3 = C_WHITE
-left.BorderSizePixel = 0
-left.Parent = customCross
-
-local right = Instance.new("Frame")
-right.Size = UDim2.new(0, 6, 0, 2)
-right.AnchorPoint = Vector2.new(0, 0.5)
-right.Position = UDim2.new(0.5, 3, 0.5, 0)
-right.BackgroundColor3 = C_WHITE
-right.BorderSizePixel = 0
-right.Parent = customCross
-
 local function applyCrosshairSize(size)
     crosshairState.size = size
     local armLen = math.max(2, size * 0.5)
@@ -258,7 +264,6 @@ local function applyCrosshairSize(size)
     left.Position = UDim2.new(0.5, -gap, 0.5, 0)
     right.Size = UDim2.new(0, armLen, 0, thickness)
     right.Position = UDim2.new(0.5, gap, 0.5, 0)
-    print("[JENOWA] Crosshair size = "..tostring(size))
 end
 
 AddToggle("Crosshair Custom", false, function(s)
