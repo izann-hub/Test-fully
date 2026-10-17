@@ -1,7 +1,6 @@
 -- ============================================
--- DARK ANGEL | MTS Masyarikul Anwar UI v4
--- 2 Tab: Combat, FPS Boost (LENGKAP)
--- Warna: Pink, Abu-abu, Biru, Merah
+-- DARK ANGEL | MTS Masyarikul Anwar UI v6
+-- FIX: Scroll & UI Tertimpa + Bypass
 -- ============================================
 
 local Players = game:GetService("Players")
@@ -27,32 +26,19 @@ local Palette = {
 }
 
 -- ============================================
--- STATE COMBAT
+-- STATE
 -- ============================================
 local noRecoilEnabled = false
 local noSpreadEnabled = false
 local macroEnabled = false
 local defaultSettings = {}
-
--- ============================================
--- STATE FPS BOOST
--- ============================================
 local settings = {
-    removePostEffects = false,
-    disableShadows    = false,
-    flatMaterials     = false,
-    hideDecals        = false,
-    flatTerrain       = false,
-    qualityLevel      = 21,
-    physicsSleep      = false,
-    daySky            = false,
+    removePostEffects = false, disableShadows = false,
+    flatMaterials = false, hideDecals = false,
+    flatTerrain = false, qualityLevel = 21,
+    physicsSleep = false, daySky = false,
 }
-
-local originalData = {
-    parts   = {},
-    decals  = {},
-    terrain = {},
-}
+local originalData = { parts = {}, decals = {}, terrain = {} }
 
 -- ============================================
 -- SCREEN GUI
@@ -96,7 +82,6 @@ MainGrad.Color = ColorSequence.new{
 MainGrad.Rotation = 45
 MainGrad.Parent = MainStroke
 
--- Animasi gradient rotasi
 task.spawn(function()
     while MainFrame.Parent do
         TweenService:Create(MainGrad, TweenInfo.new(3, Enum.EasingStyle.Linear), {Rotation = MainGrad.Rotation + 360}):Play()
@@ -104,7 +89,6 @@ task.spawn(function()
     end
 end)
 
--- Animasi muncul
 MainFrame.Size = UDim2.new(0, 0, 0, 0)
 MainFrame.BackgroundTransparency = 1
 task.spawn(function()
@@ -122,6 +106,7 @@ local Header = Instance.new("Frame")
 Header.Size = UDim2.new(1, 0, 0, 46)
 Header.BackgroundColor3 = Palette.DarkGray
 Header.BorderSizePixel = 0
+Header.ZIndex = 5
 Header.Parent = MainFrame
 
 local HeaderCorner = Instance.new("UICorner")
@@ -154,6 +139,7 @@ HeaderTitle.TextColor3 = Palette.White
 HeaderTitle.TextSize = 18
 HeaderTitle.Font = Enum.Font.GothamBold
 HeaderTitle.TextXAlignment = Enum.TextXAlignment.Left
+HeaderTitle.ZIndex = 6
 HeaderTitle.Parent = Header
 
 HeaderTitle.TextTransparency = 1
@@ -171,6 +157,7 @@ CloseBtn.TextColor3 = Palette.White
 CloseBtn.TextSize = 16
 CloseBtn.Font = Enum.Font.GothamBold
 CloseBtn.BorderSizePixel = 0
+CloseBtn.ZIndex = 7
 CloseBtn.Parent = Header
 
 local CloseCorner = Instance.new("UICorner")
@@ -201,6 +188,7 @@ Sidebar.Size = UDim2.new(0, 140, 1, -46)
 Sidebar.Position = UDim2.new(0, 0, 0, 46)
 Sidebar.BackgroundColor3 = Palette.DarkGray
 Sidebar.BorderSizePixel = 0
+Sidebar.ZIndex = 2
 Sidebar.Parent = MainFrame
 
 local SidebarCorner = Instance.new("UICorner")
@@ -226,6 +214,7 @@ Content.Position = UDim2.new(0, 145, 0, 51)
 Content.BackgroundColor3 = Palette.Dark
 Content.BorderSizePixel = 0
 Content.ClipsDescendants = true
+Content.ZIndex = 1
 Content.Parent = MainFrame
 
 local ContentCorner = Instance.new("UICorner")
@@ -233,7 +222,7 @@ ContentCorner.CornerRadius = UDim.new(0, 8)
 ContentCorner.Parent = Content
 
 -- ============================================
--- TAB SYSTEM
+-- TAB SYSTEM (FIXED SCROLL & ZINDEX)
 -- ============================================
 local tabs = {}
 local activeTab = nil
@@ -248,6 +237,7 @@ local function createTab(name, accentColor)
     btn.TextSize = 14
     btn.Font = Enum.Font.GothamMedium
     btn.BorderSizePixel = 0
+    btn.ZIndex = 3
     btn.Parent = Sidebar
 
     local bc = Instance.new("UICorner")
@@ -260,6 +250,7 @@ local function createTab(name, accentColor)
     indicator.AnchorPoint = Vector2.new(0, 0.5)
     indicator.BackgroundColor3 = accentColor
     indicator.BorderSizePixel = 0
+    indicator.ZIndex = 4
     indicator.Parent = btn
 
     local indCorner = Instance.new("UICorner")
@@ -273,7 +264,12 @@ local function createTab(name, accentColor)
     frame.BorderSizePixel = 0
     frame.ScrollBarThickness = 6
     frame.ScrollBarImageColor3 = accentColor
+    frame.ScrollBarImageTransparency = 0.3
+    frame.ScrollingDirection = Enum.ScrollingDirection.Y
     frame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    frame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    frame.ClipsDescendants = true
+    frame.ZIndex = 2
     frame.Visible = false
     frame.Parent = Content
 
@@ -284,15 +280,12 @@ local function createTab(name, accentColor)
 
     local pad = Instance.new("UIPadding")
     pad.PaddingTop = UDim.new(0, 4)
-    pad.PaddingBottom = UDim.new(0, 4)
+    pad.PaddingBottom = UDim.new(0, 24)
     pad.Parent = frame
 
     tabs[name] = {
-        button = btn,
-        frame = frame,
-        accent = accentColor,
-        layout = layout,
-        indicator = indicator
+        button = btn, frame = frame, accent = accentColor,
+        layout = layout, indicator = indicator
     }
 
     btn.MouseEnter:Connect(function()
@@ -336,15 +329,8 @@ local function createTab(name, accentColor)
 end
 
 -- ============================================
--- ELEMEN BUILDER
+-- ELEMEN BUILDER (FIXED ZINDEX)
 -- ============================================
-local function updateCanvas(tabName)
-    local t = tabs[tabName]
-    if not t then return end
-    task.wait()
-    t.frame.CanvasSize = UDim2.new(0, 0, 0, t.layout.AbsoluteContentSize.Y + 20)
-end
-
 local function createLabel(parentTab, text, color)
     local lbl = Instance.new("TextLabel")
     lbl.Size = UDim2.new(1, 0, 0, 26)
@@ -357,6 +343,7 @@ local function createLabel(parentTab, text, color)
     lbl.BorderSizePixel = 0
     lbl.BackgroundTransparency = 1
     lbl.TextTransparency = 1
+    lbl.ZIndex = 3
     lbl.Parent = parentTab
 
     local c = Instance.new("UICorner")
@@ -365,11 +352,9 @@ local function createLabel(parentTab, text, color)
 
     task.wait(0.03)
     TweenService:Create(lbl, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-        BackgroundTransparency = 0.3,
-        TextTransparency = 0
+        BackgroundTransparency = 0.3, TextTransparency = 0
     }):Play()
 
-    updateCanvas(activeTab)
     return lbl
 end
 
@@ -379,6 +364,7 @@ local function createToggle(parentTab, text, desc, accent, defaultOn, callback)
     holder.BackgroundColor3 = Palette.DarkGray
     holder.BorderSizePixel = 0
     holder.BackgroundTransparency = 1
+    holder.ZIndex = 3
     holder.Parent = parentTab
 
     local c = Instance.new("UICorner")
@@ -401,6 +387,7 @@ local function createToggle(parentTab, text, desc, accent, defaultOn, callback)
     lbl.Font = Enum.Font.GothamBold
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     lbl.TextTransparency = 1
+    lbl.ZIndex = 4
     lbl.Parent = holder
 
     local descLbl = Instance.new("TextLabel")
@@ -413,6 +400,7 @@ local function createToggle(parentTab, text, desc, accent, defaultOn, callback)
     descLbl.Font = Enum.Font.Gotham
     descLbl.TextXAlignment = Enum.TextXAlignment.Left
     descLbl.TextTransparency = 1
+    descLbl.ZIndex = 4
     descLbl.Parent = holder
 
     local track = Instance.new("Frame")
@@ -421,6 +409,7 @@ local function createToggle(parentTab, text, desc, accent, defaultOn, callback)
     track.BackgroundColor3 = defaultOn and Palette.Green or Palette.Gray
     track.BorderSizePixel = 0
     track.BackgroundTransparency = 1
+    track.ZIndex = 4
     track.Parent = holder
 
     local tc = Instance.new("UICorner")
@@ -433,6 +422,7 @@ local function createToggle(parentTab, text, desc, accent, defaultOn, callback)
     knob.BackgroundColor3 = Palette.White
     knob.BorderSizePixel = 0
     knob.BackgroundTransparency = 1
+    knob.ZIndex = 5
     knob.Parent = track
 
     local kc = Instance.new("UICorner")
@@ -452,6 +442,7 @@ local function createToggle(parentTab, text, desc, accent, defaultOn, callback)
     click.Size = UDim2.new(1, 0, 1, 0)
     click.BackgroundTransparency = 1
     click.Text = ""
+    click.ZIndex = 6
     click.Parent = holder
 
     holder.MouseEnter:Connect(function()
@@ -473,7 +464,6 @@ local function createToggle(parentTab, text, desc, accent, defaultOn, callback)
         if callback then callback(state) end
     end)
 
-    updateCanvas(activeTab)
     return holder
 end
 
@@ -483,6 +473,7 @@ local function createSlider(parentTab, text, accent, min, max, default, callback
     holder.BackgroundColor3 = Palette.DarkGray
     holder.BorderSizePixel = 0
     holder.BackgroundTransparency = 1
+    holder.ZIndex = 3
     holder.Parent = parentTab
 
     local c = Instance.new("UICorner")
@@ -505,6 +496,7 @@ local function createSlider(parentTab, text, accent, min, max, default, callback
     lbl.Font = Enum.Font.GothamBold
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     lbl.TextTransparency = 1
+    lbl.ZIndex = 4
     lbl.Parent = holder
 
     local valLbl = Instance.new("TextLabel")
@@ -517,6 +509,7 @@ local function createSlider(parentTab, text, accent, min, max, default, callback
     valLbl.Font = Enum.Font.GothamBold
     valLbl.TextXAlignment = Enum.TextXAlignment.Right
     valLbl.TextTransparency = 1
+    valLbl.ZIndex = 4
     valLbl.Parent = holder
 
     local bar = Instance.new("Frame")
@@ -525,6 +518,7 @@ local function createSlider(parentTab, text, accent, min, max, default, callback
     bar.BackgroundColor3 = Palette.Dark
     bar.BorderSizePixel = 0
     bar.BackgroundTransparency = 1
+    bar.ZIndex = 4
     bar.Parent = holder
 
     local bc = Instance.new("UICorner")
@@ -537,6 +531,7 @@ local function createSlider(parentTab, text, accent, min, max, default, callback
     fill.BackgroundColor3 = accent
     fill.BorderSizePixel = 0
     fill.BackgroundTransparency = 1
+    fill.ZIndex = 5
     fill.Parent = bar
 
     local fc = Instance.new("UICorner")
@@ -549,7 +544,7 @@ local function createSlider(parentTab, text, accent, min, max, default, callback
     thumb.BackgroundColor3 = Palette.White
     thumb.BorderSizePixel = 0
     thumb.BackgroundTransparency = 1
-    thumb.ZIndex = 2
+    thumb.ZIndex = 6
     thumb.Parent = bar
 
     local thc = Instance.new("UICorner")
@@ -580,6 +575,7 @@ local function createSlider(parentTab, text, accent, min, max, default, callback
     btn.Position = UDim2.new(0, 0, 0, 30)
     btn.BackgroundTransparency = 1
     btn.Text = ""
+    btn.ZIndex = 7
     btn.Parent = holder
 
     btn.MouseButton1Down:Connect(function() dragging = true; updateSlider(UserInputService:GetMouseLocation()) end)
@@ -590,7 +586,6 @@ local function createSlider(parentTab, text, accent, min, max, default, callback
         if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
     end)
 
-    updateCanvas(activeTab)
     return holder
 end
 
@@ -605,11 +600,8 @@ local function saveDefaults(tool)
     if not ok or type(st) ~= "table" then return end
     if not defaultSettings[tool.Name] then
         defaultSettings[tool.Name] = {
-            Accuracy = st.Accuracy,
-            SpreadX = st.SpreadX,
-            SpreadY = st.SpreadY,
-            Range = st.Range,
-            Recoil = st.Recoil,
+            Accuracy = st.Accuracy, SpreadX = st.SpreadX, SpreadY = st.SpreadY,
+            Range = st.Range, Recoil = st.Recoil,
         }
     end
 end
@@ -623,10 +615,7 @@ local function applyCombat(tool)
     if not ok or type(st) ~= "table" then return end
     if noRecoilEnabled then st.Recoil = 0 end
     if noSpreadEnabled then
-        st.Accuracy = 1
-        st.SpreadX = 0
-        st.SpreadY = 0
-        st.Range = 50000
+        st.Accuracy = 1; st.SpreadX = 0; st.SpreadY = 0; st.Range = 50000
     end
 end
 
@@ -638,11 +627,8 @@ local function resetCombat(tool)
     if not ok or type(st) ~= "table" then return end
     local d = defaultSettings[tool.Name]
     if not d then return end
-    st.Accuracy = d.Accuracy
-    st.SpreadX = d.SpreadX
-    st.SpreadY = d.SpreadY
-    st.Range = d.Range
-    st.Recoil = d.Recoil
+    st.Accuracy = d.Accuracy; st.SpreadX = d.SpreadX; st.SpreadY = d.SpreadY
+    st.Range = d.Range; st.Recoil = d.Recoil
 end
 
 local function onCharacter(character)
@@ -706,27 +692,19 @@ local function SetDaySky()
         Lighting.FogStart = 0
         Lighting.ColorShift_Top = Color3.fromRGB(0, 0, 0)
         Lighting.ColorShift_Bottom = Color3.fromRGB(0, 0, 0)
-
         local Sky = Lighting:FindFirstChild("Sky")
         if Sky then
-            Sky.SkyboxBk = "rbxassetid://404414703"
-            Sky.SkyboxDn = "rbxassetid://404414703"
-            Sky.SkyboxFt = "rbxassetid://404414703"
-            Sky.SkyboxLf = "rbxassetid://404414703"
-            Sky.SkyboxRt = "rbxassetid://404414703"
-            Sky.SkyboxUp = "rbxassetid://404414703"
-            Sky.MoonTextureId = ""
-            Sky.SunTextureId = ""
+            Sky.SkyboxBk = "rbxassetid://404414703"; Sky.SkyboxDn = "rbxassetid://404414703"
+            Sky.SkyboxFt = "rbxassetid://404414703"; Sky.SkyboxLf = "rbxassetid://404414703"
+            Sky.SkyboxRt = "rbxassetid://404414703"; Sky.SkyboxUp = "rbxassetid://404414703"
+            Sky.MoonTextureId = ""; Sky.SunTextureId = ""
         end
-
         local Atmosphere = Lighting:FindFirstChild("Atmosphere")
         if Atmosphere then
-            Atmosphere.Density = 0.2
-            Atmosphere.Offset = 0.1
+            Atmosphere.Density = 0.2; Atmosphere.Offset = 0.1
             Atmosphere.Color = Color3.fromRGB(255, 255, 255)
             Atmosphere.Decay = Color3.fromRGB(255, 255, 255)
-            Atmosphere.Glare = 1
-            Atmosphere.Haze = 0.1
+            Atmosphere.Glare = 1; Atmosphere.Haze = 0.1
         end
     end)
 end
@@ -736,13 +714,9 @@ local function applyPostEffects(enabled)
         for _, v in ipairs(Lighting:GetChildren()) do
             if v:IsA("PostEffect") then v:Destroy() end
         end
-        Lighting.GlobalShadows = false
-        Lighting.FogEnd = 9e9
-        Lighting.Brightness = 3
+        Lighting.GlobalShadows = false; Lighting.FogEnd = 9e9; Lighting.Brightness = 3
     else
-        Lighting.GlobalShadows = true
-        Lighting.FogEnd = 10000
-        Lighting.Brightness = 1
+        Lighting.GlobalShadows = true; Lighting.FogEnd = 10000; Lighting.Brightness = 1
     end
 end
 
@@ -752,8 +726,7 @@ local function applyMaterials(enabled)
             if localPlayer.Character and inst:IsDescendantOf(localPlayer.Character) then continue end
             if enabled then
                 originalData.parts[inst] = {Material = inst.Material, Reflectance = inst.Reflectance}
-                inst.Material = Enum.Material.SmoothPlastic
-                inst.Reflectance = 0
+                inst.Material = Enum.Material.SmoothPlastic; inst.Reflectance = 0
             else
                 if originalData.parts[inst] then
                     inst.Material = originalData.parts[inst].Material
@@ -769,8 +742,7 @@ local function applyDecals(enabled)
         if inst:IsA("Texture") or inst:IsA("Decal") then
             if localPlayer.Character and inst:IsDescendantOf(localPlayer.Character) then continue end
             if enabled then
-                originalData.decals[inst] = inst.Transparency
-                inst.Transparency = 1
+                originalData.decals[inst] = inst.Transparency; inst.Transparency = 1
             else
                 if originalData.decals[inst] then inst.Transparency = originalData.decals[inst] end
             end
@@ -783,15 +755,11 @@ local function applyTerrain(enabled)
     if not terrain then return end
     if enabled then
         originalData.terrain = {
-            WaterWaveSize = terrain.WaterWaveSize,
-            WaterWaveSpeed = terrain.WaterWaveSpeed,
-            WaterReflectance = terrain.WaterReflectance,
-            WaterTransparency = terrain.WaterTransparency,
+            WaterWaveSize = terrain.WaterWaveSize, WaterWaveSpeed = terrain.WaterWaveSpeed,
+            WaterReflectance = terrain.WaterReflectance, WaterTransparency = terrain.WaterTransparency,
         }
-        terrain.WaterWaveSize = 0
-        terrain.WaterWaveSpeed = 0
-        terrain.WaterReflectance = 0
-        terrain.WaterTransparency = 1
+        terrain.WaterWaveSize = 0; terrain.WaterWaveSpeed = 0
+        terrain.WaterReflectance = 0; terrain.WaterTransparency = 1
     else
         if originalData.terrain.WaterWaveSize then
             terrain.WaterWaveSize = originalData.terrain.WaterWaveSize
@@ -814,9 +782,7 @@ local function applyPhysics(enabled)
 end
 
 local function applyDaySky(enabled)
-    if enabled then
-        SetDaySky()
-    else
+    if enabled then SetDaySky() else
         pcall(function()
             Lighting.Ambient = Color3.fromRGB(0, 0, 0)
             Lighting.Brightness = 1
@@ -830,13 +796,45 @@ workspace.DescendantAdded:Connect(function(inst)
     if not settings.flatMaterials and not settings.hideDecals then return end
     if localPlayer.Character and inst:IsDescendantOf(localPlayer.Character) then return end
     if settings.flatMaterials and inst:IsA("BasePart") then
-        inst.Material = Enum.Material.SmoothPlastic
-        inst.Reflectance = 0
+        inst.Material = Enum.Material.SmoothPlastic; inst.Reflectance = 0
     end
     if settings.hideDecals and (inst:IsA("Texture") or inst:IsA("Decal")) then
         inst.Transparency = 1
     end
 end)
+
+-- ============================================
+-- BYPASS LOGIC (ANTI-CHEAT HOOK)
+-- ============================================
+local function loadBypass()
+    if bypassLoaded then return end
+    pcall(function()
+        -- Metode 1: Hook kick
+        local oldKick
+        oldKick = hookfunction(localPlayer.Kick, function(self, reason)
+            warn("[Bypass] Kick attempt blocked: " .. tostring(reason))
+            return
+        end)
+    end)
+    pcall(function()
+        -- Metode 2: Anti-Idle & Anti-Kick
+        for _, v in ipairs(getconnections(localPlayer.Idled)) do
+            v:Disconnect()
+        end
+    end)
+    pcall(function()
+        -- Metode 3: Blokir remote event pemanggil kick
+        for _, v in ipairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
+            if v:IsA("RemoteEvent") or v:IsA("RemoteFunction") then
+                if v.Name:lower():find("kick") or v.Name:lower():find("ban") then
+                    v:Destroy()
+                end
+            end
+        end
+    end)
+    bypassLoaded = true
+    print("[Dark Angel] Bypass Loaded & Active.")
+end
 
 -- ============================================
 -- BUAT 2 TAB
@@ -860,7 +858,7 @@ activeTab = "Combat"
 -- ============================================
 -- ISI TAB COMBAT
 -- ============================================
-createLabel(CombatTab, "Combat Section", Palette.Red)
+createLabel(CombatTab, "COMBAT SECTION", Palette.Red)
 
 createToggle(CombatTab, "Macro", "Auto-fire saat tahan LMB", Palette.Red, false, function(s)
     macroEnabled = s
@@ -874,55 +872,51 @@ createToggle(CombatTab, "No Spread", "Hilangkan spread senjata", Palette.Red, fa
     noSpreadEnabled = s
 end)
 
+createToggle(CombatTab, "Bypass Anti-Cheat", "Blokir kick & remote deteksi", Palette.Pink, false, function(s)
+    if s then loadBypass() end
+end)
+
 -- ============================================
 -- ISI TAB FPS BOOST
 -- ============================================
 createLabel(FPSTab, "LIGHTING", Palette.Blue)
 
 createToggle(FPSTab, "Remove Post Effects", "Bloom, blur, color correction", Palette.Blue, false, function(s)
-    settings.removePostEffects = s
-    applyPostEffects(s)
+    settings.removePostEffects = s; applyPostEffects(s)
 end)
 
 createToggle(FPSTab, "Disable Shadows", "Global shadow rendering", Palette.Blue, false, function(s)
-    settings.disableShadows = s
-    Lighting.GlobalShadows = not s
+    settings.disableShadows = s; Lighting.GlobalShadows = not s
 end)
 
 createLabel(FPSTab, "WORLD", Palette.Blue)
 
 createToggle(FPSTab, "Flat Materials", "SmoothPlastic di semua part", Palette.Blue, false, function(s)
-    settings.flatMaterials = s
-    applyMaterials(s)
+    settings.flatMaterials = s; applyMaterials(s)
 end)
 
 createToggle(FPSTab, "Hide Decals & Textures", "Semua tekstur jadi invisible", Palette.Blue, false, function(s)
-    settings.hideDecals = s
-    applyDecals(s)
+    settings.hideDecals = s; applyDecals(s)
 end)
 
 createToggle(FPSTab, "Flat Terrain Water", "Hapus gelombang & refleksi air", Palette.Blue, false, function(s)
-    settings.flatTerrain = s
-    applyTerrain(s)
+    settings.flatTerrain = s; applyTerrain(s)
 end)
 
 createLabel(FPSTab, "PERFORMANCE", Palette.Blue)
 
 createSlider(FPSTab, "Render Quality", Palette.Blue, 1, 21, 21, function(v)
-    settings.qualityLevel = v
-    applyQuality(v)
+    settings.qualityLevel = v; applyQuality(v)
 end)
 
 createToggle(FPSTab, "Physics Sleep", "Part diam skip physics", Palette.Blue, false, function(s)
-    settings.physicsSleep = s
-    applyPhysics(s)
+    settings.physicsSleep = s; applyPhysics(s)
 end)
 
 createLabel(FPSTab, "SKY", Palette.Blue)
 
 createToggle(FPSTab, "Day Sky", "Langit siang cerah", Palette.Blue, false, function(s)
-    settings.daySky = s
-    applyDaySky(s)
+    settings.daySky = s; applyDaySky(s)
 end)
 
 -- ============================================
@@ -953,8 +947,8 @@ UserInputService.InputBegan:Connect(function(input, gp)
 end)
 
 print("============================================")
-print(" MTS Masyarikul Anwar UI v4 | ANIMATED")
-print(" Tab: Combat | FPS Boost")
-print(" FPS Boost: 8 fitur lengkap")
+print(" MTS Masyarikul Anwar UI v6")
+print(" FIXED: Scroll & ZIndex Tertimpa")
+print(" Bypass: Anti-Kick & Remote Blocker")
 print(" RightShift = Show/Hide")
 print("============================================")
