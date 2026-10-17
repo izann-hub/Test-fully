@@ -1,18 +1,229 @@
--- ============================================
--- DARK ANGEL | MTS Masyarikul Anwar UI v6
--- FIX: Scroll & UI Tertimpa + Bypass
--- ============================================
+-- ============================================================
+-- DARK ANGEL | MTS Masyarikul Anwar v9
+-- FULL SOURCE: UI + Combat + FPS Boost + AUTO BYPASS
+-- ============================================================
 
+-- ============================================================
+-- [1] DARK ANGEL BYPASS MODULE (LANGSUNG JALAN)
+-- ============================================================
+local Bypass = {}
+getgenv().DarkAngelBypass = Bypass
+
+if not filtergc then
+    filtergc = function(ftype, filters, returnSingle)
+        local results = {}
+        local ok, gc = pcall(getgc, true)
+        if not ok then return returnSingle and nil or results end
+        for _, obj in pairs(gc) do
+            if type(obj) == "function" then
+                local ok2, info = pcall(debug.getinfo, obj)
+                if ok2 and info then
+                    local match = true
+                    if filters.StartLine and info.linedefined ~= filters.StartLine then match = false end
+                    if filters.Source and info.source ~= filters.Source then match = false end
+                    if match then
+                        if returnSingle then return obj end
+                        table.insert(results, obj)
+                    end
+                end
+            end
+        end
+        return returnSingle and nil or results
+    end
+end
+
+if not bit32 then bit32 = {} end
+if not bit32.bxor then
+    bit32.bxor = function(a, b)
+        local result, bit = 0, 1
+        while a > 0 or b > 0 do
+            if (a % 2) ~= (b % 2) then result = result + bit end
+            a, b, bit = math.floor(a / 2), math.floor(b / 2), bit * 2
+        end
+        return result
+    end
+end
+
+local function tryFind(ln)
+    local fn = filtergc("function", { StartLine = ln }, true)
+    if type(fn) ~= "function" then
+        local all = filtergc("function", { StartLine = ln })
+        if type(all) == "table" and #all > 0 then fn = all[1] end
+    end
+    return fn
+end
+
+local Hyphon = { Encode = nil, Decode = nil, Script = nil, Ready = false }
+local function InitHyphon()
+    local fn2102 = tryFind(2102)
+    local fn2247 = tryFind(2247)
+    local fn2846 = tryFind(2846)
+    local fnFake = tryFind(1097)
+    if not (fn2102 and fn2247 and fn2846 and fnFake) then return false end
+
+    Hyphon.Encode = debug.getupvalue(fn2102, 1)
+    Hyphon.Decode = debug.getupvalue(fn2102, 21)
+
+    pcall(function()
+        local ok, nilinst = pcall(getnilinstances)
+        if ok and nilinst then
+            for _, o in pairs(nilinst) do
+                if o:IsA("Script") and o.Name:len() == 32 then
+                    Hyphon.Script = o
+                    break
+                end
+            end
+        end
+    end)
+
+    pcall(function()
+        local RF = debug.getupvalue(fn2247, 6)
+        if RF and RF.InvokeServer then
+            local old = hookfunction(RF.InvokeServer, function(self, ...)
+                local args = table.pack(...)
+                if type(args[1]) == "table" and args[1][1] then
+                    getgenv().DA_T1 = args[1][1]
+                    getgenv().DA_T2 = args[1][2]
+                    getgenv().DA_T3 = args[1][6]
+                    getgenv().DA_T4 = args[1][11]
+                end
+                return old(self, ...)
+            end)
+        end
+    end)
+
+    if bit32 and bit32.bxor and checkcaller and getcallingscript and Hyphon.Script then
+        pcall(function()
+            local oldBxor = hookfunction(bit32.bxor, function(a, b)
+                if not checkcaller() and getcallingscript() == Hyphon.Script then
+                    return task.wait(9e9)
+                end
+                return oldBxor(a, b)
+            end)
+        end)
+    end
+
+    Hyphon.Ready = true
+    return true
+end
+
+local KICK_KEYWORDS = {
+    "Kick", "Ban", "Disconnect", "Error", "Moderation",
+    "Warning", "Alert", "Popup", "Notice", "Detection",
+    "Anti", "Handshake",
+}
+local function isKickGui(name)
+    if not name then return false end
+    for _, kw in ipairs(KICK_KEYWORDS) do
+        if name:find(kw) then return true end
+    end
+    return false
+end
+
+function Bypass.StartKickDestroyer()
+    if Bypass._kickThread then return end
+    Bypass._kickRunning = true
+    Bypass._kickThread = task.spawn(function()
+        local Players = game:GetService("Players")
+        local CoreGui = game:GetService("CoreGui")
+        while Bypass._kickRunning do
+            pcall(function()
+                for _, gui in pairs(CoreGui:GetChildren()) do
+                    if isKickGui(gui.Name) then gui:Destroy() end
+                end
+                local lp = Players.LocalPlayer
+                local pg = lp and lp:FindFirstChild("PlayerGui")
+                if pg then
+                    for _, gui in pairs(pg:GetChildren()) do
+                        if isKickGui(gui.Name) then gui:Destroy() end
+                    end
+                end
+            end)
+            task.wait(0.1)
+        end
+    end)
+end
+
+function Bypass.AntiKick()
+    pcall(function()
+        local Players = game:GetService("Players")
+        if Players.LocalPlayer then
+            Players.LocalPlayer.Kick = function() return end
+        end
+        Players.Kick = function() return end
+    end)
+end
+
+function Bypass.StartAntiAFK()
+    if Bypass._afkConn then return end
+    local Players = game:GetService("Players")
+    local lp = Players.LocalPlayer
+    if not lp then return end
+    Bypass._afkConn = lp.Idled:Connect(function()
+        pcall(function()
+            local VU = game:GetService("VirtualUser")
+            VU:CaptureController()
+            VU:ClickButton2(Vector2.new())
+        end)
+    end)
+end
+
+Bypass.AutoRejoin = {
+    Enabled = true,
+    ScriptUrl = "",
+    GameId = game.PlaceId,
+}
+local _isDeathTP = false
+function Bypass.MarkDeathTeleport() _isDeathTP = true end
+
+function Bypass.DoRejoin()
+    if not Bypass.AutoRejoin.Enabled then return end
+    if _isDeathTP then _isDeathTP = false; return end
+    pcall(function()
+        game:GetService("TeleportService"):Teleport(Bypass.AutoRejoin.GameId)
+    end)
+end
+
+function Bypass.StartRejoinDetector()
+    if Bypass._rejoinConn then return end
+    local LogService = game:GetService("LogService")
+    Bypass._rejoinConn = LogService.MessageOut:Connect(function(msg, mtype)
+        if mtype ~= Enum.MessageType.MessageError then return end
+        if msg:find("Kicked") or msg:find("Disconnected") or msg:find("Idle")
+           or msg:find("Removed") or msg:find("Connection lost") or msg:find("Ban") then
+            task.spawn(Bypass.DoRejoin)
+        end
+    end)
+end
+
+function Bypass.Start()
+    Bypass.AntiKick()
+    Bypass.StartKickDestroyer()
+    Bypass.StartAntiAFK()
+    Bypass.StartRejoinDetector()
+    local hyphonOk = InitHyphon()
+    if hyphonOk then
+        print("[Dark Angel] Hyphon Bypass: OK")
+    else
+        print("[Dark Angel] Hyphon Bypass: SKIP (fungsi tidak ditemukan)")
+    end
+    print("[Dark Angel] Bypass Active.")
+    return hyphonOk
+end
+
+-- EKSEKUSI BYPASS
+Bypass.Start()
+
+-- ============================================================
+-- [2] UI & FITUR UTAMA
+-- ============================================================
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
 local localPlayer = Players.LocalPlayer
 
--- ============================================
 -- PALET
--- ============================================
 local Palette = {
     Pink     = Color3.fromRGB(255, 105, 180),
     Gray     = Color3.fromRGB(90, 90, 90),
@@ -20,14 +231,13 @@ local Palette = {
     Red      = Color3.fromRGB(220, 50, 50),
     Dark     = Color3.fromRGB(25, 25, 30),
     DarkGray = Color3.fromRGB(40, 40, 45),
+    Hover    = Color3.fromRGB(50, 50, 55),
     Light    = Color3.fromRGB(230, 230, 235),
     White    = Color3.fromRGB(255, 255, 255),
     Green    = Color3.fromRGB(120, 200, 140),
 }
 
--- ============================================
 -- STATE
--- ============================================
 local noRecoilEnabled = false
 local noSpreadEnabled = false
 local macroEnabled = false
@@ -40,9 +250,7 @@ local settings = {
 }
 local originalData = { parts = {}, decals = {}, terrain = {} }
 
--- ============================================
 -- SCREEN GUI
--- ============================================
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "MTS_UI"
 ScreenGui.ResetOnSpawn = false
@@ -50,9 +258,7 @@ ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.IgnoreGuiInset = true
 ScreenGui.Parent = localPlayer:WaitForChild("PlayerGui")
 
--- ============================================
 -- MAIN FRAME
--- ============================================
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 520, 0, 380)
@@ -99,9 +305,7 @@ task.spawn(function()
     }):Play()
 end)
 
--- ============================================
 -- HEADER
--- ============================================
 local Header = Instance.new("Frame")
 Header.Size = UDim2.new(1, 0, 0, 46)
 Header.BackgroundColor3 = Palette.DarkGray
@@ -145,9 +349,7 @@ HeaderTitle.Parent = Header
 HeaderTitle.TextTransparency = 1
 TweenService:Create(HeaderTitle, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
 
--- ============================================
 -- CLOSE BUTTON
--- ============================================
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Size = UDim2.new(0, 30, 0, 30)
 CloseBtn.Position = UDim2.new(1, -38, 0, 8)
@@ -180,9 +382,7 @@ CloseBtn.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
 
--- ============================================
 -- SIDEBAR
--- ============================================
 local Sidebar = Instance.new("Frame")
 Sidebar.Size = UDim2.new(0, 140, 1, -46)
 Sidebar.Position = UDim2.new(0, 0, 0, 46)
@@ -205,9 +405,7 @@ local SidebarPad = Instance.new("UIPadding")
 SidebarPad.PaddingTop = UDim.new(0, 10)
 SidebarPad.Parent = Sidebar
 
--- ============================================
 -- CONTENT
--- ============================================
 local Content = Instance.new("Frame")
 Content.Size = UDim2.new(1, -150, 1, -56)
 Content.Position = UDim2.new(0, 145, 0, 51)
@@ -221,9 +419,7 @@ local ContentCorner = Instance.new("UICorner")
 ContentCorner.CornerRadius = UDim.new(0, 8)
 ContentCorner.Parent = Content
 
--- ============================================
--- TAB SYSTEM (FIXED SCROLL & ZINDEX)
--- ============================================
+-- TAB SYSTEM
 local tabs = {}
 local activeTab = nil
 local isSwitching = false
@@ -258,8 +454,8 @@ local function createTab(name, accentColor)
     indCorner.Parent = indicator
 
     local frame = Instance.new("ScrollingFrame")
-    frame.Size = UDim2.new(1, -20, 1, -20)
-    frame.Position = UDim2.new(0, 10, 0, 10)
+    frame.Size = UDim2.new(1, -8, 1, -8)
+    frame.Position = UDim2.new(0, 4, 0, 4)
     frame.BackgroundTransparency = 1
     frame.BorderSizePixel = 0
     frame.ScrollBarThickness = 6
@@ -279,14 +475,13 @@ local function createTab(name, accentColor)
     layout.Parent = frame
 
     local pad = Instance.new("UIPadding")
-    pad.PaddingTop = UDim.new(0, 4)
+    pad.PaddingLeft = UDim.new(0, 8)
+    pad.PaddingRight = UDim.new(0, 8)
+    pad.PaddingTop = UDim.new(0, 6)
     pad.PaddingBottom = UDim.new(0, 24)
     pad.Parent = frame
 
-    tabs[name] = {
-        button = btn, frame = frame, accent = accentColor,
-        layout = layout, indicator = indicator
-    }
+    tabs[name] = { button = btn, frame = frame, accent = accentColor, layout = layout, indicator = indicator }
 
     btn.MouseEnter:Connect(function()
         if activeTab ~= name then
@@ -312,13 +507,12 @@ local function createTab(name, accentColor)
                 TweenService:Create(t.indicator, TweenInfo.new(0.2), {Size = UDim2.new(0, 3, 0, 0)}):Play()
             end
         end
-        local accent = tabs[name].accent
-        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = accent}):Play()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = accentColor}):Play()
         TweenService:Create(indicator, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {Size = UDim2.new(0, 3, 0, 28)}):Play()
-        frame.Position = UDim2.new(0, 40, 0, 10)
+        frame.Position = UDim2.new(0, 40, 0, 4)
         frame.Visible = true
         TweenService:Create(frame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-            Position = UDim2.new(0, 10, 0, 10)
+            Position = UDim2.new(0, 4, 0, 4)
         }):Play()
         activeTab = name
         task.wait(0.25)
@@ -328,12 +522,10 @@ local function createTab(name, accentColor)
     return frame
 end
 
--- ============================================
--- ELEMEN BUILDER (FIXED ZINDEX)
--- ============================================
+-- ELEMEN BUILDER
 local function createLabel(parentTab, text, color)
     local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(1, 0, 0, 26)
+    lbl.Size = UDim2.new(1, -8, 0, 26)
     lbl.BackgroundColor3 = Palette.DarkGray
     lbl.Text = "  " .. text
     lbl.TextColor3 = color or Palette.Light
@@ -354,13 +546,12 @@ local function createLabel(parentTab, text, color)
     TweenService:Create(lbl, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
         BackgroundTransparency = 0.3, TextTransparency = 0
     }):Play()
-
     return lbl
 end
 
 local function createToggle(parentTab, text, desc, accent, defaultOn, callback)
     local holder = Instance.new("Frame")
-    holder.Size = UDim2.new(1, 0, 0, 52)
+    holder.Size = UDim2.new(1, -8, 0, 52)
     holder.BackgroundColor3 = Palette.DarkGray
     holder.BorderSizePixel = 0
     holder.BackgroundTransparency = 1
@@ -447,9 +638,11 @@ local function createToggle(parentTab, text, desc, accent, defaultOn, callback)
 
     holder.MouseEnter:Connect(function()
         TweenService:Create(s, TweenInfo.new(0.15), {Thickness = 2}):Play()
+        TweenService:Create(holder, TweenInfo.new(0.15), {BackgroundColor3 = Palette.Hover}):Play()
     end)
     holder.MouseLeave:Connect(function()
         TweenService:Create(s, TweenInfo.new(0.15), {Thickness = 1}):Play()
+        TweenService:Create(holder, TweenInfo.new(0.15), {BackgroundColor3 = Palette.DarkGray}):Play()
     end)
 
     click.MouseButton1Click:Connect(function()
@@ -463,13 +656,12 @@ local function createToggle(parentTab, text, desc, accent, defaultOn, callback)
         end
         if callback then callback(state) end
     end)
-
     return holder
 end
 
 local function createSlider(parentTab, text, accent, min, max, default, callback)
     local holder = Instance.new("Frame")
-    holder.Size = UDim2.new(1, 0, 0, 56)
+    holder.Size = UDim2.new(1, -8, 0, 56)
     holder.BackgroundColor3 = Palette.DarkGray
     holder.BorderSizePixel = 0
     holder.BackgroundTransparency = 1
@@ -560,6 +752,15 @@ local function createSlider(parentTab, text, accent, min, max, default, callback
     TweenService:Create(fill, TweenInfo.new(0.35), {BackgroundTransparency = 0}):Play()
     TweenService:Create(thumb, TweenInfo.new(0.35), {BackgroundTransparency = 0}):Play()
 
+    holder.MouseEnter:Connect(function()
+        TweenService:Create(s, TweenInfo.new(0.15), {Thickness = 2}):Play()
+        TweenService:Create(holder, TweenInfo.new(0.15), {BackgroundColor3 = Palette.Hover}):Play()
+    end)
+    holder.MouseLeave:Connect(function()
+        TweenService:Create(s, TweenInfo.new(0.15), {Thickness = 1}):Play()
+        TweenService:Create(holder, TweenInfo.new(0.15), {BackgroundColor3 = Palette.DarkGray}):Play()
+    end)
+
     local dragging = false
     local function updateSlider(input)
         local rel = math.clamp((input.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
@@ -585,13 +786,10 @@ local function createSlider(parentTab, text, accent, min, max, default, callback
     UserInputService.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
     end)
-
     return holder
 end
 
--- ============================================
 -- LOGIKA COMBAT
--- ============================================
 local function saveDefaults(tool)
     if not tool:IsA("Tool") then return end
     local sm = tool:FindFirstChild("Setting")
@@ -678,9 +876,7 @@ task.spawn(function()
     end
 end)
 
--- ============================================
 -- LOGIKA FPS BOOST
--- ============================================
 local function SetDaySky()
     pcall(function()
         Lighting.Ambient = Color3.fromRGB(255, 255, 255)
@@ -803,42 +999,7 @@ workspace.DescendantAdded:Connect(function(inst)
     end
 end)
 
--- ============================================
--- BYPASS LOGIC (ANTI-CHEAT HOOK)
--- ============================================
-local function loadBypass()
-    if bypassLoaded then return end
-    pcall(function()
-        -- Metode 1: Hook kick
-        local oldKick
-        oldKick = hookfunction(localPlayer.Kick, function(self, reason)
-            warn("[Bypass] Kick attempt blocked: " .. tostring(reason))
-            return
-        end)
-    end)
-    pcall(function()
-        -- Metode 2: Anti-Idle & Anti-Kick
-        for _, v in ipairs(getconnections(localPlayer.Idled)) do
-            v:Disconnect()
-        end
-    end)
-    pcall(function()
-        -- Metode 3: Blokir remote event pemanggil kick
-        for _, v in ipairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
-            if v:IsA("RemoteEvent") or v:IsA("RemoteFunction") then
-                if v.Name:lower():find("kick") or v.Name:lower():find("ban") then
-                    v:Destroy()
-                end
-            end
-        end
-    end)
-    bypassLoaded = true
-    print("[Dark Angel] Bypass Loaded & Active.")
-end
-
--- ============================================
 -- BUAT 2 TAB
--- ============================================
 local CombatTab = createTab("Combat", Palette.Red)
 local FPSTab = createTab("FPS Boost", Palette.Blue)
 
@@ -848,16 +1009,14 @@ local firstFrame = tabs["Combat"].frame
 local firstInd = tabs["Combat"].indicator
 firstBtn.BackgroundColor3 = Palette.Red
 firstInd.Size = UDim2.new(0, 3, 0, 28)
-firstFrame.Position = UDim2.new(0, 40, 0, 10)
+firstFrame.Position = UDim2.new(0, 40, 0, 4)
 firstFrame.Visible = true
 TweenService:Create(firstFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-    Position = UDim2.new(0, 10, 0, 10)
+    Position = UDim2.new(0, 4, 0, 4)
 }):Play()
 activeTab = "Combat"
 
--- ============================================
--- ISI TAB COMBAT
--- ============================================
+-- ISI TAB COMBAT (Bypass SUDAH DIHAPUS DARI SINI)
 createLabel(CombatTab, "COMBAT SECTION", Palette.Red)
 
 createToggle(CombatTab, "Macro", "Auto-fire saat tahan LMB", Palette.Red, false, function(s)
@@ -872,13 +1031,7 @@ createToggle(CombatTab, "No Spread", "Hilangkan spread senjata", Palette.Red, fa
     noSpreadEnabled = s
 end)
 
-createToggle(CombatTab, "Bypass Anti-Cheat", "Blokir kick & remote deteksi", Palette.Pink, false, function(s)
-    if s then loadBypass() end
-end)
-
--- ============================================
 -- ISI TAB FPS BOOST
--- ============================================
 createLabel(FPSTab, "LIGHTING", Palette.Blue)
 
 createToggle(FPSTab, "Remove Post Effects", "Bloom, blur, color correction", Palette.Blue, false, function(s)
@@ -919,9 +1072,7 @@ createToggle(FPSTab, "Day Sky", "Langit siang cerah", Palette.Blue, false, funct
     settings.daySky = s; applyDaySky(s)
 end)
 
--- ============================================
 -- TOGGLE UI (RightShift)
--- ============================================
 local uiVisible = true
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
@@ -947,8 +1098,8 @@ UserInputService.InputBegan:Connect(function(input, gp)
 end)
 
 print("============================================")
-print(" MTS Masyarikul Anwar UI v6")
-print(" FIXED: Scroll & ZIndex Tertimpa")
-print(" Bypass: Anti-Kick & Remote Blocker")
-print(" RightShift = Show/Hide")
+print(" MTS Masyarikul Anwar UI v9")
+print(" Bypass: AUTO START (Tanpa Toggle)")
+print(" Fitur : Combat & FPS Boost")
+print(" Tombol: [RightShift] = Show/Hide UI")
 print("============================================")
