@@ -1,11 +1,10 @@
 --============================================================
--- NRD ONTOP - Crosshair & Cursor Simbol '+' (Tanpa Gambar)
+-- NRD ONTOP - Crosshair Mengikuti Mouse (Cursor Mode)
 -- LocalScript di: StarterPlayer > StarterPlayerScripts
 --============================================================
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
@@ -13,7 +12,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 local camera = Workspace.CurrentCamera
 
 --============================================================
--- PALET WARNA TEMA (BIRU TUA, HITAM, PUTIH)
+-- PALET WARNA TEMA
 --============================================================
 local THEME = {
     BgPanel     = Color3.fromRGB(10, 15, 30),    
@@ -25,11 +24,8 @@ local THEME = {
     TextAccent  = Color3.fromRGB(120, 180, 255), 
 }
 
---============================================================
--- KONFIGURASI
---============================================================
 local CONFIG = {
-    CrosshairSize = 32,  -- Ukuran default (pixel)
+    CrosshairSize = 32, 
     MinSize = 16,
     MaxSize = 128,
     FOV = 90,
@@ -47,43 +43,67 @@ screenGui.DisplayOrder = 100
 screenGui.Parent = playerGui
 
 --============================================================
--- 1. CROSSHAIR SIMBOL '+' (TENGAH LAYAR)
+-- KURSOR CROSSHAIR (MENGIKUTI MOUSE)
 --============================================================
-local crosshair = Instance.new("TextLabel")
-crosshair.Name = "CrosshairPlus"
-crosshair.AnchorPoint = Vector2.new(0.5, 0.5)
-crosshair.Position = UDim2.new(0.5, 0, 0.5, 0)
-crosshair.Size = UDim2.new(0, CONFIG.CrosshairSize, 0, CONFIG.CrosshairSize)
-crosshair.BackgroundTransparency = 1
-crosshair.Text = "+"
-crosshair.TextColor3 = Color3.fromRGB(255, 255, 255) -- Putih
-crosshair.TextScaled = true
-crosshair.Font = Enum.Font.GothamBold
-crosshair.ZIndex = 999
-crosshair.Parent = screenGui
+UserInputService.MouseIconEnabled = false -- Sembunyikan kursor bawaan
 
---============================================================
--- 2. KURSOR SIMBOL '+' (MENGIKUTI MOUSE)
---============================================================
--- Sembunyikan kursor bawaan Roblox
-UserInputService.MouseIconEnabled = false
+-- Wadah Kursor
+local cursorContainer = Instance.new("Frame")
+cursorContainer.Name = "CursorCrosshair"
+cursorContainer.AnchorPoint = Vector2.new(0.5, 0.5)
+cursorContainer.Size = UDim2.new(0, CONFIG.CrosshairSize, 0, CONFIG.CrosshairSize)
+cursorContainer.BackgroundTransparency = 1
+cursorContainer.ZIndex = 1000
+cursorContainer.Parent = screenGui
 
-local customCursor = Instance.new("TextLabel")
-customCursor.Name = "CursorPlus"
-customCursor.AnchorPoint = Vector2.new(0.5, 0.5)
-customCursor.Size = UDim2.new(0, 32, 0, 32) -- Ukuran kursor
-customCursor.BackgroundTransparency = 1
-customCursor.Text = "+"
-customCursor.TextColor3 = Color3.fromRGB(255, 255, 255) -- Putih
-customCursor.TextScaled = true
-customCursor.Font = Enum.Font.GothamBold
-customCursor.ZIndex = 1000 -- Di atas segalanya
-customCursor.Parent = screenGui
+-- Teks '+'
+local cursorText = Instance.new("TextLabel")
+cursorText.Name = "CursorPlus"
+cursorText.BackgroundTransparency = 1
+cursorText.Size = UDim2.new(1, 0, 1, 0)
+cursorText.Text = "+"
+cursorText.TextColor3 = Color3.fromRGB(255, 255, 255)
+cursorText.TextScaled = true
+cursorText.Font = Enum.Font.GothamBold
+cursorText.Parent = cursorContainer
 
--- Update posisi kursor setiap frame
-RunService.RenderStepped:Connect(function()
-    local mousePos = UserInputService:GetMouseLocation()
-    customCursor.Position = UDim2.new(0, mousePos.X, 0, mousePos.Y)
+-- Titik tengah presisi
+local dot = Instance.new("Frame")
+dot.Name = "Dot"
+dot.Size = UDim2.new(0, 3, 0, 3)
+dot.Position = UDim2.new(0.5, 0, 0.5, 0)
+dot.AnchorPoint = Vector2.new(0.5, 0.5)
+dot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+dot.BorderSizePixel = 0
+dot.Parent = cursorContainer
+
+local uiCornerDot = Instance.new("UICorner")
+uiCornerDot.CornerRadius = UDim.new(1, 0)
+uiCornerDot.Parent = dot
+
+-- Posisi awal kursor
+local initialMousePos = UserInputService:GetMouseLocation()
+cursorContainer.Position = UDim2.new(0, initialMousePos.X, 0, initialMousePos.Y)
+
+-- Update pergerakan mouse (Anti-Delay)
+UserInputService.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        cursorContainer.Position = UDim2.new(0, input.Position.X, 0, input.Position.Y)
+    end
+end)
+
+-- Deteksi jika mouse di atas UI (berubah jadi panah)
+local playerMouse = player:GetMouse()
+playerMouse.Move:Connect(function()
+    if playerMouse.TargetGui then
+        cursorText.Text = "↖"
+        cursorText.TextColor3 = THEME.Accent
+        dot.BackgroundColor3 = THEME.Accent
+    else
+        cursorText.Text = "+"
+        cursorText.TextColor3 = Color3.fromRGB(255, 255, 255)
+        dot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    end
 end)
 
 --============================================================
@@ -121,7 +141,7 @@ uiLayout.SortOrder = Enum.SortOrder.LayoutOrder
 uiLayout.Padding = UDim.new(0, 6)
 uiLayout.Parent = uiFrame
 
--- TITLE: NRD ONTOP
+-- TITLE
 local titleFrame = Instance.new("Frame")
 titleFrame.Name = "TitleFrame"
 titleFrame.Size = UDim2.new(1, 0, 0, 30)
@@ -184,7 +204,7 @@ local function buatBaris(nama, urutan)
     return row
 end
 
--- BARIS 1: Toggle (Show/Hide)
+-- BARIS 1: Toggle
 local rowToggle = buatBaris("Status", 1)
 local toggleBtn = Instance.new("TextButton")
 toggleBtn.Name = "ToggleBtn"
@@ -218,7 +238,7 @@ fovValue.TextXAlignment = Enum.TextXAlignment.Right
 fovValue.ZIndex = 12
 fovValue.Parent = rowFov
 
--- BARIS 3: CrosshairSize (Slider)
+-- BARIS 3: CrosshairSize
 local rowSize = buatBaris("CrosshairSize", 3)
 local sizeValue = Instance.new("TextLabel")
 sizeValue.Name = "Value"
@@ -279,10 +299,10 @@ local function updateSize(size)
     size = math.clamp(size, CONFIG.MinSize, CONFIG.MaxSize)
     CONFIG.CrosshairSize = size
     
-    -- Update ukuran Crosshair
-    crosshair.Size = UDim2.new(0, size, 0, size)
+    -- Update ukuran Kursor Crosshair
+    cursorContainer.Size = UDim2.new(0, size, 0, size)
     
-    -- Update UI Slider
+    -- Update UI
     sizeValue.Text = math.floor(size) .. "/" .. CONFIG.MaxSize
     local alpha = (size - CONFIG.MinSize) / (CONFIG.MaxSize - CONFIG.MinSize)
     fill.Size = UDim2.new(alpha, 0, 1, 0)
@@ -301,7 +321,7 @@ end
 --============================================================
 toggleBtn.MouseButton1Click:Connect(function()
     CONFIG.Visible = not CONFIG.Visible
-    crosshair.Visible = CONFIG.Visible
+    cursorContainer.Visible = CONFIG.Visible
     if CONFIG.Visible then
         toggleBtn.Text = "AKTIF"
         toggleBtn.BackgroundColor3 = THEME.Accent
@@ -312,7 +332,6 @@ toggleBtn.MouseButton1Click:Connect(function()
 end)
 
 local dragging = false
-
 local function getAlphaFromX(x)
     local absPos = slider.AbsolutePosition.X
     local absSize = slider.AbsoluteSize.X
@@ -348,4 +367,4 @@ end)
 updateSize(CONFIG.CrosshairSize)
 updateFOV(CONFIG.FOV)
 
-print("[NRD ONTOP] Loaded - Plus Symbol Mode (+)")
+print("[NRD ONTOP] Loaded - Cursor Crosshair Mode (+)")
