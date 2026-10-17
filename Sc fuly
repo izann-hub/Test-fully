@@ -1,22 +1,24 @@
---============================================================
--- NRD ONTOP - CoreGui Version (Anti-Delete & Static Crosshair)
--- LocalScript di: StarterPlayer > StarterPlayerScripts
---============================================================
-
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
 local Workspace = game:GetService("Workspace")
-local CoreGui = game:GetService("CoreGui")
 local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local camera = Workspace.CurrentCamera
 
+local THEME = {
+    BgPanel     = Color3.fromRGB(10, 15, 30),    
+    BgRow       = Color3.fromRGB(20, 30, 55),    
+    BgSlider    = Color3.fromRGB(45, 60, 95),    
+    Accent      = Color3.fromRGB(60, 130, 220),  
+    AccentDark  = Color3.fromRGB(30, 70, 140),   
+    TextPrimary = Color3.fromRGB(255, 255, 255), 
+    TextAccent  = Color3.fromRGB(120, 180, 255), 
+}
+
 local CONFIG = {
-    CrosshairImageId = "131115132205510", -- Ganti dengan ID gambar kamu
-    
     CrosshairSize = 32, 
     MinSize = 16,
     MaxSize = 128,
@@ -33,16 +35,6 @@ fakeMouse.BackgroundTransparency = 1
 fakeMouse.Parent = playerGui
 UserInputService.MouseIcon = fakeMouse 
 
-local THEME = {
-    BgPanel     = Color3.fromRGB(10, 15, 30),    
-    BgRow       = Color3.fromRGB(20, 30, 55),    
-    BgSlider    = Color3.fromRGB(45, 60, 95),    
-    Accent      = Color3.fromRGB(60, 130, 220),  
-    AccentDark  = Color3.fromRGB(30, 70, 140),   
-    TextPrimary = Color3.fromRGB(255, 255, 255), 
-    TextAccent  = Color3.fromRGB(120, 180, 255), 
-}
-
 local screenGui
 
 local function createGui()
@@ -52,33 +44,39 @@ local function createGui()
     screenGui.Name = "NRD_ONTOP_SYSTEM"
     screenGui.ResetOnSpawn = false
     screenGui.IgnoreGuiInset = true
-    screenGui.DisplayOrder = 2147483647 -- Paksa paling atas
+    screenGui.DisplayOrder = 2147483647 
+    screenGui.Parent = playerGui
+
+    local crosshair = Instance.new("Frame")
+    crosshair.Name = "Crosshair"
+    crosshair.AnchorPoint = Vector2.new(0.5, 0.5)
+    crosshair.Position = UDim2.new(0.5, 0, 0.5, 0)
+    crosshair.Size = UDim2.new(0, CONFIG.CrosshairSize, 0, CONFIG.CrosshairSize)
+    crosshair.BackgroundTransparency = 1
+    crosshair.Parent = screenGui
+
+    local plus = Instance.new("TextLabel")
+    plus.Name = "PlusText"
+    plus.BackgroundTransparency = 1
+    plus.Size = UDim2.new(1, 0, 1, 0)
+    plus.Text = "+"
+    plus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    plus.TextScaled = true
+    plus.Font = Enum.Font.GothamBold
+    plus.Parent = crosshair
+
+    local dot = Instance.new("Frame")
+    dot.Size = UDim2.new(0, 3, 0, 3)
+    dot.Position = UDim2.new(0.5, 0, 0.5, 0)
+    dot.AnchorPoint = Vector2.new(0.5, 0.5)
+    dot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    dot.BorderSizePixel = 0
+    dot.Parent = crosshair
     
-    -- Pindahkan ke CoreGui agar tidak bisa dihapus game
-    local success = pcall(function()
-        screenGui.Parent = CoreGui
-    end)
-    if not success then
-        screenGui.Parent = playerGui
-    end
+    local dotCorner = Instance.new("UICorner")
+    dotCorner.CornerRadius = UDim.new(1, 0)
+    dotCorner.Parent = dot
 
-    -- CROSSHAIR STATIS DI TENGAH LAYAR
-    local cursorContainer = Instance.new("ImageLabel")
-    cursorContainer.Name = "CursorImage"
-    cursorContainer.AnchorPoint = Vector2.new(0.5, 0.5)
-    cursorContainer.Position = UDim2.new(0.5, 0, 0.5, 0) -- DIKUNCI DI TENGAH
-    cursorContainer.Size = UDim2.new(0, CONFIG.CrosshairSize, 0, CONFIG.CrosshairSize)
-    cursorContainer.BackgroundTransparency = 1
-    cursorContainer.ZIndex = 1000
-    cursorContainer.ScaleType = Enum.ScaleType.Fit
-    cursorContainer.Image = "rbxassetid://" .. CONFIG.CrosshairImageId
-    cursorContainer.Parent = screenGui
-
-    cursorContainer.ImageFailed:Connect(function()
-        warn("[NRD ONTOP] GAGAL MEMUAT GAMBAR! Cek apakah Asset ID " .. CONFIG.CrosshairImageId .. " valid dan publik.")
-    end)
-
-    -- UI PANEL
     local uiFrame = Instance.new("Frame")
     uiFrame.Name = "SettingsPanel"
     uiFrame.Size = UDim2.new(0, 260, 0, 210)
@@ -86,7 +84,6 @@ local function createGui()
     uiFrame.BackgroundColor3 = THEME.BgPanel
     uiFrame.BackgroundTransparency = 0.1
     uiFrame.BorderSizePixel = 0
-    uiFrame.ZIndex = 10
     uiFrame.Parent = screenGui
 
     local uiCorner = Instance.new("UICorner")
@@ -112,13 +109,11 @@ local function createGui()
     uiLayout.Parent = uiFrame
 
     local titleFrame = Instance.new("Frame")
-    titleFrame.Name = "TitleFrame"
     titleFrame.Size = UDim2.new(1, 0, 0, 30)
     titleFrame.BackgroundColor3 = THEME.AccentDark
     titleFrame.BackgroundTransparency = 0.15
     titleFrame.BorderSizePixel = 0
     titleFrame.LayoutOrder = 0
-    titleFrame.ZIndex = 11
     titleFrame.Parent = uiFrame
 
     local tCorner = Instance.new("UICorner")
@@ -126,24 +121,20 @@ local function createGui()
     tCorner.Parent = titleFrame
 
     local titleLabel = Instance.new("TextLabel")
-    titleLabel.Name = "Title"
     titleLabel.Size = UDim2.new(1, 0, 1, 0)
     titleLabel.BackgroundTransparency = 1
     titleLabel.Text = "NRD ONTOP"
     titleLabel.TextColor3 = THEME.TextPrimary
     titleLabel.TextSize = 16
     titleLabel.Font = Enum.Font.GothamBold
-    titleLabel.ZIndex = 12
     titleLabel.Parent = titleFrame
 
     local function buatBaris(nama, urutan)
         local row = Instance.new("Frame")
-        row.Name = nama .. "Row"
         row.Size = UDim2.new(1, 0, 0, 38)
         row.BackgroundColor3 = THEME.BgRow
         row.BorderSizePixel = 0
         row.LayoutOrder = urutan
-        row.ZIndex = 11
         row.Parent = uiFrame
         
         local c = Instance.new("UICorner")
@@ -151,7 +142,6 @@ local function createGui()
         c.Parent = row
         
         local lbl = Instance.new("TextLabel")
-        lbl.Name = "Label"
         lbl.Size = UDim2.new(0.5, 0, 1, 0)
         lbl.Position = UDim2.new(0, 12, 0, 0)
         lbl.BackgroundTransparency = 1
@@ -160,7 +150,6 @@ local function createGui()
         lbl.TextSize = 15
         lbl.Font = Enum.Font.GothamBold
         lbl.TextXAlignment = Enum.TextXAlignment.Left
-        lbl.ZIndex = 12
         lbl.Parent = row
         
         return row
@@ -168,7 +157,6 @@ local function createGui()
 
     local rowToggle = buatBaris("Status", 1)
     local toggleBtn = Instance.new("TextButton")
-    toggleBtn.Name = "ToggleBtn"
     toggleBtn.Size = UDim2.new(0, 80, 0, 26)
     toggleBtn.Position = UDim2.new(1, -90, 0.5, 0)
     toggleBtn.AnchorPoint = Vector2.new(0, 0.5)
@@ -177,7 +165,6 @@ local function createGui()
     toggleBtn.TextSize = 13
     toggleBtn.Font = Enum.Font.GothamBold
     toggleBtn.Text = "AKTIF"
-    toggleBtn.ZIndex = 12
     toggleBtn.Parent = rowToggle
 
     local togCorner = Instance.new("UICorner")
@@ -186,7 +173,6 @@ local function createGui()
 
     local rowFov = buatBaris("FOV", 2)
     local fovValue = Instance.new("TextLabel")
-    fovValue.Name = "Value"
     fovValue.Size = UDim2.new(0, 100, 1, 0)
     fovValue.Position = UDim2.new(1, -110, 0, 0)
     fovValue.BackgroundTransparency = 1
@@ -195,12 +181,11 @@ local function createGui()
     fovValue.TextSize = 15
     fovValue.Font = Enum.Font.GothamBold
     fovValue.TextXAlignment = Enum.TextXAlignment.Right
-    fovValue.ZIndex = 12
     fovValue.Parent = rowFov
 
     local rowSize = buatBaris("CrosshairSize", 3)
     local sizeValue = Instance.new("TextLabel")
-    sizeValue.Name = "Value"
+    sizeValue.Name = "SizeValue"
     sizeValue.Size = UDim2.new(0, 60, 0, 12)
     sizeValue.Position = UDim2.new(1, -110, 0, 2)
     sizeValue.BackgroundTransparency = 1
@@ -209,7 +194,6 @@ local function createGui()
     sizeValue.TextSize = 11
     sizeValue.Font = Enum.Font.GothamBold
     sizeValue.TextXAlignment = Enum.TextXAlignment.Right
-    sizeValue.ZIndex = 12
     sizeValue.Parent = rowSize
 
     local slider = Instance.new("Frame")
@@ -218,7 +202,6 @@ local function createGui()
     slider.Position = UDim2.new(1, -110, 0.7, 0)
     slider.BackgroundColor3 = THEME.BgSlider
     slider.BorderSizePixel = 0
-    slider.ZIndex = 12
     slider.Parent = rowSize
 
     local sCorner = Instance.new("UICorner")
@@ -230,7 +213,6 @@ local function createGui()
     fill.Size = UDim2.new((CONFIG.CrosshairSize - CONFIG.MinSize)/(CONFIG.MaxSize - CONFIG.MinSize), 0, 1, 0)
     fill.BackgroundColor3 = THEME.Accent
     fill.BorderSizePixel = 0
-    fill.ZIndex = 13
     fill.Parent = slider
 
     local fCorner = Instance.new("UICorner")
@@ -244,33 +226,17 @@ local function createGui()
     knob.Position = UDim2.new((CONFIG.CrosshairSize - CONFIG.MinSize)/(CONFIG.MaxSize - CONFIG.MinSize), 0, 0.5, 0)
     knob.BackgroundColor3 = THEME.TextPrimary
     knob.BorderSizePixel = 0
-    knob.ZIndex = 14
     knob.Parent = slider
 
     local kCorner = Instance.new("UICorner")
     kCorner.CornerRadius = UDim.new(1, 0)
     kCorner.Parent = knob
 
-    local function updateSize(size)
-        size = math.clamp(size, CONFIG.MinSize, CONFIG.MaxSize)
-        CONFIG.CrosshairSize = size
-        cursorContainer.Size = UDim2.new(0, size, 0, size)
-        sizeValue.Text = math.floor(size) .. "/" .. CONFIG.MaxSize
-        local alpha = (size - CONFIG.MinSize) / (CONFIG.MaxSize - CONFIG.MinSize)
-        fill.Size = UDim2.new(alpha, 0, 1, 0)
-        knob.Position = UDim2.new(alpha, 0, 0.5, 0)
-    end
-
     toggleBtn.MouseButton1Click:Connect(function()
         CONFIG.Visible = not CONFIG.Visible
-        cursorContainer.Visible = CONFIG.Visible
-        if CONFIG.Visible then
-            toggleBtn.Text = "AKTIF"
-            toggleBtn.BackgroundColor3 = THEME.Accent
-        else
-            toggleBtn.Text = "MATI"
-            toggleBtn.BackgroundColor3 = THEME.BgSlider
-        end
+        crosshair.Visible = CONFIG.Visible
+        toggleBtn.Text = CONFIG.Visible and "AKTIF" or "MATI"
+        toggleBtn.BackgroundColor3 = CONFIG.Visible and THEME.Accent or THEME.BgSlider
     end)
 
     local dragging = false
@@ -281,33 +247,37 @@ local function createGui()
     knob.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = true end
     end)
-
+    
     slider.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             local alpha = getAlphaFromX(input.Position.X)
-            updateSize(CONFIG.MinSize + alpha * (CONFIG.MaxSize - CONFIG.MinSize))
+            local newSize = CONFIG.MinSize + alpha * (CONFIG.MaxSize - CONFIG.MinSize)
+            crosshair.Size = UDim2.new(0, newSize, 0, newSize)
+            sizeValue.Text = math.floor(newSize) .. "/" .. CONFIG.MaxSize
+            fill.Size = UDim2.new(alpha, 0, 1, 0)
+            knob.Position = UDim2.new(alpha, 0, 0.5, 0)
         end
     end)
 
     UserInputService.InputChanged:Connect(function(input)
         if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             local alpha = getAlphaFromX(input.Position.X)
-            updateSize(CONFIG.MinSize + alpha * (CONFIG.MaxSize - CONFIG.MinSize))
+            local newSize = CONFIG.MinSize + alpha * (CONFIG.MaxSize - CONFIG.MinSize)
+            crosshair.Size = UDim2.new(0, newSize, 0, newSize)
+            sizeValue.Text = math.floor(newSize) .. "/" .. CONFIG.MaxSize
+            fill.Size = UDim2.new(alpha, 0, 1, 0)
+            knob.Position = UDim2.new(alpha, 0, 0.5, 0)
         end
     end)
 
     UserInputService.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
     end)
-
-    updateSize(CONFIG.CrosshairSize)
-    camera.FieldOfView = CONFIG.FOV
 end
 
 createGui()
 
--- Auto-Repair: Memastikan UI tidak terhapus oleh sistem game
 RunService.Heartbeat:Connect(function()
     if not screenGui or not screenGui.Parent then
         createGui()
