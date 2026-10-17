@@ -1,5 +1,6 @@
 -- ============================================================
--- DARK ANGEL | MTS Masyarikul Anwar v9 + FLOAT BUTTON
+-- DARK ANGEL | MTS Masyarikul Anwar v11
+-- FITUR: Background Image + Float Button
 -- ============================================================
 
 -- ============================================================
@@ -263,15 +264,15 @@ ScreenGui.Parent = localPlayer:WaitForChild("PlayerGui")
 local FloatBtn = Instance.new("TextButton")
 FloatBtn.Name = "FloatToggleBtn"
 FloatBtn.Size = UDim2.new(0, 46, 0, 46)
-FloatBtn.Position = UDim2.new(0, 20, 0.5, -23) -- Posisi awal di kiri tengah
+FloatBtn.Position = UDim2.new(0, 20, 0.5, -23)
 FloatBtn.BackgroundColor3 = Palette.Dark
 FloatBtn.Text = "MTS"
 FloatBtn.TextColor3 = Palette.Pink
 FloatBtn.TextSize = 14
-FloatBtn.Font = Enum.Font.GothamBold
+FloatBtn.Font = Enum.Font.Gotham
 FloatBtn.BorderSizePixel = 0
 FloatBtn.Active = true
-FloatBtn.Draggable = true -- Bisa digeser
+FloatBtn.Draggable = true
 FloatBtn.Parent = ScreenGui
 
 local FloatCorner = Instance.new("UICorner")
@@ -283,12 +284,17 @@ FloatStroke.Color = Palette.Pink
 FloatStroke.Thickness = 2
 FloatStroke.Parent = FloatBtn
 
--- MAIN FRAME
-local MainFrame = Instance.new("Frame")
+-- ============================================
+-- MAIN FRAME (PAKAI IMAGE BACKGROUND)
+-- ============================================
+local MainFrame = Instance.new("ImageLabel") -- Diubah ke ImageLabel
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 520, 0, 380)
 MainFrame.Position = UDim2.new(0.5, -260, 0.5, -190)
 MainFrame.BackgroundColor3 = Palette.Dark
+MainFrame.BackgroundTransparency = 0.3 -- Background hitam dasar diturunkan transparansinya
+MainFrame.Image = "rbxassetid://86196334070679" -- ID IMAGE DARI USER
+MainFrame.ScaleType = Enum.ScaleType.Crop
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
@@ -322,19 +328,35 @@ task.spawn(function()
 end)
 
 MainFrame.Size = UDim2.new(0, 0, 0, 0)
+MainFrame.ImageTransparency = 1
 MainFrame.BackgroundTransparency = 1
 task.spawn(function()
     task.wait(0.1)
     TweenService:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
         Size = UDim2.new(0, 520, 0, 380),
-        BackgroundTransparency = 0
+        ImageTransparency = 0,
+        BackgroundTransparency = 0.3
     }):Play()
 end)
+
+-- OVERLAY GELAP (Agar text & tombol tetap jelas dibaca di atas image)
+local OverlayFrame = Instance.new("Frame")
+OverlayFrame.Size = UDim2.new(1, 0, 1, 0)
+OverlayFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+OverlayFrame.BackgroundTransparency = 0.4 -- Ubah ke 0.2 jika ingin lebih gelap
+OverlayFrame.BorderSizePixel = 0
+OverlayFrame.ZIndex = 1
+OverlayFrame.Parent = MainFrame
+
+local OverlayCorner = Instance.new("UICorner")
+OverlayCorner.CornerRadius = UDim.new(0, 12)
+OverlayCorner.Parent = OverlayFrame
 
 -- HEADER
 local Header = Instance.new("Frame")
 Header.Size = UDim2.new(1, 0, 0, 46)
 Header.BackgroundColor3 = Palette.DarkGray
+Header.BackgroundTransparency = 0.2
 Header.BorderSizePixel = 0
 Header.ZIndex = 5
 Header.Parent = MainFrame
@@ -346,17 +368,17 @@ HeaderCorner.Parent = Header
 local HeaderGrad = Instance.new("UIGradient")
 HeaderGrad.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0, Palette.Pink),
-    ColorSequenceKeypoint.new(0.33, Palette.Blue),
-    ColorSequenceKeypoint.new(0.66, Palette.Red),
-    ColorSequenceKeypoint.new(1, Palette.Pink),
+    ColorSequenceKeypoint.new(0.5, Palette.Blue),
+    ColorSequenceKeypoint.new(1, Palette.Red),
 }
 HeaderGrad.Parent = Header
 
 task.spawn(function()
     while Header.Parent do
-        TweenService:Create(HeaderGrad, TweenInfo.new(2, Enum.EasingStyle.Linear), {Offset = Vector2.new(1, 0)}):Play()
+        TweenService:Create(HeaderGrad, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Offset = Vector2.new(1, 0)}):Play()
         task.wait(2)
-        HeaderGrad.Offset = Vector2.new(-1, 0)
+        TweenService:Create(HeaderGrad, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Offset = Vector2.new(-1, 0)}):Play()
+        task.wait(2)
     end
 end)
 
@@ -403,7 +425,8 @@ end)
 local function HideUI()
     TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
         Size = UDim2.new(0, 0, 0, 0),
-        BackgroundTransparency = 1
+        BackgroundTransparency = 1,
+        ImageTransparency = 1
     }):Play()
     task.wait(0.3)
     MainFrame.Visible = false
@@ -414,13 +437,14 @@ local function ShowUI()
     MainFrame.Visible = true
     MainFrame.Size = UDim2.new(0, 0, 0, 0)
     MainFrame.BackgroundTransparency = 1
+    MainFrame.ImageTransparency = 1
     TweenService:Create(MainFrame, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
         Size = UDim2.new(0, 520, 0, 380),
-        BackgroundTransparency = 0
+        BackgroundTransparency = 0.3,
+        ImageTransparency = 0
     }):Play()
 end
 
--- Tombol X di header (Hanya hide, tidak destroy)
 CloseBtn.MouseButton1Click:Connect(HideUI)
 
 -- LOGIKA FLOAT BUTTON
@@ -441,6 +465,7 @@ local Sidebar = Instance.new("Frame")
 Sidebar.Size = UDim2.new(0, 140, 1, -46)
 Sidebar.Position = UDim2.new(0, 0, 0, 46)
 Sidebar.BackgroundColor3 = Palette.DarkGray
+Sidebar.BackgroundTransparency = 0.2 -- Transparan agar image kelihatan sedikit
 Sidebar.BorderSizePixel = 0
 Sidebar.ZIndex = 2
 Sidebar.Parent = MainFrame
@@ -464,9 +489,10 @@ local Content = Instance.new("Frame")
 Content.Size = UDim2.new(1, -150, 1, -56)
 Content.Position = UDim2.new(0, 145, 0, 51)
 Content.BackgroundColor3 = Palette.Dark
+Content.BackgroundTransparency = 0.3 -- Transparan
 Content.BorderSizePixel = 0
 Content.ClipsDescendants = true
-Content.ZIndex = 1
+Content.ZIndex = 2
 Content.Parent = MainFrame
 
 local ContentCorner = Instance.new("UICorner")
@@ -482,6 +508,7 @@ local function createTab(name, accentColor)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -16, 0, 36)
     btn.BackgroundColor3 = Palette.Dark
+    btn.BackgroundTransparency = 0.2
     btn.Text = name
     btn.TextColor3 = Palette.Light
     btn.TextSize = 14
@@ -519,7 +546,7 @@ local function createTab(name, accentColor)
     frame.CanvasSize = UDim2.new(0, 0, 0, 0)
     frame.AutomaticCanvasSize = Enum.AutomaticSize.Y
     frame.ClipsDescendants = true
-    frame.ZIndex = 2
+    frame.ZIndex = 3
     frame.Visible = false
     frame.Parent = Content
 
@@ -589,7 +616,7 @@ local function createLabel(parentTab, text, color)
     lbl.BorderSizePixel = 0
     lbl.BackgroundTransparency = 1
     lbl.TextTransparency = 1
-    lbl.ZIndex = 3
+    lbl.ZIndex = 4
     lbl.Parent = parentTab
 
     local c = Instance.new("UICorner")
@@ -609,7 +636,7 @@ local function createToggle(parentTab, text, desc, accent, defaultOn, callback)
     holder.BackgroundColor3 = Palette.DarkGray
     holder.BorderSizePixel = 0
     holder.BackgroundTransparency = 1
-    holder.ZIndex = 3
+    holder.ZIndex = 4
     holder.Parent = parentTab
 
     local c = Instance.new("UICorner")
@@ -632,7 +659,7 @@ local function createToggle(parentTab, text, desc, accent, defaultOn, callback)
     lbl.Font = Enum.Font.GothamBold
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     lbl.TextTransparency = 1
-    lbl.ZIndex = 4
+    lbl.ZIndex = 5
     lbl.Parent = holder
 
     local descLbl = Instance.new("TextLabel")
@@ -645,7 +672,7 @@ local function createToggle(parentTab, text, desc, accent, defaultOn, callback)
     descLbl.Font = Enum.Font.Gotham
     descLbl.TextXAlignment = Enum.TextXAlignment.Left
     descLbl.TextTransparency = 1
-    descLbl.ZIndex = 4
+    descLbl.ZIndex = 5
     descLbl.Parent = holder
 
     local track = Instance.new("Frame")
@@ -654,7 +681,7 @@ local function createToggle(parentTab, text, desc, accent, defaultOn, callback)
     track.BackgroundColor3 = defaultOn and Palette.Green or Palette.Gray
     track.BorderSizePixel = 0
     track.BackgroundTransparency = 1
-    track.ZIndex = 4
+    track.ZIndex = 5
     track.Parent = holder
 
     local tc = Instance.new("UICorner")
@@ -667,7 +694,7 @@ local function createToggle(parentTab, text, desc, accent, defaultOn, callback)
     knob.BackgroundColor3 = Palette.White
     knob.BorderSizePixel = 0
     knob.BackgroundTransparency = 1
-    knob.ZIndex = 5
+    knob.ZIndex = 6
     knob.Parent = track
 
     local kc = Instance.new("UICorner")
@@ -687,7 +714,7 @@ local function createToggle(parentTab, text, desc, accent, defaultOn, callback)
     click.Size = UDim2.new(1, 0, 1, 0)
     click.BackgroundTransparency = 1
     click.Text = ""
-    click.ZIndex = 6
+    click.ZIndex = 7
     click.Parent = holder
 
     holder.MouseEnter:Connect(function()
@@ -719,7 +746,7 @@ local function createSlider(parentTab, text, accent, min, max, default, callback
     holder.BackgroundColor3 = Palette.DarkGray
     holder.BorderSizePixel = 0
     holder.BackgroundTransparency = 1
-    holder.ZIndex = 3
+    holder.ZIndex = 4
     holder.Parent = parentTab
 
     local c = Instance.new("UICorner")
@@ -742,7 +769,7 @@ local function createSlider(parentTab, text, accent, min, max, default, callback
     lbl.Font = Enum.Font.GothamBold
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     lbl.TextTransparency = 1
-    lbl.ZIndex = 4
+    lbl.ZIndex = 5
     lbl.Parent = holder
 
     local valLbl = Instance.new("TextLabel")
@@ -755,7 +782,7 @@ local function createSlider(parentTab, text, accent, min, max, default, callback
     valLbl.Font = Enum.Font.GothamBold
     valLbl.TextXAlignment = Enum.TextXAlignment.Right
     valLbl.TextTransparency = 1
-    valLbl.ZIndex = 4
+    valLbl.ZIndex = 5
     valLbl.Parent = holder
 
     local bar = Instance.new("Frame")
@@ -764,7 +791,7 @@ local function createSlider(parentTab, text, accent, min, max, default, callback
     bar.BackgroundColor3 = Palette.Dark
     bar.BorderSizePixel = 0
     bar.BackgroundTransparency = 1
-    bar.ZIndex = 4
+    bar.ZIndex = 5
     bar.Parent = holder
 
     local bc = Instance.new("UICorner")
@@ -777,7 +804,7 @@ local function createSlider(parentTab, text, accent, min, max, default, callback
     fill.BackgroundColor3 = accent
     fill.BorderSizePixel = 0
     fill.BackgroundTransparency = 1
-    fill.ZIndex = 5
+    fill.ZIndex = 6
     fill.Parent = bar
 
     local fc = Instance.new("UICorner")
@@ -790,7 +817,7 @@ local function createSlider(parentTab, text, accent, min, max, default, callback
     thumb.BackgroundColor3 = Palette.White
     thumb.BorderSizePixel = 0
     thumb.BackgroundTransparency = 1
-    thumb.ZIndex = 6
+    thumb.ZIndex = 7
     thumb.Parent = bar
 
     local thc = Instance.new("UICorner")
@@ -830,7 +857,7 @@ local function createSlider(parentTab, text, accent, min, max, default, callback
     btn.Position = UDim2.new(0, 0, 0, 30)
     btn.BackgroundTransparency = 1
     btn.Text = ""
-    btn.ZIndex = 7
+    btn.ZIndex = 8
     btn.Parent = holder
 
     btn.MouseButton1Down:Connect(function() dragging = true; updateSlider(UserInputService:GetMouseLocation()) end)
@@ -1143,8 +1170,8 @@ UserInputService.InputBegan:Connect(function(input, gp)
 end)
 
 print("============================================")
-print(" MTS Masyarikul Anwar UI v9")
-print(" Float Button : [MTS] di kiri layar")
-print(" Bypass       : AUTO START")
-print(" Tombol       : [RightShift] = Show/Hide UI")
+print(" MTS Masyarikul Anwar UI v11")
+print(" Background Image : ACTIVE")
+print(" Float Button     : [MTS]")
+print(" Bypass           : AUTO START")
 print("============================================")
