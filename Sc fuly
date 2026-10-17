@@ -1,12 +1,11 @@
 --============================================================
--- NRD ONTOP - Crosshair System (Image Based)
--- Asset ID: 86837668912282
--- Tema: Biru Tua, Hitam, Putih
+-- NRD ONTOP - Crosshair & Cursor Simbol '+' (Tanpa Gambar)
 -- LocalScript di: StarterPlayer > StarterPlayerScripts
 --============================================================
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
@@ -30,10 +29,9 @@ local THEME = {
 -- KONFIGURASI
 --============================================================
 local CONFIG = {
-    CrosshairImageId = "86837668912282", -- ID Baru kamu
-    CrosshairSize = 32,                  -- Ukuran default (pixel)
-    MinSize = 16,                        -- Minimal slider
-    MaxSize = 128,                       -- Maksimal slider
+    CrosshairSize = 32,  -- Ukuran default (pixel)
+    MinSize = 16,
+    MaxSize = 128,
     FOV = 90,
     Visible = true,
 }
@@ -49,23 +47,43 @@ screenGui.DisplayOrder = 100
 screenGui.Parent = playerGui
 
 --============================================================
--- CROSSHAIR (IMAGE LABEL)
+-- 1. CROSSHAIR SIMBOL '+' (TENGAH LAYAR)
 --============================================================
-local crosshair = Instance.new("ImageLabel")
-crosshair.Name = "CrosshairImage"
+local crosshair = Instance.new("TextLabel")
+crosshair.Name = "CrosshairPlus"
 crosshair.AnchorPoint = Vector2.new(0.5, 0.5)
 crosshair.Position = UDim2.new(0.5, 0, 0.5, 0)
 crosshair.Size = UDim2.new(0, CONFIG.CrosshairSize, 0, CONFIG.CrosshairSize)
 crosshair.BackgroundTransparency = 1
-crosshair.BorderSizePixel = 0
-crosshair.ZIndex = 999 -- Agar selalu di atas UI lain
-crosshair.ScaleType = Enum.ScaleType.Fit -- Agar gambar tidak terpotong
-crosshair.Image = "rbxassetid://" .. CONFIG.CrosshairImageId
+crosshair.Text = "+"
+crosshair.TextColor3 = Color3.fromRGB(255, 255, 255) -- Putih
+crosshair.TextScaled = true
+crosshair.Font = Enum.Font.GothamBold
+crosshair.ZIndex = 999
 crosshair.Parent = screenGui
 
--- Peringatan jika gambar gagal dimuat (ID salah/moderasi)
-crosshair.ImageFailed:Connect(function()
-    warn("[NRD ONTOP] GAGAL MEMUAT GAMBAR! Cek apakah Asset ID " .. CONFIG.CrosshairImageId .. " valid dan publik.")
+--============================================================
+-- 2. KURSOR SIMBOL '+' (MENGIKUTI MOUSE)
+--============================================================
+-- Sembunyikan kursor bawaan Roblox
+UserInputService.MouseIconEnabled = false
+
+local customCursor = Instance.new("TextLabel")
+customCursor.Name = "CursorPlus"
+customCursor.AnchorPoint = Vector2.new(0.5, 0.5)
+customCursor.Size = UDim2.new(0, 32, 0, 32) -- Ukuran kursor
+customCursor.BackgroundTransparency = 1
+customCursor.Text = "+"
+customCursor.TextColor3 = Color3.fromRGB(255, 255, 255) -- Putih
+customCursor.TextScaled = true
+customCursor.Font = Enum.Font.GothamBold
+customCursor.ZIndex = 1000 -- Di atas segalanya
+customCursor.Parent = screenGui
+
+-- Update posisi kursor setiap frame
+RunService.RenderStepped:Connect(function()
+    local mousePos = UserInputService:GetMouseLocation()
+    customCursor.Position = UDim2.new(0, mousePos.X, 0, mousePos.Y)
 end)
 
 --============================================================
@@ -103,9 +121,7 @@ uiLayout.SortOrder = Enum.SortOrder.LayoutOrder
 uiLayout.Padding = UDim.new(0, 6)
 uiLayout.Parent = uiFrame
 
---============================================================
 -- TITLE: NRD ONTOP
---============================================================
 local titleFrame = Instance.new("Frame")
 titleFrame.Name = "TitleFrame"
 titleFrame.Size = UDim2.new(1, 0, 0, 30)
@@ -137,9 +153,7 @@ titleLabel.Font = Enum.Font.GothamBold
 titleLabel.ZIndex = 12
 titleLabel.Parent = titleFrame
 
---============================================================
 -- FUNGSI BIKIN BARIS
---============================================================
 local function buatBaris(nama, urutan)
     local row = Instance.new("Frame")
     row.Name = nama .. "Row"
@@ -170,11 +184,8 @@ local function buatBaris(nama, urutan)
     return row
 end
 
---============================================================
 -- BARIS 1: Toggle (Show/Hide)
---============================================================
 local rowToggle = buatBaris("Status", 1)
-
 local toggleBtn = Instance.new("TextButton")
 toggleBtn.Name = "ToggleBtn"
 toggleBtn.Size = UDim2.new(0, 80, 0, 26)
@@ -192,9 +203,7 @@ local togCorner = Instance.new("UICorner")
 togCorner.CornerRadius = UDim.new(0, 6)
 togCorner.Parent = toggleBtn
 
---============================================================
 -- BARIS 2: FOV
---============================================================
 local rowFov = buatBaris("FOV", 2)
 local fovValue = Instance.new("TextLabel")
 fovValue.Name = "Value"
@@ -209,9 +218,7 @@ fovValue.TextXAlignment = Enum.TextXAlignment.Right
 fovValue.ZIndex = 12
 fovValue.Parent = rowFov
 
---============================================================
 -- BARIS 3: CrosshairSize (Slider)
---============================================================
 local rowSize = buatBaris("CrosshairSize", 3)
 local sizeValue = Instance.new("TextLabel")
 sizeValue.Name = "Value"
@@ -271,7 +278,11 @@ kCorner.Parent = knob
 local function updateSize(size)
     size = math.clamp(size, CONFIG.MinSize, CONFIG.MaxSize)
     CONFIG.CrosshairSize = size
+    
+    -- Update ukuran Crosshair
     crosshair.Size = UDim2.new(0, size, 0, size)
+    
+    -- Update UI Slider
     sizeValue.Text = math.floor(size) .. "/" .. CONFIG.MaxSize
     local alpha = (size - CONFIG.MinSize) / (CONFIG.MaxSize - CONFIG.MinSize)
     fill.Size = UDim2.new(alpha, 0, 1, 0)
@@ -337,4 +348,4 @@ end)
 updateSize(CONFIG.CrosshairSize)
 updateFOV(CONFIG.FOV)
 
-print("[NRD ONTOP] Loaded - Image ID: 86837668912282")
+print("[NRD ONTOP] Loaded - Plus Symbol Mode (+)")
