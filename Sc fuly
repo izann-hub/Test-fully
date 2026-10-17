@@ -1,19 +1,30 @@
---============================================================
--- NRD ONTOP - Crosshair Mengikuti Mouse (Cursor Mode)
--- LocalScript di: StarterPlayer > StarterPlayerScripts
---============================================================
-
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
+local GuiService = game:GetService("GuiService")
 local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local camera = Workspace.CurrentCamera
 
---============================================================
--- PALET WARNA TEMA
---============================================================
+local CONFIG = {
+    CrosshairImageId = "131115132205510",
+    CrosshairSize = 32, 
+    MinSize = 16,
+    MaxSize = 128,
+    FOV = 90,
+    Visible = true,
+}
+
+UserInputService.MouseIconEnabled = false
+GuiService.MousePointerIcon = ""
+
+local fakeMouse = Instance.new("Frame")
+fakeMouse.Size = UDim2.new(0, 0, 0, 0)
+fakeMouse.BackgroundTransparency = 1
+fakeMouse.Parent = playerGui
+UserInputService.MouseIcon = fakeMouse 
+
 local THEME = {
     BgPanel     = Color3.fromRGB(10, 15, 30),    
     BgRow       = Color3.fromRGB(20, 30, 55),    
@@ -24,17 +35,6 @@ local THEME = {
     TextAccent  = Color3.fromRGB(120, 180, 255), 
 }
 
-local CONFIG = {
-    CrosshairSize = 32, 
-    MinSize = 16,
-    MaxSize = 128,
-    FOV = 90,
-    Visible = true,
-}
-
---============================================================
--- SCREENGUI
---============================================================
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "NRD_ONTOP"
 screenGui.ResetOnSpawn = false
@@ -42,73 +42,25 @@ screenGui.IgnoreGuiInset = true
 screenGui.DisplayOrder = 100
 screenGui.Parent = playerGui
 
---============================================================
--- KURSOR CROSSHAIR (MENGIKUTI MOUSE)
---============================================================
-UserInputService.MouseIconEnabled = false -- Sembunyikan kursor bawaan
-
--- Wadah Kursor
-local cursorContainer = Instance.new("Frame")
-cursorContainer.Name = "CursorCrosshair"
+local cursorContainer = Instance.new("ImageLabel")
+cursorContainer.Name = "CursorImage"
 cursorContainer.AnchorPoint = Vector2.new(0.5, 0.5)
 cursorContainer.Size = UDim2.new(0, CONFIG.CrosshairSize, 0, CONFIG.CrosshairSize)
 cursorContainer.BackgroundTransparency = 1
 cursorContainer.ZIndex = 1000
+cursorContainer.ScaleType = Enum.ScaleType.Fit
+cursorContainer.Image = "rbxassetid://" .. CONFIG.CrosshairImageId
 cursorContainer.Parent = screenGui
 
--- Teks '+'
-local cursorText = Instance.new("TextLabel")
-cursorText.Name = "CursorPlus"
-cursorText.BackgroundTransparency = 1
-cursorText.Size = UDim2.new(1, 0, 1, 0)
-cursorText.Text = "+"
-cursorText.TextColor3 = Color3.fromRGB(255, 255, 255)
-cursorText.TextScaled = true
-cursorText.Font = Enum.Font.GothamBold
-cursorText.Parent = cursorContainer
-
--- Titik tengah presisi
-local dot = Instance.new("Frame")
-dot.Name = "Dot"
-dot.Size = UDim2.new(0, 3, 0, 3)
-dot.Position = UDim2.new(0.5, 0, 0.5, 0)
-dot.AnchorPoint = Vector2.new(0.5, 0.5)
-dot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-dot.BorderSizePixel = 0
-dot.Parent = cursorContainer
-
-local uiCornerDot = Instance.new("UICorner")
-uiCornerDot.CornerRadius = UDim.new(1, 0)
-uiCornerDot.Parent = dot
-
--- Posisi awal kursor
 local initialMousePos = UserInputService:GetMouseLocation()
 cursorContainer.Position = UDim2.new(0, initialMousePos.X, 0, initialMousePos.Y)
 
--- Update pergerakan mouse (Anti-Delay)
 UserInputService.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement then
         cursorContainer.Position = UDim2.new(0, input.Position.X, 0, input.Position.Y)
     end
 end)
 
--- Deteksi jika mouse di atas UI (berubah jadi panah)
-local playerMouse = player:GetMouse()
-playerMouse.Move:Connect(function()
-    if playerMouse.TargetGui then
-        cursorText.Text = "↖"
-        cursorText.TextColor3 = THEME.Accent
-        dot.BackgroundColor3 = THEME.Accent
-    else
-        cursorText.Text = "+"
-        cursorText.TextColor3 = Color3.fromRGB(255, 255, 255)
-        dot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    end
-end)
-
---============================================================
--- UI PANEL
---============================================================
 local uiFrame = Instance.new("Frame")
 uiFrame.Name = "SettingsPanel"
 uiFrame.Size = UDim2.new(0, 260, 0, 210)
@@ -141,7 +93,6 @@ uiLayout.SortOrder = Enum.SortOrder.LayoutOrder
 uiLayout.Padding = UDim.new(0, 6)
 uiLayout.Parent = uiFrame
 
--- TITLE
 local titleFrame = Instance.new("Frame")
 titleFrame.Name = "TitleFrame"
 titleFrame.Size = UDim2.new(1, 0, 0, 30)
@@ -156,12 +107,6 @@ local tCorner = Instance.new("UICorner")
 tCorner.CornerRadius = UDim.new(0, 6)
 tCorner.Parent = titleFrame
 
-local titleStroke = Instance.new("UIStroke")
-titleStroke.Color = THEME.Accent
-titleStroke.Thickness = 1
-titleStroke.Transparency = 0.4
-titleStroke.Parent = titleFrame
-
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Name = "Title"
 titleLabel.Size = UDim2.new(1, 0, 1, 0)
@@ -173,7 +118,6 @@ titleLabel.Font = Enum.Font.GothamBold
 titleLabel.ZIndex = 12
 titleLabel.Parent = titleFrame
 
--- FUNGSI BIKIN BARIS
 local function buatBaris(nama, urutan)
     local row = Instance.new("Frame")
     row.Name = nama .. "Row"
@@ -204,7 +148,6 @@ local function buatBaris(nama, urutan)
     return row
 end
 
--- BARIS 1: Toggle
 local rowToggle = buatBaris("Status", 1)
 local toggleBtn = Instance.new("TextButton")
 toggleBtn.Name = "ToggleBtn"
@@ -223,7 +166,6 @@ local togCorner = Instance.new("UICorner")
 togCorner.CornerRadius = UDim.new(0, 6)
 togCorner.Parent = toggleBtn
 
--- BARIS 2: FOV
 local rowFov = buatBaris("FOV", 2)
 local fovValue = Instance.new("TextLabel")
 fovValue.Name = "Value"
@@ -238,7 +180,6 @@ fovValue.TextXAlignment = Enum.TextXAlignment.Right
 fovValue.ZIndex = 12
 fovValue.Parent = rowFov
 
--- BARIS 3: CrosshairSize
 local rowSize = buatBaris("CrosshairSize", 3)
 local sizeValue = Instance.new("TextLabel")
 sizeValue.Name = "Value"
@@ -292,17 +233,10 @@ local kCorner = Instance.new("UICorner")
 kCorner.CornerRadius = UDim.new(1, 0)
 kCorner.Parent = knob
 
---============================================================
--- FUNGSI UPDATE
---============================================================
 local function updateSize(size)
     size = math.clamp(size, CONFIG.MinSize, CONFIG.MaxSize)
     CONFIG.CrosshairSize = size
-    
-    -- Update ukuran Kursor Crosshair
     cursorContainer.Size = UDim2.new(0, size, 0, size)
-    
-    -- Update UI
     sizeValue.Text = math.floor(size) .. "/" .. CONFIG.MaxSize
     local alpha = (size - CONFIG.MinSize) / (CONFIG.MaxSize - CONFIG.MinSize)
     fill.Size = UDim2.new(alpha, 0, 1, 0)
@@ -316,9 +250,6 @@ local function updateFOV(value)
     fovValue.Text = tostring(math.floor(value))
 end
 
---============================================================
--- INPUT HANDLERS
---============================================================
 toggleBtn.MouseButton1Click:Connect(function()
     CONFIG.Visible = not CONFIG.Visible
     cursorContainer.Visible = CONFIG.Visible
@@ -361,10 +292,5 @@ UserInputService.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
 end)
 
---============================================================
--- INISIALISASI
---============================================================
 updateSize(CONFIG.CrosshairSize)
 updateFOV(CONFIG.FOV)
-
-print("[NRD ONTOP] Loaded - Cursor Crosshair Mode (+)")
