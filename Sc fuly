@@ -52,6 +52,21 @@ cursorContainer.ScaleType = Enum.ScaleType.Fit
 cursorContainer.Image = "rbxassetid://" .. CONFIG.CrosshairImageId
 cursorContainer.Parent = screenGui
 
+local fallbackText = Instance.new("TextLabel")
+fallbackText.Name = "FallbackPlus"
+fallbackText.BackgroundTransparency = 1
+fallbackText.Size = UDim2.new(1, 0, 1, 0)
+fallbackText.Text = "+"
+fallbackText.TextColor3 = Color3.fromRGB(255, 255, 255)
+fallbackText.TextScaled = true
+fallbackText.Font = Enum.Font.GothamBold
+fallbackText.Visible = false
+fallbackText.Parent = cursorContainer
+
+cursorContainer.ImageFailed:Connect(function()
+    fallbackText.Visible = true
+end)
+
 local initialMousePos = UserInputService:GetMouseLocation()
 cursorContainer.Position = UDim2.new(0, initialMousePos.X, 0, initialMousePos.Y)
 
@@ -168,7 +183,7 @@ togCorner.Parent = toggleBtn
 
 local rowFov = buatBaris("FOV", 2)
 local fovValue = Instance.new("TextLabel")
-fovValue.Name = "Value"
+fovValue.Name = "FovValue"
 fovValue.Size = UDim2.new(0, 100, 1, 0)
 fovValue.Position = UDim2.new(1, -110, 0, 0)
 fovValue.BackgroundTransparency = 1
@@ -182,7 +197,7 @@ fovValue.Parent = rowFov
 
 local rowSize = buatBaris("CrosshairSize", 3)
 local sizeValue = Instance.new("TextLabel")
-sizeValue.Name = "Value"
+sizeValue.Name = "SizeValue"
 sizeValue.Size = UDim2.new(0, 60, 0, 12)
 sizeValue.Position = UDim2.new(1, -110, 0, 2)
 sizeValue.BackgroundTransparency = 1
