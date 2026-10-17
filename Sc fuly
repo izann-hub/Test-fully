@@ -1,12 +1,26 @@
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
-local GuiService = game:GetService("GuiService")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui") 
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local camera = Workspace.CurrentCamera
+
+-- Mencoba menggunakan CoreGui (Tidak bisa dihapus oleh script biasa)
+local function getSafeParent()
+    local success, result = pcall(function()
+        return CoreGui
+    end)
+    if success and result then
+        return result
+    else
+        return playerGui
+    end
+end
+
+local safeParent = getSafeParent()
 
 local THEME = {
     BgPanel     = Color3.fromRGB(10, 15, 30),    
@@ -27,17 +41,24 @@ local CONFIG = {
 }
 
 local screenGui
+
 local function createGui()
     if screenGui and screenGui.Parent then return end
     
     screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "NRD_ONTOP"
+    screenGui.Name = "NRD_ONTOP_SYSTEM"
     screenGui.ResetOnSpawn = false
     screenGui.IgnoreGuiInset = true
-    screenGui.DisplayOrder = 999999
-    screenGui.Parent = playerGui
+    screenGui.DisplayOrder = 2147483647 
+    
+    -- Coba taruh di CoreGui, kalau gagal taruh di PlayerGui
+    local success = pcall(function()
+        screenGui.Parent = safeParent
+    end)
+    if not success then
+        screenGui.Parent = playerGui
+    end
 
-    -- CROSSHAIR STATIS DI TENGAH LAYAR
     local crosshair = Instance.new("Frame")
     crosshair.Name = "Crosshair"
     crosshair.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -68,7 +89,6 @@ local function createGui()
     dotCorner.CornerRadius = UDim.new(1, 0)
     dotCorner.Parent = dot
 
-    -- UI PANEL
     local uiFrame = Instance.new("Frame")
     uiFrame.Name = "SettingsPanel"
     uiFrame.Size = UDim2.new(0, 260, 0, 210)
@@ -76,7 +96,6 @@ local function createGui()
     uiFrame.BackgroundColor3 = THEME.BgPanel
     uiFrame.BackgroundTransparency = 0.1
     uiFrame.BorderSizePixel = 0
-    uiFrame.ZIndex = 10
     uiFrame.Parent = screenGui
 
     local uiCorner = Instance.new("UICorner")
@@ -107,7 +126,6 @@ local function createGui()
     titleFrame.BackgroundTransparency = 0.15
     titleFrame.BorderSizePixel = 0
     titleFrame.LayoutOrder = 0
-    titleFrame.ZIndex = 11
     titleFrame.Parent = uiFrame
 
     local tCorner = Instance.new("UICorner")
@@ -121,7 +139,6 @@ local function createGui()
     titleLabel.TextColor3 = THEME.TextPrimary
     titleLabel.TextSize = 16
     titleLabel.Font = Enum.Font.GothamBold
-    titleLabel.ZIndex = 12
     titleLabel.Parent = titleFrame
 
     local function buatBaris(nama, urutan)
@@ -130,7 +147,6 @@ local function createGui()
         row.BackgroundColor3 = THEME.BgRow
         row.BorderSizePixel = 0
         row.LayoutOrder = urutan
-        row.ZIndex = 11
         row.Parent = uiFrame
         
         local c = Instance.new("UICorner")
@@ -146,7 +162,6 @@ local function createGui()
         lbl.TextSize = 15
         lbl.Font = Enum.Font.GothamBold
         lbl.TextXAlignment = Enum.TextXAlignment.Left
-        lbl.ZIndex = 12
         lbl.Parent = row
         
         return row
@@ -162,7 +177,6 @@ local function createGui()
     toggleBtn.TextSize = 13
     toggleBtn.Font = Enum.Font.GothamBold
     toggleBtn.Text = "AKTIF"
-    toggleBtn.ZIndex = 12
     toggleBtn.Parent = rowToggle
 
     local togCorner = Instance.new("UICorner")
@@ -179,7 +193,6 @@ local function createGui()
     fovValue.TextSize = 15
     fovValue.Font = Enum.Font.GothamBold
     fovValue.TextXAlignment = Enum.TextXAlignment.Right
-    fovValue.ZIndex = 12
     fovValue.Parent = rowFov
 
     local rowSize = buatBaris("CrosshairSize", 3)
@@ -193,7 +206,6 @@ local function createGui()
     sizeValue.TextSize = 11
     sizeValue.Font = Enum.Font.GothamBold
     sizeValue.TextXAlignment = Enum.TextXAlignment.Right
-    sizeValue.ZIndex = 12
     sizeValue.Parent = rowSize
 
     local slider = Instance.new("Frame")
@@ -202,7 +214,6 @@ local function createGui()
     slider.Position = UDim2.new(1, -110, 0.7, 0)
     slider.BackgroundColor3 = THEME.BgSlider
     slider.BorderSizePixel = 0
-    slider.ZIndex = 12
     slider.Parent = rowSize
 
     local sCorner = Instance.new("UICorner")
@@ -214,7 +225,6 @@ local function createGui()
     fill.Size = UDim2.new((CONFIG.CrosshairSize - CONFIG.MinSize)/(CONFIG.MaxSize - CONFIG.MinSize), 0, 1, 0)
     fill.BackgroundColor3 = THEME.Accent
     fill.BorderSizePixel = 0
-    fill.ZIndex = 13
     fill.Parent = slider
 
     local fCorner = Instance.new("UICorner")
@@ -228,14 +238,12 @@ local function createGui()
     knob.Position = UDim2.new((CONFIG.CrosshairSize - CONFIG.MinSize)/(CONFIG.MaxSize - CONFIG.MinSize), 0, 0.5, 0)
     knob.BackgroundColor3 = THEME.TextPrimary
     knob.BorderSizePixel = 0
-    knob.ZIndex = 14
     knob.Parent = slider
 
     local kCorner = Instance.new("UICorner")
     kCorner.CornerRadius = UDim.new(1, 0)
     kCorner.Parent = knob
 
-    -- LOGIKA UI
     toggleBtn.MouseButton1Click:Connect(function()
         CONFIG.Visible = not CONFIG.Visible
         crosshair.Visible = CONFIG.Visible
@@ -251,6 +259,7 @@ local function createGui()
     knob.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = true end
     end)
+    
     slider.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
@@ -281,8 +290,8 @@ end
 
 createGui()
 
--- SISTEM AUTO-REPAIR (Mencegah UI hilang saat mati/respawn)
-RunService.RenderStepped:Connect(function()
+-- Auto-repair jika game memaksa menghapus
+RunService.Heartbeat:Connect(function()
     if not screenGui or not screenGui.Parent then
         createGui()
     end
