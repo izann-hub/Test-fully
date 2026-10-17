@@ -1,5 +1,7 @@
 --============================================================
 -- NRD ONTOP - Crosshair System (Image Based)
+-- Asset ID: 86837668912282
+-- Tema: Biru Tua, Hitam, Putih
 -- LocalScript di: StarterPlayer > StarterPlayerScripts
 --============================================================
 
@@ -17,12 +19,9 @@ local camera = Workspace.CurrentCamera
 local THEME = {
     BgPanel     = Color3.fromRGB(10, 15, 30),    
     BgRow       = Color3.fromRGB(20, 30, 55),    
-    BgInput     = Color3.fromRGB(15, 22, 42),    
     BgSlider    = Color3.fromRGB(45, 60, 95),    
-    
     Accent      = Color3.fromRGB(60, 130, 220),  
     AccentDark  = Color3.fromRGB(30, 70, 140),   
-    
     TextPrimary = Color3.fromRGB(255, 255, 255), 
     TextAccent  = Color3.fromRGB(120, 180, 255), 
 }
@@ -31,10 +30,10 @@ local THEME = {
 -- KONFIGURASI
 --============================================================
 local CONFIG = {
-    CrosshairImageId = "10179538382", -- ID gambar crosshair kamu
-    CrosshairSize = 32,               -- Ukuran default (pixel)
-    MinSize = 16,                     -- Minimal slider
-    MaxSize = 128,                    -- Maksimal slider
+    CrosshairImageId = "86837668912282", -- ID Baru kamu
+    CrosshairSize = 32,                  -- Ukuran default (pixel)
+    MinSize = 16,                        -- Minimal slider
+    MaxSize = 128,                       -- Maksimal slider
     FOV = 90,
     Visible = true,
 }
@@ -54,13 +53,20 @@ screenGui.Parent = playerGui
 --============================================================
 local crosshair = Instance.new("ImageLabel")
 crosshair.Name = "CrosshairImage"
-crosshair.AnchorPoint = Vector2.new(0.5, 0.5) -- Titik tengah pas di tengah layar
+crosshair.AnchorPoint = Vector2.new(0.5, 0.5)
 crosshair.Position = UDim2.new(0.5, 0, 0.5, 0)
 crosshair.Size = UDim2.new(0, CONFIG.CrosshairSize, 0, CONFIG.CrosshairSize)
 crosshair.BackgroundTransparency = 1
 crosshair.BorderSizePixel = 0
+crosshair.ZIndex = 999 -- Agar selalu di atas UI lain
+crosshair.ScaleType = Enum.ScaleType.Fit -- Agar gambar tidak terpotong
 crosshair.Image = "rbxassetid://" .. CONFIG.CrosshairImageId
 crosshair.Parent = screenGui
+
+-- Peringatan jika gambar gagal dimuat (ID salah/moderasi)
+crosshair.ImageFailed:Connect(function()
+    warn("[NRD ONTOP] GAGAL MEMUAT GAMBAR! Cek apakah Asset ID " .. CONFIG.CrosshairImageId .. " valid dan publik.")
+end)
 
 --============================================================
 -- UI PANEL
@@ -72,6 +78,7 @@ uiFrame.Position = UDim2.new(1, -280, 0, 20)
 uiFrame.BackgroundColor3 = THEME.BgPanel
 uiFrame.BackgroundTransparency = 0.1
 uiFrame.BorderSizePixel = 0
+uiFrame.ZIndex = 10
 uiFrame.Parent = screenGui
 
 local uiCorner = Instance.new("UICorner")
@@ -106,6 +113,7 @@ titleFrame.BackgroundColor3 = THEME.AccentDark
 titleFrame.BackgroundTransparency = 0.15
 titleFrame.BorderSizePixel = 0
 titleFrame.LayoutOrder = 0
+titleFrame.ZIndex = 11
 titleFrame.Parent = uiFrame
 
 local tCorner = Instance.new("UICorner")
@@ -126,6 +134,7 @@ titleLabel.Text = "NRD ONTOP"
 titleLabel.TextColor3 = THEME.TextPrimary
 titleLabel.TextSize = 16
 titleLabel.Font = Enum.Font.GothamBold
+titleLabel.ZIndex = 12
 titleLabel.Parent = titleFrame
 
 --============================================================
@@ -138,6 +147,7 @@ local function buatBaris(nama, urutan)
     row.BackgroundColor3 = THEME.BgRow
     row.BorderSizePixel = 0
     row.LayoutOrder = urutan
+    row.ZIndex = 11
     row.Parent = uiFrame
     
     local c = Instance.new("UICorner")
@@ -154,6 +164,7 @@ local function buatBaris(nama, urutan)
     lbl.TextSize = 15
     lbl.Font = Enum.Font.GothamBold
     lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.ZIndex = 12
     lbl.Parent = row
     
     return row
@@ -174,6 +185,7 @@ toggleBtn.TextColor3 = THEME.TextPrimary
 toggleBtn.TextSize = 13
 toggleBtn.Font = Enum.Font.GothamBold
 toggleBtn.Text = "AKTIF"
+toggleBtn.ZIndex = 12
 toggleBtn.Parent = rowToggle
 
 local togCorner = Instance.new("UICorner")
@@ -194,6 +206,7 @@ fovValue.TextColor3 = THEME.TextAccent
 fovValue.TextSize = 15
 fovValue.Font = Enum.Font.GothamBold
 fovValue.TextXAlignment = Enum.TextXAlignment.Right
+fovValue.ZIndex = 12
 fovValue.Parent = rowFov
 
 --============================================================
@@ -210,6 +223,7 @@ sizeValue.TextColor3 = THEME.TextAccent
 sizeValue.TextSize = 11
 sizeValue.Font = Enum.Font.GothamBold
 sizeValue.TextXAlignment = Enum.TextXAlignment.Right
+sizeValue.ZIndex = 12
 sizeValue.Parent = rowSize
 
 local slider = Instance.new("Frame")
@@ -218,6 +232,7 @@ slider.Size = UDim2.new(0, 100, 0, 8)
 slider.Position = UDim2.new(1, -110, 0.7, 0)
 slider.BackgroundColor3 = THEME.BgSlider
 slider.BorderSizePixel = 0
+slider.ZIndex = 12
 slider.Parent = rowSize
 
 local sCorner = Instance.new("UICorner")
@@ -229,6 +244,7 @@ fill.Name = "Fill"
 fill.Size = UDim2.new((CONFIG.CrosshairSize - CONFIG.MinSize)/(CONFIG.MaxSize - CONFIG.MinSize), 0, 1, 0)
 fill.BackgroundColor3 = THEME.Accent
 fill.BorderSizePixel = 0
+fill.ZIndex = 13
 fill.Parent = slider
 
 local fCorner = Instance.new("UICorner")
@@ -242,6 +258,7 @@ knob.AnchorPoint = Vector2.new(0.5, 0.5)
 knob.Position = UDim2.new((CONFIG.CrosshairSize - CONFIG.MinSize)/(CONFIG.MaxSize - CONFIG.MinSize), 0, 0.5, 0)
 knob.BackgroundColor3 = THEME.TextPrimary
 knob.BorderSizePixel = 0
+knob.ZIndex = 14
 knob.Parent = slider
 
 local kCorner = Instance.new("UICorner")
@@ -254,11 +271,7 @@ kCorner.Parent = knob
 local function updateSize(size)
     size = math.clamp(size, CONFIG.MinSize, CONFIG.MaxSize)
     CONFIG.CrosshairSize = size
-    
-    -- Update ukuran ImageLabel secara proporsional (kotak)
     crosshair.Size = UDim2.new(0, size, 0, size)
-    
-    -- Update UI Slider
     sizeValue.Text = math.floor(size) .. "/" .. CONFIG.MaxSize
     local alpha = (size - CONFIG.MinSize) / (CONFIG.MaxSize - CONFIG.MinSize)
     fill.Size = UDim2.new(alpha, 0, 1, 0)
@@ -275,7 +288,6 @@ end
 --============================================================
 -- INPUT HANDLERS
 --============================================================
--- Toggle Button (Tampil / Sembunyi)
 toggleBtn.MouseButton1Click:Connect(function()
     CONFIG.Visible = not CONFIG.Visible
     crosshair.Visible = CONFIG.Visible
@@ -288,7 +300,6 @@ toggleBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Drag Slider
 local dragging = false
 
 local function getAlphaFromX(x)
@@ -298,15 +309,11 @@ local function getAlphaFromX(x)
 end
 
 knob.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 
-    or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-    end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = true end
 end)
 
 slider.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 
-    or input.UserInputType == Enum.UserInputType.Touch then
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         local alpha = getAlphaFromX(input.Position.X)
         updateSize(CONFIG.MinSize + alpha * (CONFIG.MaxSize - CONFIG.MinSize))
@@ -314,18 +321,14 @@ slider.InputBegan:Connect(function(input)
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement 
-    or input.UserInputType == Enum.UserInputType.Touch) then
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
         local alpha = getAlphaFromX(input.Position.X)
         updateSize(CONFIG.MinSize + alpha * (CONFIG.MaxSize - CONFIG.MinSize))
     end
 end)
 
 UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 
-    or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = false
-    end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
 end)
 
 --============================================================
@@ -334,4 +337,4 @@ end)
 updateSize(CONFIG.CrosshairSize)
 updateFOV(CONFIG.FOV)
 
-print("[NRD ONTOP] Loaded - Image Crosshair Mode")
+print("[NRD ONTOP] Loaded - Image ID: 86837668912282")
