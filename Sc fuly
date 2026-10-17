@@ -1,5 +1,5 @@
 -- ============================================================
--- 👑 MTS MASYARIKUL ANWAR — UI SOURCE (FULL)
+-- 👑 MTS MASYARIKUL ANWAR — UI SOURCE (FULL + HUJAN)
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -22,6 +22,7 @@ local COLOR_GRAY_DARK   = Color3.fromRGB(60, 60, 60)
 local COLOR_BLUE        = Color3.fromRGB(40, 90, 200)
 local COLOR_RED         = Color3.fromRGB(200, 40, 40)
 local COLOR_TEXT        = Color3.fromRGB(255, 255, 255)
+local COLOR_RAIN        = Color3.fromRGB(200, 200, 200)
 
 -- ==============================
 -- SCREEN GUI
@@ -34,7 +35,49 @@ screenGui.IgnoreGuiInset = true
 screenGui.Parent = playerGui
 
 -- ==============================
--- MAIN FRAME (mulai 0, transparan)
+-- 🌧️ ANIMASI HUJAN
+-- ==============================
+local rainContainer = Instance.new("Frame")
+rainContainer.Size = UDim2.new(1, 0, 1, 0)
+rainContainer.BackgroundTransparency = 1
+rainContainer.ClipsDescendants = true
+rainContainer.ZIndex = 0
+rainContainer.Parent = screenGui
+
+local RAIN_COUNT = 60
+local rainDrops = {}
+local rainConns = {}
+
+for i = 1, RAIN_COUNT do
+    local drop = Instance.new("Frame")
+    drop.Size = UDim2.new(0, 2, 0, math.random(15, 35))
+    drop.Position = UDim2.new(math.random(), 0, -0.1, 0)
+    drop.BackgroundColor3 = COLOR_RAIN
+    drop.BackgroundTransparency = math.random(30, 70) / 100
+    drop.BorderSizePixel = 0
+    drop.ZIndex = 0
+    drop.Parent = rainContainer
+
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(1, 0)
+    c.Parent = drop
+
+    local speed = math.random(80, 150) / 100
+    local conn
+    conn = RunService.Heartbeat:Connect(function()
+        if not drop.Parent then conn:Disconnect() return end
+        drop.Position = UDim2.new(drop.Position.X.Scale, 0, drop.Position.Y.Scale + (speed * 0.008), 0)
+        if drop.Position.Y.Scale > 1.1 then
+            drop.Position = UDim2.new(math.random(), 0, -0.1, 0)
+        end
+    end)
+
+    table.insert(rainDrops, drop)
+    table.insert(rainConns, conn)
+end
+
+-- ==============================
+-- MAIN FRAME
 -- ==============================
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0, 0, 0, 0)
@@ -45,6 +88,7 @@ mainFrame.BackgroundTransparency = 1
 mainFrame.BorderSizePixel = 0
 mainFrame.Active = false
 mainFrame.Draggable = false
+mainFrame.ZIndex = 2
 mainFrame.Parent = screenGui
 
 local mainCorner = Instance.new("UICorner")
@@ -65,6 +109,7 @@ topBar.Size = UDim2.new(1, 0, 0, 40)
 topBar.BackgroundColor3 = COLOR_BLUE
 topBar.BackgroundTransparency = 1
 topBar.BorderSizePixel = 0
+topBar.ZIndex = 3
 topBar.Parent = mainFrame
 
 local topCorner = Instance.new("UICorner")
@@ -77,6 +122,7 @@ redDivider.Position = UDim2.new(0, 0, 1, -3)
 redDivider.BackgroundColor3 = COLOR_RED
 redDivider.BackgroundTransparency = 1
 redDivider.BorderSizePixel = 0
+redDivider.ZIndex = 4
 redDivider.Parent = topBar
 
 local topTitle = Instance.new("TextLabel")
@@ -89,6 +135,7 @@ topTitle.TextTransparency = 1
 topTitle.TextScaled = true
 topTitle.Font = Enum.Font.GothamBold
 topTitle.TextXAlignment = Enum.TextXAlignment.Left
+topTitle.ZIndex = 4
 topTitle.Parent = topBar
 
 local topTitleSize = Instance.new("UITextSizeConstraint")
@@ -104,6 +151,7 @@ contentFrame.Position = UDim2.new(0, 10, 0, 50)
 contentFrame.BackgroundColor3 = COLOR_GRAY
 contentFrame.BackgroundTransparency = 1
 contentFrame.BorderSizePixel = 0
+contentFrame.ZIndex = 3
 contentFrame.Parent = mainFrame
 
 local contentCorner = Instance.new("UICorner")
@@ -119,6 +167,7 @@ infoLabel.TextColor3 = COLOR_PINK
 infoLabel.TextTransparency = 1
 infoLabel.TextScaled = true
 infoLabel.Font = Enum.Font.GothamBold
+infoLabel.ZIndex = 3
 infoLabel.Parent = contentFrame
 
 local infoLabelSize = Instance.new("UITextSizeConstraint")
@@ -134,6 +183,7 @@ statusLabel.TextColor3 = COLOR_TEXT
 statusLabel.TextTransparency = 1
 statusLabel.TextScaled = true
 statusLabel.Font = Enum.Font.Gotham
+statusLabel.ZIndex = 3
 statusLabel.Parent = contentFrame
 
 local statusLabelSize = Instance.new("UITextSizeConstraint")
@@ -208,6 +258,9 @@ local function animExit()
     task.delay(0.7, function()
         if combatConn then combatConn:Disconnect() end
         if farmConn then farmConn:Disconnect() end
+        for _, conn in ipairs(rainConns) do
+            if conn then conn:Disconnect() end
+        end
         screenGui:Destroy()
     end)
 end
@@ -228,6 +281,7 @@ local function createButton(text, order, callback)
     btn.TextScaled = true
     btn.Font = Enum.Font.GothamBold
     btn.AutoButtonColor = false
+    btn.ZIndex = 3
     btn.Parent = contentFrame
 
     local c = Instance.new("UICorner")
