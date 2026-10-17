@@ -34,16 +34,17 @@ screenGui.IgnoreGuiInset = true
 screenGui.Parent = playerGui
 
 -- ==============================
--- MAIN FRAME
+-- MAIN FRAME (mulai 0, transparan)
 -- ==============================
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 420, 0, 280)
+mainFrame.Size = UDim2.new(0, 0, 0, 0)
 mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 mainFrame.BackgroundColor3 = COLOR_GRAY_DARK
+mainFrame.BackgroundTransparency = 1
 mainFrame.BorderSizePixel = 0
-mainFrame.Active = true
-mainFrame.Draggable = true
+mainFrame.Active = false
+mainFrame.Draggable = false
 mainFrame.Parent = screenGui
 
 local mainCorner = Instance.new("UICorner")
@@ -53,6 +54,7 @@ mainCorner.Parent = mainFrame
 local mainStroke = Instance.new("UIStroke")
 mainStroke.Color = COLOR_PINK
 mainStroke.Thickness = 2
+mainStroke.Transparency = 1
 mainStroke.Parent = mainFrame
 
 -- ==============================
@@ -61,6 +63,7 @@ mainStroke.Parent = mainFrame
 local topBar = Instance.new("Frame")
 topBar.Size = UDim2.new(1, 0, 0, 40)
 topBar.BackgroundColor3 = COLOR_BLUE
+topBar.BackgroundTransparency = 1
 topBar.BorderSizePixel = 0
 topBar.Parent = mainFrame
 
@@ -72,6 +75,7 @@ local redDivider = Instance.new("Frame")
 redDivider.Size = UDim2.new(1, 0, 0, 3)
 redDivider.Position = UDim2.new(0, 0, 1, -3)
 redDivider.BackgroundColor3 = COLOR_RED
+redDivider.BackgroundTransparency = 1
 redDivider.BorderSizePixel = 0
 redDivider.Parent = topBar
 
@@ -81,6 +85,7 @@ topTitle.Position = UDim2.new(0, 10, 0, 0)
 topTitle.BackgroundTransparency = 1
 topTitle.Text = "MTS MASYARIKUL ANWAR"
 topTitle.TextColor3 = COLOR_TEXT
+topTitle.TextTransparency = 1
 topTitle.TextScaled = true
 topTitle.Font = Enum.Font.GothamBold
 topTitle.TextXAlignment = Enum.TextXAlignment.Left
@@ -97,7 +102,7 @@ local contentFrame = Instance.new("Frame")
 contentFrame.Size = UDim2.new(1, -20, 1, -60)
 contentFrame.Position = UDim2.new(0, 10, 0, 50)
 contentFrame.BackgroundColor3 = COLOR_GRAY
-contentFrame.BackgroundTransparency = 0.3
+contentFrame.BackgroundTransparency = 1
 contentFrame.BorderSizePixel = 0
 contentFrame.Parent = mainFrame
 
@@ -111,6 +116,7 @@ infoLabel.Position = UDim2.new(0, 10, 0, 10)
 infoLabel.BackgroundTransparency = 1
 infoLabel.Text = "SELAMAT DATANG DI MTS MASYARIKUL ANWAR"
 infoLabel.TextColor3 = COLOR_PINK
+infoLabel.TextTransparency = 1
 infoLabel.TextScaled = true
 infoLabel.Font = Enum.Font.GothamBold
 infoLabel.Parent = contentFrame
@@ -119,15 +125,13 @@ local infoLabelSize = Instance.new("UITextSizeConstraint")
 infoLabelSize.MaxTextSize = 16
 infoLabelSize.Parent = infoLabel
 
--- ==============================
--- STATUS LABEL
--- ==============================
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, -20, 0, 20)
 statusLabel.Position = UDim2.new(0, 10, 1, -28)
 statusLabel.BackgroundTransparency = 1
 statusLabel.Text = "STATUS: IDLE"
 statusLabel.TextColor3 = COLOR_TEXT
+statusLabel.TextTransparency = 1
 statusLabel.TextScaled = true
 statusLabel.Font = Enum.Font.Gotham
 statusLabel.Parent = contentFrame
@@ -137,6 +141,78 @@ statusLabelSize.MaxTextSize = 12
 statusLabelSize.Parent = statusLabel
 
 -- ==============================
+-- ANIMASI MUNCUL
+-- ==============================
+task.spawn(function()
+    task.wait(0.1)
+    TweenService:Create(mainFrame, TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+        Size = UDim2.new(0, 420, 0, 280),
+        BackgroundTransparency = 0
+    }):Play()
+    TweenService:Create(mainStroke, TweenInfo.new(0.6), { Transparency = 0 }):Play()
+
+    task.wait(0.15)
+    TweenService:Create(topBar, TweenInfo.new(0.4), { BackgroundTransparency = 0 }):Play()
+    TweenService:Create(redDivider, TweenInfo.new(0.4), { BackgroundTransparency = 0 }):Play()
+    TweenService:Create(topTitle, TweenInfo.new(0.4), { TextTransparency = 0 }):Play()
+    TweenService:Create(contentFrame, TweenInfo.new(0.4), { BackgroundTransparency = 0.3 }):Play()
+    TweenService:Create(infoLabel, TweenInfo.new(0.4), { TextTransparency = 0 }):Play()
+    TweenService:Create(statusLabel, TweenInfo.new(0.4), { TextTransparency = 0 }):Play()
+
+    for _, child in ipairs(contentFrame:GetChildren()) do
+        if child:IsA("TextButton") then
+            TweenService:Create(child, TweenInfo.new(0.4), {
+                BackgroundTransparency = 0, TextTransparency = 0
+            }):Play()
+            local s = child:FindFirstChildOfClass("UIStroke")
+            if s then TweenService:Create(s, TweenInfo.new(0.4), { Transparency = 0 }):Play() end
+        end
+    end
+end)
+
+-- ==============================
+-- ANIMASI HILANG
+-- ==============================
+local isClosing = false
+
+local function animExit()
+    if isClosing then return end
+    isClosing = true
+
+    task.wait(0.1)
+
+    TweenService:Create(topBar, TweenInfo.new(0.3), { BackgroundTransparency = 1 }):Play()
+    TweenService:Create(redDivider, TweenInfo.new(0.3), { BackgroundTransparency = 1 }):Play()
+    TweenService:Create(topTitle, TweenInfo.new(0.3), { TextTransparency = 1 }):Play()
+    TweenService:Create(contentFrame, TweenInfo.new(0.3), { BackgroundTransparency = 1 }):Play()
+    TweenService:Create(infoLabel, TweenInfo.new(0.3), { TextTransparency = 1 }):Play()
+    TweenService:Create(statusLabel, TweenInfo.new(0.3), { TextTransparency = 1 }):Play()
+
+    for _, child in ipairs(contentFrame:GetChildren()) do
+        if child:IsA("TextButton") then
+            TweenService:Create(child, TweenInfo.new(0.3), {
+                BackgroundTransparency = 1, TextTransparency = 1
+            }):Play()
+            local s = child:FindFirstChildOfClass("UIStroke")
+            if s then TweenService:Create(s, TweenInfo.new(0.3), { Transparency = 1 }):Play() end
+        end
+    end
+
+    task.wait(0.25)
+    TweenService:Create(mainFrame, TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+        Size = UDim2.new(0, 0, 0, 0),
+        BackgroundTransparency = 1
+    }):Play()
+    TweenService:Create(mainStroke, TweenInfo.new(0.6), { Transparency = 1 }):Play()
+
+    task.delay(0.7, function()
+        if combatConn then combatConn:Disconnect() end
+        if farmConn then farmConn:Disconnect() end
+        screenGui:Destroy()
+    end)
+end
+
+-- ==============================
 -- BUTTON FUNCTION
 -- ==============================
 local function createButton(text, order, callback)
@@ -144,9 +220,11 @@ local function createButton(text, order, callback)
     btn.Size = UDim2.new(1, -20, 0, 34)
     btn.Position = UDim2.new(0, 10, 0, 50 + (order * 42))
     btn.BackgroundColor3 = COLOR_PINK_DARK
+    btn.BackgroundTransparency = 1
     btn.BorderSizePixel = 0
     btn.Text = text
     btn.TextColor3 = COLOR_TEXT
+    btn.TextTransparency = 1
     btn.TextScaled = true
     btn.Font = Enum.Font.GothamBold
     btn.AutoButtonColor = false
@@ -159,6 +237,7 @@ local function createButton(text, order, callback)
     local s = Instance.new("UIStroke")
     s.Color = COLOR_PINK
     s.Thickness = 1
+    s.Transparency = 1
     s.Parent = btn
 
     local ts = Instance.new("UITextSizeConstraint")
@@ -172,9 +251,11 @@ local function createButton(text, order, callback)
         TweenService:Create(btn, TweenInfo.new(0.2), { BackgroundColor3 = COLOR_PINK_DARK }):Play()
     end)
     btn.MouseButton1Click:Connect(function()
+        if isClosing then return end
         btn.BackgroundColor3 = COLOR_BLUE
         task.delay(0.1, function()
             if callback then callback() end
+            animExit()
         end)
     end)
 
@@ -189,17 +270,14 @@ local combatConn = nil
 
 local function toggleCombat()
     combatActive = not combatActive
-
     if combatActive then
         statusLabel.Text = "STATUS: COMBAT AKTIF"
         statusLabel.TextColor3 = COLOR_RED
-
         combatConn = RunService.Heartbeat:Connect(function()
             local char = player.Character
             if not char then return end
             local root = char:FindFirstChild("HumanoidRootPart")
             if not root then return end
-
             for _, other in ipairs(Players:GetPlayers()) do
                 if other ~= player and other.Character then
                     local oRoot = other.Character:FindFirstChild("HumanoidRootPart")
@@ -227,18 +305,15 @@ local farmConn = nil
 
 local function toggleAutoFarm()
     farmActive = not farmActive
-
     if farmActive then
         statusLabel.Text = "STATUS: AUTO FARM AKTIF"
         statusLabel.TextColor3 = COLOR_PINK
-
         farmConn = RunService.Heartbeat:Connect(function()
             local char = player.Character
             if not char then return end
             local hum = char:FindFirstChildOfClass("Humanoid")
             local root = char:FindFirstChild("HumanoidRootPart")
             if not hum or not root then return end
-
             local nearest, dist = nil, math.huge
             for _, obj in ipairs(workspace:GetDescendants()) do
                 if obj:IsA("BasePart") and (obj.Name:lower():find("coin") or obj.Name:lower():find("cash") or obj.Name:lower():find("gem")) then
@@ -246,10 +321,7 @@ local function toggleAutoFarm()
                     if d < dist then nearest, dist = obj, d end
                 end
             end
-
-            if nearest then
-                hum:MoveTo(nearest.Position)
-            end
+            if nearest then hum:MoveTo(nearest.Position) end
         end)
     else
         statusLabel.Text = "STATUS: IDLE"
@@ -264,9 +336,7 @@ end
 createButton("COMBAT",    0, toggleCombat)
 createButton("AUTO FARM", 1, toggleAutoFarm)
 createButton("EXIT",      2, function()
-    if combatConn then combatConn:Disconnect() end
-    if farmConn then farmConn:Disconnect() end
-    screenGui:Destroy()
+    -- animExit sudah putus koneksi
 end)
 
 print("[MTS MASYARIKUL ANWAR] UI Loaded ✓")
