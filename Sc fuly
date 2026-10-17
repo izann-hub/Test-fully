@@ -1,285 +1,960 @@
+-- ============================================
+-- DARK ANGEL | MTS Masyarikul Anwar UI v4
+-- 2 Tab: Combat, FPS Boost (LENGKAP)
+-- Warna: Pink, Abu-abu, Biru, Merah
+-- ============================================
+
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
-local GuiService = game:GetService("GuiService")
-local Workspace = game:GetService("Workspace")
+local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+local localPlayer = Players.LocalPlayer
 
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
-local camera = Workspace.CurrentCamera
-
-local THEME = {
-    BgPanel     = Color3.fromRGB(10, 15, 30),    
-    BgRow       = Color3.fromRGB(20, 30, 55),    
-    BgSlider    = Color3.fromRGB(45, 60, 95),    
-    Accent      = Color3.fromRGB(60, 130, 220),  
-    AccentDark  = Color3.fromRGB(30, 70, 140),   
-    TextPrimary = Color3.fromRGB(255, 255, 255), 
-    TextAccent  = Color3.fromRGB(120, 180, 255), 
+-- ============================================
+-- PALET
+-- ============================================
+local Palette = {
+    Pink     = Color3.fromRGB(255, 105, 180),
+    Gray     = Color3.fromRGB(90, 90, 90),
+    Blue     = Color3.fromRGB(60, 130, 246),
+    Red      = Color3.fromRGB(220, 50, 50),
+    Dark     = Color3.fromRGB(25, 25, 30),
+    DarkGray = Color3.fromRGB(40, 40, 45),
+    Light    = Color3.fromRGB(230, 230, 235),
+    White    = Color3.fromRGB(255, 255, 255),
+    Green    = Color3.fromRGB(120, 200, 140),
 }
 
-local CONFIG = {
-    CrosshairSize = 32, 
-    MinSize = 16,
-    MaxSize = 128,
-    FOV = 90,
-    Visible = true,
+-- ============================================
+-- STATE COMBAT
+-- ============================================
+local noRecoilEnabled = false
+local noSpreadEnabled = false
+local macroEnabled = false
+local defaultSettings = {}
+
+-- ============================================
+-- STATE FPS BOOST
+-- ============================================
+local settings = {
+    removePostEffects = false,
+    disableShadows    = false,
+    flatMaterials     = false,
+    hideDecals        = false,
+    flatTerrain       = false,
+    qualityLevel      = 21,
+    physicsSleep      = false,
+    daySky            = false,
 }
 
-UserInputService.MouseIconEnabled = false
-GuiService.MousePointerIcon = ""
+local originalData = {
+    parts   = {},
+    decals  = {},
+    terrain = {},
+}
 
-local fakeMouse = Instance.new("Frame")
-fakeMouse.Size = UDim2.new(0, 0, 0, 0)
-fakeMouse.BackgroundTransparency = 1
-fakeMouse.Parent = playerGui
-UserInputService.MouseIcon = fakeMouse 
+-- ============================================
+-- SCREEN GUI
+-- ============================================
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "MTS_UI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.Parent = localPlayer:WaitForChild("PlayerGui")
 
-local screenGui
+-- ============================================
+-- MAIN FRAME
+-- ============================================
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 520, 0, 380)
+MainFrame.Position = UDim2.new(0.5, -260, 0.5, -190)
+MainFrame.BackgroundColor3 = Palette.Dark
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.ClipsDescendants = true
+MainFrame.Parent = ScreenGui
 
-local function createGui()
-    if screenGui and screenGui.Parent then return end
-    
-    screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "NRD_ONTOP_SYSTEM"
-    screenGui.ResetOnSpawn = false
-    screenGui.IgnoreGuiInset = true
-    screenGui.DisplayOrder = 2147483647 
-    screenGui.Parent = playerGui
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 12)
+MainCorner.Parent = MainFrame
 
-    local crosshair = Instance.new("Frame")
-    crosshair.Name = "Crosshair"
-    crosshair.AnchorPoint = Vector2.new(0.5, 0.5)
-    crosshair.Position = UDim2.new(0.5, 0, 0.5, 0)
-    crosshair.Size = UDim2.new(0, CONFIG.CrosshairSize, 0, CONFIG.CrosshairSize)
-    crosshair.BackgroundTransparency = 1
-    crosshair.Parent = screenGui
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Thickness = 2
+MainStroke.Parent = MainFrame
 
-    local plus = Instance.new("TextLabel")
-    plus.Name = "PlusText"
-    plus.BackgroundTransparency = 1
-    plus.Size = UDim2.new(1, 0, 1, 0)
-    plus.Text = "+"
-    plus.TextColor3 = Color3.fromRGB(255, 255, 255)
-    plus.TextScaled = true
-    plus.Font = Enum.Font.GothamBold
-    plus.Parent = crosshair
+local MainGrad = Instance.new("UIGradient")
+MainGrad.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Palette.Pink),
+    ColorSequenceKeypoint.new(0.33, Palette.Blue),
+    ColorSequenceKeypoint.new(0.66, Palette.Red),
+    ColorSequenceKeypoint.new(1, Palette.Gray),
+}
+MainGrad.Rotation = 45
+MainGrad.Parent = MainStroke
 
-    local dot = Instance.new("Frame")
-    dot.Size = UDim2.new(0, 3, 0, 3)
-    dot.Position = UDim2.new(0.5, 0, 0.5, 0)
-    dot.AnchorPoint = Vector2.new(0.5, 0.5)
-    dot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    dot.BorderSizePixel = 0
-    dot.Parent = crosshair
-    
-    local dotCorner = Instance.new("UICorner")
-    dotCorner.CornerRadius = UDim.new(1, 0)
-    dotCorner.Parent = dot
-
-    local uiFrame = Instance.new("Frame")
-    uiFrame.Name = "SettingsPanel"
-    uiFrame.Size = UDim2.new(0, 260, 0, 210)
-    uiFrame.Position = UDim2.new(1, -280, 0, 20)
-    uiFrame.BackgroundColor3 = THEME.BgPanel
-    uiFrame.BackgroundTransparency = 0.1
-    uiFrame.BorderSizePixel = 0
-    uiFrame.Parent = screenGui
-
-    local uiCorner = Instance.new("UICorner")
-    uiCorner.CornerRadius = UDim.new(0, 10)
-    uiCorner.Parent = uiFrame
-
-    local uiStroke = Instance.new("UIStroke")
-    uiStroke.Color = THEME.Accent
-    uiStroke.Thickness = 1.5
-    uiStroke.Transparency = 0.3
-    uiStroke.Parent = uiFrame
-
-    local uiPadding = Instance.new("UIPadding")
-    uiPadding.PaddingTop = UDim.new(0, 10)
-    uiPadding.PaddingBottom = UDim.new(0, 10)
-    uiPadding.PaddingLeft = UDim.new(0, 10)
-    uiPadding.PaddingRight = UDim.new(0, 10)
-    uiPadding.Parent = uiFrame
-
-    local uiLayout = Instance.new("UIListLayout")
-    uiLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    uiLayout.Padding = UDim.new(0, 6)
-    uiLayout.Parent = uiFrame
-
-    local titleFrame = Instance.new("Frame")
-    titleFrame.Size = UDim2.new(1, 0, 0, 30)
-    titleFrame.BackgroundColor3 = THEME.AccentDark
-    titleFrame.BackgroundTransparency = 0.15
-    titleFrame.BorderSizePixel = 0
-    titleFrame.LayoutOrder = 0
-    titleFrame.Parent = uiFrame
-
-    local tCorner = Instance.new("UICorner")
-    tCorner.CornerRadius = UDim.new(0, 6)
-    tCorner.Parent = titleFrame
-
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Size = UDim2.new(1, 0, 1, 0)
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Text = "NRD ONTOP"
-    titleLabel.TextColor3 = THEME.TextPrimary
-    titleLabel.TextSize = 16
-    titleLabel.Font = Enum.Font.GothamBold
-    titleLabel.Parent = titleFrame
-
-    local function buatBaris(nama, urutan)
-        local row = Instance.new("Frame")
-        row.Size = UDim2.new(1, 0, 0, 38)
-        row.BackgroundColor3 = THEME.BgRow
-        row.BorderSizePixel = 0
-        row.LayoutOrder = urutan
-        row.Parent = uiFrame
-        
-        local c = Instance.new("UICorner")
-        c.CornerRadius = UDim.new(0, 8)
-        c.Parent = row
-        
-        local lbl = Instance.new("TextLabel")
-        lbl.Size = UDim2.new(0.5, 0, 1, 0)
-        lbl.Position = UDim2.new(0, 12, 0, 0)
-        lbl.BackgroundTransparency = 1
-        lbl.Text = nama
-        lbl.TextColor3 = THEME.TextPrimary
-        lbl.TextSize = 15
-        lbl.Font = Enum.Font.GothamBold
-        lbl.TextXAlignment = Enum.TextXAlignment.Left
-        lbl.Parent = row
-        
-        return row
+-- Animasi gradient rotasi
+task.spawn(function()
+    while MainFrame.Parent do
+        TweenService:Create(MainGrad, TweenInfo.new(3, Enum.EasingStyle.Linear), {Rotation = MainGrad.Rotation + 360}):Play()
+        task.wait(3)
     end
+end)
 
-    local rowToggle = buatBaris("Status", 1)
-    local toggleBtn = Instance.new("TextButton")
-    toggleBtn.Size = UDim2.new(0, 80, 0, 26)
-    toggleBtn.Position = UDim2.new(1, -90, 0.5, 0)
-    toggleBtn.AnchorPoint = Vector2.new(0, 0.5)
-    toggleBtn.BackgroundColor3 = THEME.Accent
-    toggleBtn.TextColor3 = THEME.TextPrimary
-    toggleBtn.TextSize = 13
-    toggleBtn.Font = Enum.Font.GothamBold
-    toggleBtn.Text = "AKTIF"
-    toggleBtn.Parent = rowToggle
+-- Animasi muncul
+MainFrame.Size = UDim2.new(0, 0, 0, 0)
+MainFrame.BackgroundTransparency = 1
+task.spawn(function()
+    task.wait(0.1)
+    TweenService:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+        Size = UDim2.new(0, 520, 0, 380),
+        BackgroundTransparency = 0
+    }):Play()
+end)
 
-    local togCorner = Instance.new("UICorner")
-    togCorner.CornerRadius = UDim.new(0, 6)
-    togCorner.Parent = toggleBtn
+-- ============================================
+-- HEADER
+-- ============================================
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 46)
+Header.BackgroundColor3 = Palette.DarkGray
+Header.BorderSizePixel = 0
+Header.Parent = MainFrame
 
-    local rowFov = buatBaris("FOV", 2)
-    local fovValue = Instance.new("TextLabel")
-    fovValue.Size = UDim2.new(0, 100, 1, 0)
-    fovValue.Position = UDim2.new(1, -110, 0, 0)
-    fovValue.BackgroundTransparency = 1
-    fovValue.Text = tostring(CONFIG.FOV)
-    fovValue.TextColor3 = THEME.TextAccent
-    fovValue.TextSize = 15
-    fovValue.Font = Enum.Font.GothamBold
-    fovValue.TextXAlignment = Enum.TextXAlignment.Right
-    fovValue.Parent = rowFov
+local HeaderCorner = Instance.new("UICorner")
+HeaderCorner.CornerRadius = UDim.new(0, 12)
+HeaderCorner.Parent = Header
 
-    local rowSize = buatBaris("CrosshairSize", 3)
-    local sizeValue = Instance.new("TextLabel")
-    sizeValue.Name = "SizeValue"
-    sizeValue.Size = UDim2.new(0, 60, 0, 12)
-    sizeValue.Position = UDim2.new(1, -110, 0, 2)
-    sizeValue.BackgroundTransparency = 1
-    sizeValue.Text = CONFIG.CrosshairSize .. "/" .. CONFIG.MaxSize
-    sizeValue.TextColor3 = THEME.TextAccent
-    sizeValue.TextSize = 11
-    sizeValue.Font = Enum.Font.GothamBold
-    sizeValue.TextXAlignment = Enum.TextXAlignment.Right
-    sizeValue.Parent = rowSize
+local HeaderGrad = Instance.new("UIGradient")
+HeaderGrad.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Palette.Pink),
+    ColorSequenceKeypoint.new(0.5, Palette.Blue),
+    ColorSequenceKeypoint.new(1, Palette.Red),
+}
+HeaderGrad.Parent = Header
 
-    local slider = Instance.new("Frame")
-    slider.Name = "Slider"
-    slider.Size = UDim2.new(0, 100, 0, 8)
-    slider.Position = UDim2.new(1, -110, 0.7, 0)
-    slider.BackgroundColor3 = THEME.BgSlider
-    slider.BorderSizePixel = 0
-    slider.Parent = rowSize
+task.spawn(function()
+    while Header.Parent do
+        TweenService:Create(HeaderGrad, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Offset = Vector2.new(1, 0)}):Play()
+        task.wait(2)
+        TweenService:Create(HeaderGrad, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Offset = Vector2.new(-1, 0)}):Play()
+        task.wait(2)
+    end
+end)
 
-    local sCorner = Instance.new("UICorner")
-    sCorner.CornerRadius = UDim.new(1, 0)
-    sCorner.Parent = slider
+local HeaderTitle = Instance.new("TextLabel")
+HeaderTitle.Size = UDim2.new(1, -60, 1, 0)
+HeaderTitle.Position = UDim2.new(0, 16, 0, 0)
+HeaderTitle.BackgroundTransparency = 1
+HeaderTitle.Text = "MTS Masyarikul Anwar"
+HeaderTitle.TextColor3 = Palette.White
+HeaderTitle.TextSize = 18
+HeaderTitle.Font = Enum.Font.GothamBold
+HeaderTitle.TextXAlignment = Enum.TextXAlignment.Left
+HeaderTitle.Parent = Header
 
-    local fill = Instance.new("Frame")
-    fill.Name = "Fill"
-    fill.Size = UDim2.new((CONFIG.CrosshairSize - CONFIG.MinSize)/(CONFIG.MaxSize - CONFIG.MinSize), 0, 1, 0)
-    fill.BackgroundColor3 = THEME.Accent
-    fill.BorderSizePixel = 0
-    fill.Parent = slider
+HeaderTitle.TextTransparency = 1
+TweenService:Create(HeaderTitle, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
 
-    local fCorner = Instance.new("UICorner")
-    fCorner.CornerRadius = UDim.new(1, 0)
-    fCorner.Parent = fill
+-- ============================================
+-- CLOSE BUTTON
+-- ============================================
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+CloseBtn.Position = UDim2.new(1, -38, 0, 8)
+CloseBtn.BackgroundColor3 = Palette.Red
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Palette.White
+CloseBtn.TextSize = 16
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.BorderSizePixel = 0
+CloseBtn.Parent = Header
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 8)
+CloseCorner.Parent = CloseBtn
+
+CloseBtn.MouseEnter:Connect(function()
+    TweenService:Create(CloseBtn, TweenInfo.new(0.15), {Size = UDim2.new(0, 34, 0, 34), Position = UDim2.new(1, -40, 0, 6), Rotation = 90}):Play()
+end)
+CloseBtn.MouseLeave:Connect(function()
+    TweenService:Create(CloseBtn, TweenInfo.new(0.15), {Size = UDim2.new(0, 30, 0, 30), Position = UDim2.new(1, -38, 0, 8), Rotation = 0}):Play()
+end)
+
+CloseBtn.MouseButton1Click:Connect(function()
+    TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+        Size = UDim2.new(0, 0, 0, 0),
+        BackgroundTransparency = 1
+    }):Play()
+    task.wait(0.35)
+    ScreenGui:Destroy()
+end)
+
+-- ============================================
+-- SIDEBAR
+-- ============================================
+local Sidebar = Instance.new("Frame")
+Sidebar.Size = UDim2.new(0, 140, 1, -46)
+Sidebar.Position = UDim2.new(0, 0, 0, 46)
+Sidebar.BackgroundColor3 = Palette.DarkGray
+Sidebar.BorderSizePixel = 0
+Sidebar.Parent = MainFrame
+
+local SidebarCorner = Instance.new("UICorner")
+SidebarCorner.CornerRadius = UDim.new(0, 12)
+SidebarCorner.Parent = Sidebar
+
+local SidebarLayout = Instance.new("UIListLayout")
+SidebarLayout.Padding = UDim.new(0, 6)
+SidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
+SidebarLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+SidebarLayout.Parent = Sidebar
+
+local SidebarPad = Instance.new("UIPadding")
+SidebarPad.PaddingTop = UDim.new(0, 10)
+SidebarPad.Parent = Sidebar
+
+-- ============================================
+-- CONTENT
+-- ============================================
+local Content = Instance.new("Frame")
+Content.Size = UDim2.new(1, -150, 1, -56)
+Content.Position = UDim2.new(0, 145, 0, 51)
+Content.BackgroundColor3 = Palette.Dark
+Content.BorderSizePixel = 0
+Content.ClipsDescendants = true
+Content.Parent = MainFrame
+
+local ContentCorner = Instance.new("UICorner")
+ContentCorner.CornerRadius = UDim.new(0, 8)
+ContentCorner.Parent = Content
+
+-- ============================================
+-- TAB SYSTEM
+-- ============================================
+local tabs = {}
+local activeTab = nil
+local isSwitching = false
+
+local function createTab(name, accentColor)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -16, 0, 36)
+    btn.BackgroundColor3 = Palette.Dark
+    btn.Text = name
+    btn.TextColor3 = Palette.Light
+    btn.TextSize = 14
+    btn.Font = Enum.Font.GothamMedium
+    btn.BorderSizePixel = 0
+    btn.Parent = Sidebar
+
+    local bc = Instance.new("UICorner")
+    bc.CornerRadius = UDim.new(0, 8)
+    bc.Parent = btn
+
+    local indicator = Instance.new("Frame")
+    indicator.Size = UDim2.new(0, 3, 0, 0)
+    indicator.Position = UDim2.new(0, 0, 0.5, 0)
+    indicator.AnchorPoint = Vector2.new(0, 0.5)
+    indicator.BackgroundColor3 = accentColor
+    indicator.BorderSizePixel = 0
+    indicator.Parent = btn
+
+    local indCorner = Instance.new("UICorner")
+    indCorner.CornerRadius = UDim.new(1, 0)
+    indCorner.Parent = indicator
+
+    local frame = Instance.new("ScrollingFrame")
+    frame.Size = UDim2.new(1, -20, 1, -20)
+    frame.Position = UDim2.new(0, 10, 0, 10)
+    frame.BackgroundTransparency = 1
+    frame.BorderSizePixel = 0
+    frame.ScrollBarThickness = 6
+    frame.ScrollBarImageColor3 = accentColor
+    frame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    frame.Visible = false
+    frame.Parent = Content
+
+    local layout = Instance.new("UIListLayout")
+    layout.Padding = UDim.new(0, 8)
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Parent = frame
+
+    local pad = Instance.new("UIPadding")
+    pad.PaddingTop = UDim.new(0, 4)
+    pad.PaddingBottom = UDim.new(0, 4)
+    pad.Parent = frame
+
+    tabs[name] = {
+        button = btn,
+        frame = frame,
+        accent = accentColor,
+        layout = layout,
+        indicator = indicator
+    }
+
+    btn.MouseEnter:Connect(function()
+        if activeTab ~= name then
+            TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = Palette.DarkGray}):Play()
+        end
+        TweenService:Create(indicator, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {Size = UDim2.new(0, 3, 0, 20)}):Play()
+    end)
+
+    btn.MouseLeave:Connect(function()
+        if activeTab ~= name then
+            TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = Palette.Dark}):Play()
+        end
+        TweenService:Create(indicator, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {Size = UDim2.new(0, 3, 0, 0)}):Play()
+    end)
+
+    btn.MouseButton1Click:Connect(function()
+        if isSwitching or activeTab == name then return end
+        isSwitching = true
+        for n, t in pairs(tabs) do
+            if n ~= name then
+                t.frame.Visible = false
+                TweenService:Create(t.button, TweenInfo.new(0.2), {BackgroundColor3 = Palette.Dark}):Play()
+                TweenService:Create(t.indicator, TweenInfo.new(0.2), {Size = UDim2.new(0, 3, 0, 0)}):Play()
+            end
+        end
+        local accent = tabs[name].accent
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = accent}):Play()
+        TweenService:Create(indicator, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {Size = UDim2.new(0, 3, 0, 28)}):Play()
+        frame.Position = UDim2.new(0, 40, 0, 10)
+        frame.Visible = true
+        TweenService:Create(frame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            Position = UDim2.new(0, 10, 0, 10)
+        }):Play()
+        activeTab = name
+        task.wait(0.25)
+        isSwitching = false
+    end)
+
+    return frame
+end
+
+-- ============================================
+-- ELEMEN BUILDER
+-- ============================================
+local function updateCanvas(tabName)
+    local t = tabs[tabName]
+    if not t then return end
+    task.wait()
+    t.frame.CanvasSize = UDim2.new(0, 0, 0, t.layout.AbsoluteContentSize.Y + 20)
+end
+
+local function createLabel(parentTab, text, color)
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, 0, 0, 26)
+    lbl.BackgroundColor3 = Palette.DarkGray
+    lbl.Text = "  " .. text
+    lbl.TextColor3 = color or Palette.Light
+    lbl.TextSize = 12
+    lbl.Font = Enum.Font.GothamBold
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.BorderSizePixel = 0
+    lbl.BackgroundTransparency = 1
+    lbl.TextTransparency = 1
+    lbl.Parent = parentTab
+
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 6)
+    c.Parent = lbl
+
+    task.wait(0.03)
+    TweenService:Create(lbl, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        BackgroundTransparency = 0.3,
+        TextTransparency = 0
+    }):Play()
+
+    updateCanvas(activeTab)
+    return lbl
+end
+
+local function createToggle(parentTab, text, desc, accent, defaultOn, callback)
+    local holder = Instance.new("Frame")
+    holder.Size = UDim2.new(1, 0, 0, 52)
+    holder.BackgroundColor3 = Palette.DarkGray
+    holder.BorderSizePixel = 0
+    holder.BackgroundTransparency = 1
+    holder.Parent = parentTab
+
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 6)
+    c.Parent = holder
+
+    local s = Instance.new("UIStroke")
+    s.Color = accent
+    s.Thickness = 1
+    s.Transparency = 1
+    s.Parent = holder
+
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, -64, 0, 20)
+    lbl.Position = UDim2.new(0, 10, 0, 6)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = text
+    lbl.TextColor3 = Palette.Light
+    lbl.TextSize = 13
+    lbl.Font = Enum.Font.GothamBold
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.TextTransparency = 1
+    lbl.Parent = holder
+
+    local descLbl = Instance.new("TextLabel")
+    descLbl.Size = UDim2.new(1, -64, 0, 16)
+    descLbl.Position = UDim2.new(0, 10, 0, 26)
+    descLbl.BackgroundTransparency = 1
+    descLbl.Text = desc or ""
+    descLbl.TextColor3 = Palette.Gray
+    descLbl.TextSize = 10
+    descLbl.Font = Enum.Font.Gotham
+    descLbl.TextXAlignment = Enum.TextXAlignment.Left
+    descLbl.TextTransparency = 1
+    descLbl.Parent = holder
+
+    local track = Instance.new("Frame")
+    track.Size = UDim2.new(0, 40, 0, 20)
+    track.Position = UDim2.new(1, -50, 0.5, -10)
+    track.BackgroundColor3 = defaultOn and Palette.Green or Palette.Gray
+    track.BorderSizePixel = 0
+    track.BackgroundTransparency = 1
+    track.Parent = holder
+
+    local tc = Instance.new("UICorner")
+    tc.CornerRadius = UDim.new(1, 0)
+    tc.Parent = track
 
     local knob = Instance.new("Frame")
-    knob.Name = "Knob"
     knob.Size = UDim2.new(0, 16, 0, 16)
-    knob.AnchorPoint = Vector2.new(0.5, 0.5)
-    knob.Position = UDim2.new((CONFIG.CrosshairSize - CONFIG.MinSize)/(CONFIG.MaxSize - CONFIG.MinSize), 0, 0.5, 0)
-    knob.BackgroundColor3 = THEME.TextPrimary
+    knob.Position = defaultOn and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
+    knob.BackgroundColor3 = Palette.White
     knob.BorderSizePixel = 0
-    knob.Parent = slider
+    knob.BackgroundTransparency = 1
+    knob.Parent = track
 
-    local kCorner = Instance.new("UICorner")
-    kCorner.CornerRadius = UDim.new(1, 0)
-    kCorner.Parent = knob
+    local kc = Instance.new("UICorner")
+    kc.CornerRadius = UDim.new(1, 0)
+    kc.Parent = knob
 
-    toggleBtn.MouseButton1Click:Connect(function()
-        CONFIG.Visible = not CONFIG.Visible
-        crosshair.Visible = CONFIG.Visible
-        toggleBtn.Text = CONFIG.Visible and "AKTIF" or "MATI"
-        toggleBtn.BackgroundColor3 = CONFIG.Visible and THEME.Accent or THEME.BgSlider
+    task.wait(0.03)
+    TweenService:Create(holder, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
+    TweenService:Create(s, TweenInfo.new(0.35), {Transparency = 0}):Play()
+    TweenService:Create(lbl, TweenInfo.new(0.35), {TextTransparency = 0}):Play()
+    TweenService:Create(descLbl, TweenInfo.new(0.35), {TextTransparency = 0}):Play()
+    TweenService:Create(track, TweenInfo.new(0.35), {BackgroundTransparency = 0}):Play()
+    TweenService:Create(knob, TweenInfo.new(0.35), {BackgroundTransparency = 0}):Play()
+
+    local state = defaultOn
+    local click = Instance.new("TextButton")
+    click.Size = UDim2.new(1, 0, 1, 0)
+    click.BackgroundTransparency = 1
+    click.Text = ""
+    click.Parent = holder
+
+    holder.MouseEnter:Connect(function()
+        TweenService:Create(s, TweenInfo.new(0.15), {Thickness = 2}):Play()
     end)
+    holder.MouseLeave:Connect(function()
+        TweenService:Create(s, TweenInfo.new(0.15), {Thickness = 1}):Play()
+    end)
+
+    click.MouseButton1Click:Connect(function()
+        state = not state
+        if state then
+            TweenService:Create(track, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {BackgroundColor3 = Palette.Green}):Play()
+            TweenService:Create(knob, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(1, -18, 0.5, -8)}):Play()
+        else
+            TweenService:Create(track, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {BackgroundColor3 = Palette.Gray}):Play()
+            TweenService:Create(knob, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {Position = UDim2.new(0, 2, 0.5, -8)}):Play()
+        end
+        if callback then callback(state) end
+    end)
+
+    updateCanvas(activeTab)
+    return holder
+end
+
+local function createSlider(parentTab, text, accent, min, max, default, callback)
+    local holder = Instance.new("Frame")
+    holder.Size = UDim2.new(1, 0, 0, 56)
+    holder.BackgroundColor3 = Palette.DarkGray
+    holder.BorderSizePixel = 0
+    holder.BackgroundTransparency = 1
+    holder.Parent = parentTab
+
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 6)
+    c.Parent = holder
+
+    local s = Instance.new("UIStroke")
+    s.Color = accent
+    s.Thickness = 1
+    s.Transparency = 1
+    s.Parent = holder
+
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, -60, 0, 18)
+    lbl.Position = UDim2.new(0, 10, 0, 6)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = text
+    lbl.TextColor3 = Palette.Light
+    lbl.TextSize = 13
+    lbl.Font = Enum.Font.GothamBold
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.TextTransparency = 1
+    lbl.Parent = holder
+
+    local valLbl = Instance.new("TextLabel")
+    valLbl.Size = UDim2.new(0, 50, 0, 18)
+    valLbl.Position = UDim2.new(1, -58, 0, 6)
+    valLbl.BackgroundTransparency = 1
+    valLbl.Text = tostring(default)
+    valLbl.TextColor3 = accent
+    valLbl.TextSize = 13
+    valLbl.Font = Enum.Font.GothamBold
+    valLbl.TextXAlignment = Enum.TextXAlignment.Right
+    valLbl.TextTransparency = 1
+    valLbl.Parent = holder
+
+    local bar = Instance.new("Frame")
+    bar.Size = UDim2.new(1, -20, 0, 6)
+    bar.Position = UDim2.new(0, 10, 0, 36)
+    bar.BackgroundColor3 = Palette.Dark
+    bar.BorderSizePixel = 0
+    bar.BackgroundTransparency = 1
+    bar.Parent = holder
+
+    local bc = Instance.new("UICorner")
+    bc.CornerRadius = UDim.new(1, 0)
+    bc.Parent = bar
+
+    local pct = (default - min) / (max - min)
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new(pct, 0, 1, 0)
+    fill.BackgroundColor3 = accent
+    fill.BorderSizePixel = 0
+    fill.BackgroundTransparency = 1
+    fill.Parent = bar
+
+    local fc = Instance.new("UICorner")
+    fc.CornerRadius = UDim.new(1, 0)
+    fc.Parent = fill
+
+    local thumb = Instance.new("Frame")
+    thumb.Size = UDim2.new(0, 14, 0, 14)
+    thumb.Position = UDim2.new(pct, -7, 0.5, -7)
+    thumb.BackgroundColor3 = Palette.White
+    thumb.BorderSizePixel = 0
+    thumb.BackgroundTransparency = 1
+    thumb.ZIndex = 2
+    thumb.Parent = bar
+
+    local thc = Instance.new("UICorner")
+    thc.CornerRadius = UDim.new(1, 0)
+    thc.Parent = thumb
+
+    task.wait(0.03)
+    TweenService:Create(holder, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
+    TweenService:Create(s, TweenInfo.new(0.35), {Transparency = 0}):Play()
+    TweenService:Create(lbl, TweenInfo.new(0.35), {TextTransparency = 0}):Play()
+    TweenService:Create(valLbl, TweenInfo.new(0.35), {TextTransparency = 0}):Play()
+    TweenService:Create(bar, TweenInfo.new(0.35), {BackgroundTransparency = 0}):Play()
+    TweenService:Create(fill, TweenInfo.new(0.35), {BackgroundTransparency = 0}):Play()
+    TweenService:Create(thumb, TweenInfo.new(0.35), {BackgroundTransparency = 0}):Play()
 
     local dragging = false
-    local function getAlphaFromX(x)
-        return math.clamp((x - slider.AbsolutePosition.X) / slider.AbsoluteSize.X, 0, 1)
+    local function updateSlider(input)
+        local rel = math.clamp((input.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
+        local val = math.floor(min + (max - min) * rel + 0.5)
+        valLbl.Text = tostring(val)
+        fill.Size = UDim2.new(rel, 0, 1, 0)
+        thumb.Position = UDim2.new(rel, -7, 0.5, -7)
+        if callback then callback(val) end
     end
 
-    knob.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = true end
-    end)
-    
-    slider.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            local alpha = getAlphaFromX(input.Position.X)
-            local newSize = CONFIG.MinSize + alpha * (CONFIG.MaxSize - CONFIG.MinSize)
-            crosshair.Size = UDim2.new(0, newSize, 0, newSize)
-            sizeValue.Text = math.floor(newSize) .. "/" .. CONFIG.MaxSize
-            fill.Size = UDim2.new(alpha, 0, 1, 0)
-            knob.Position = UDim2.new(alpha, 0, 0.5, 0)
-        end
-    end)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, 20)
+    btn.Position = UDim2.new(0, 0, 0, 30)
+    btn.BackgroundTransparency = 1
+    btn.Text = ""
+    btn.Parent = holder
 
+    btn.MouseButton1Down:Connect(function() dragging = true; updateSlider(UserInputService:GetMouseLocation()) end)
     UserInputService.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            local alpha = getAlphaFromX(input.Position.X)
-            local newSize = CONFIG.MinSize + alpha * (CONFIG.MaxSize - CONFIG.MinSize)
-            crosshair.Size = UDim2.new(0, newSize, 0, newSize)
-            sizeValue.Text = math.floor(newSize) .. "/" .. CONFIG.MaxSize
-            fill.Size = UDim2.new(alpha, 0, 1, 0)
-            knob.Position = UDim2.new(alpha, 0, 0.5, 0)
-        end
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then updateSlider(input) end
+    end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
     end)
 
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
+    updateCanvas(activeTab)
+    return holder
+end
+
+-- ============================================
+-- LOGIKA COMBAT
+-- ============================================
+local function saveDefaults(tool)
+    if not tool:IsA("Tool") then return end
+    local sm = tool:FindFirstChild("Setting")
+    if not sm or not sm:IsA("ModuleScript") then return end
+    local ok, st = pcall(require, sm)
+    if not ok or type(st) ~= "table" then return end
+    if not defaultSettings[tool.Name] then
+        defaultSettings[tool.Name] = {
+            Accuracy = st.Accuracy,
+            SpreadX = st.SpreadX,
+            SpreadY = st.SpreadY,
+            Range = st.Range,
+            Recoil = st.Recoil,
+        }
+    end
+end
+
+local function applyCombat(tool)
+    if not tool:IsA("Tool") then return end
+    local sm = tool:FindFirstChild("Setting")
+    if not sm or not sm:IsA("ModuleScript") then return end
+    saveDefaults(tool)
+    local ok, st = pcall(require, sm)
+    if not ok or type(st) ~= "table" then return end
+    if noRecoilEnabled then st.Recoil = 0 end
+    if noSpreadEnabled then
+        st.Accuracy = 1
+        st.SpreadX = 0
+        st.SpreadY = 0
+        st.Range = 50000
+    end
+end
+
+local function resetCombat(tool)
+    if not tool:IsA("Tool") then return end
+    local sm = tool:FindFirstChild("Setting")
+    if not sm or not sm:IsA("ModuleScript") then return end
+    local ok, st = pcall(require, sm)
+    if not ok or type(st) ~= "table" then return end
+    local d = defaultSettings[tool.Name]
+    if not d then return end
+    st.Accuracy = d.Accuracy
+    st.SpreadX = d.SpreadX
+    st.SpreadY = d.SpreadY
+    st.Range = d.Range
+    st.Recoil = d.Recoil
+end
+
+local function onCharacter(character)
+    character.ChildAdded:Connect(function(child)
+        if child:IsA("Tool") then
+            task.wait(0.1)
+            if noRecoilEnabled or noSpreadEnabled then applyCombat(child) else resetCombat(child) end
+        end
+    end)
+    for _, child in ipairs(character:GetChildren()) do
+        if child:IsA("Tool") then
+            task.wait(0.1)
+            if noRecoilEnabled or noSpreadEnabled then applyCombat(child) else resetCombat(child) end
+        end
+    end
+end
+
+if localPlayer.Character then onCharacter(localPlayer.Character) end
+localPlayer.CharacterAdded:Connect(onCharacter)
+
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        if noRecoilEnabled or noSpreadEnabled then
+            local char = localPlayer.Character
+            if char then
+                for _, tool in ipairs(char:GetChildren()) do
+                    if tool:IsA("Tool") then applyCombat(tool) end
+                end
+            end
+        end
+    end
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(0.01)
+        if macroEnabled then
+            if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
+                local char = localPlayer.Character
+                if char then
+                    local tool = char:FindFirstChildOfClass("Tool")
+                    if tool then pcall(function() tool:Activate() end) end
+                end
+            end
+        end
+    end
+end)
+
+-- ============================================
+-- LOGIKA FPS BOOST
+-- ============================================
+local function SetDaySky()
+    pcall(function()
+        Lighting.Ambient = Color3.fromRGB(255, 255, 255)
+        Lighting.Brightness = 3
+        Lighting.ClockTime = 14
+        Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 9e9
+        Lighting.FogStart = 0
+        Lighting.ColorShift_Top = Color3.fromRGB(0, 0, 0)
+        Lighting.ColorShift_Bottom = Color3.fromRGB(0, 0, 0)
+
+        local Sky = Lighting:FindFirstChild("Sky")
+        if Sky then
+            Sky.SkyboxBk = "rbxassetid://404414703"
+            Sky.SkyboxDn = "rbxassetid://404414703"
+            Sky.SkyboxFt = "rbxassetid://404414703"
+            Sky.SkyboxLf = "rbxassetid://404414703"
+            Sky.SkyboxRt = "rbxassetid://404414703"
+            Sky.SkyboxUp = "rbxassetid://404414703"
+            Sky.MoonTextureId = ""
+            Sky.SunTextureId = ""
+        end
+
+        local Atmosphere = Lighting:FindFirstChild("Atmosphere")
+        if Atmosphere then
+            Atmosphere.Density = 0.2
+            Atmosphere.Offset = 0.1
+            Atmosphere.Color = Color3.fromRGB(255, 255, 255)
+            Atmosphere.Decay = Color3.fromRGB(255, 255, 255)
+            Atmosphere.Glare = 1
+            Atmosphere.Haze = 0.1
+        end
     end)
 end
 
-createGui()
+local function applyPostEffects(enabled)
+    if enabled then
+        for _, v in ipairs(Lighting:GetChildren()) do
+            if v:IsA("PostEffect") then v:Destroy() end
+        end
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 9e9
+        Lighting.Brightness = 3
+    else
+        Lighting.GlobalShadows = true
+        Lighting.FogEnd = 10000
+        Lighting.Brightness = 1
+    end
+end
 
-RunService.Heartbeat:Connect(function()
-    if not screenGui or not screenGui.Parent then
-        createGui()
+local function applyMaterials(enabled)
+    for _, inst in ipairs(workspace:GetDescendants()) do
+        if inst:IsA("BasePart") then
+            if localPlayer.Character and inst:IsDescendantOf(localPlayer.Character) then continue end
+            if enabled then
+                originalData.parts[inst] = {Material = inst.Material, Reflectance = inst.Reflectance}
+                inst.Material = Enum.Material.SmoothPlastic
+                inst.Reflectance = 0
+            else
+                if originalData.parts[inst] then
+                    inst.Material = originalData.parts[inst].Material
+                    inst.Reflectance = originalData.parts[inst].Reflectance
+                end
+            end
+        end
+    end
+end
+
+local function applyDecals(enabled)
+    for _, inst in ipairs(workspace:GetDescendants()) do
+        if inst:IsA("Texture") or inst:IsA("Decal") then
+            if localPlayer.Character and inst:IsDescendantOf(localPlayer.Character) then continue end
+            if enabled then
+                originalData.decals[inst] = inst.Transparency
+                inst.Transparency = 1
+            else
+                if originalData.decals[inst] then inst.Transparency = originalData.decals[inst] end
+            end
+        end
+    end
+end
+
+local function applyTerrain(enabled)
+    local terrain = workspace:FindFirstChild("Terrain")
+    if not terrain then return end
+    if enabled then
+        originalData.terrain = {
+            WaterWaveSize = terrain.WaterWaveSize,
+            WaterWaveSpeed = terrain.WaterWaveSpeed,
+            WaterReflectance = terrain.WaterReflectance,
+            WaterTransparency = terrain.WaterTransparency,
+        }
+        terrain.WaterWaveSize = 0
+        terrain.WaterWaveSpeed = 0
+        terrain.WaterReflectance = 0
+        terrain.WaterTransparency = 1
+    else
+        if originalData.terrain.WaterWaveSize then
+            terrain.WaterWaveSize = originalData.terrain.WaterWaveSize
+            terrain.WaterWaveSpeed = originalData.terrain.WaterWaveSpeed
+            terrain.WaterReflectance = originalData.terrain.WaterReflectance
+            terrain.WaterTransparency = originalData.terrain.WaterTransparency
+        end
+    end
+end
+
+local function applyQuality(level)
+    pcall(function()
+        UserSettings().GameSettings.SavedQualityLevel = Enum.SavedQualitySetting.QualityLevel1
+        settings().Rendering.QualityLevel = level
+    end)
+end
+
+local function applyPhysics(enabled)
+    pcall(function() settings().Physics.AllowSleep = enabled end)
+end
+
+local function applyDaySky(enabled)
+    if enabled then
+        SetDaySky()
+    else
+        pcall(function()
+            Lighting.Ambient = Color3.fromRGB(0, 0, 0)
+            Lighting.Brightness = 1
+            Lighting.ClockTime = 0
+            Lighting.OutdoorAmbient = Color3.fromRGB(0, 0, 0)
+        end)
+    end
+end
+
+workspace.DescendantAdded:Connect(function(inst)
+    if not settings.flatMaterials and not settings.hideDecals then return end
+    if localPlayer.Character and inst:IsDescendantOf(localPlayer.Character) then return end
+    if settings.flatMaterials and inst:IsA("BasePart") then
+        inst.Material = Enum.Material.SmoothPlastic
+        inst.Reflectance = 0
+    end
+    if settings.hideDecals and (inst:IsA("Texture") or inst:IsA("Decal")) then
+        inst.Transparency = 1
     end
 end)
+
+-- ============================================
+-- BUAT 2 TAB
+-- ============================================
+local CombatTab = createTab("Combat", Palette.Red)
+local FPSTab = createTab("FPS Boost", Palette.Blue)
+
+task.wait(0.4)
+local firstBtn = tabs["Combat"].button
+local firstFrame = tabs["Combat"].frame
+local firstInd = tabs["Combat"].indicator
+firstBtn.BackgroundColor3 = Palette.Red
+firstInd.Size = UDim2.new(0, 3, 0, 28)
+firstFrame.Position = UDim2.new(0, 40, 0, 10)
+firstFrame.Visible = true
+TweenService:Create(firstFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+    Position = UDim2.new(0, 10, 0, 10)
+}):Play()
+activeTab = "Combat"
+
+-- ============================================
+-- ISI TAB COMBAT
+-- ============================================
+createLabel(CombatTab, "Combat Section", Palette.Red)
+
+createToggle(CombatTab, "Macro", "Auto-fire saat tahan LMB", Palette.Red, false, function(s)
+    macroEnabled = s
+end)
+
+createToggle(CombatTab, "No Recoil", "Hilangkan recoil senjata", Palette.Red, false, function(s)
+    noRecoilEnabled = s
+end)
+
+createToggle(CombatTab, "No Spread", "Hilangkan spread senjata", Palette.Red, false, function(s)
+    noSpreadEnabled = s
+end)
+
+-- ============================================
+-- ISI TAB FPS BOOST
+-- ============================================
+createLabel(FPSTab, "LIGHTING", Palette.Blue)
+
+createToggle(FPSTab, "Remove Post Effects", "Bloom, blur, color correction", Palette.Blue, false, function(s)
+    settings.removePostEffects = s
+    applyPostEffects(s)
+end)
+
+createToggle(FPSTab, "Disable Shadows", "Global shadow rendering", Palette.Blue, false, function(s)
+    settings.disableShadows = s
+    Lighting.GlobalShadows = not s
+end)
+
+createLabel(FPSTab, "WORLD", Palette.Blue)
+
+createToggle(FPSTab, "Flat Materials", "SmoothPlastic di semua part", Palette.Blue, false, function(s)
+    settings.flatMaterials = s
+    applyMaterials(s)
+end)
+
+createToggle(FPSTab, "Hide Decals & Textures", "Semua tekstur jadi invisible", Palette.Blue, false, function(s)
+    settings.hideDecals = s
+    applyDecals(s)
+end)
+
+createToggle(FPSTab, "Flat Terrain Water", "Hapus gelombang & refleksi air", Palette.Blue, false, function(s)
+    settings.flatTerrain = s
+    applyTerrain(s)
+end)
+
+createLabel(FPSTab, "PERFORMANCE", Palette.Blue)
+
+createSlider(FPSTab, "Render Quality", Palette.Blue, 1, 21, 21, function(v)
+    settings.qualityLevel = v
+    applyQuality(v)
+end)
+
+createToggle(FPSTab, "Physics Sleep", "Part diam skip physics", Palette.Blue, false, function(s)
+    settings.physicsSleep = s
+    applyPhysics(s)
+end)
+
+createLabel(FPSTab, "SKY", Palette.Blue)
+
+createToggle(FPSTab, "Day Sky", "Langit siang cerah", Palette.Blue, false, function(s)
+    settings.daySky = s
+    applyDaySky(s)
+end)
+
+-- ============================================
+-- TOGGLE UI (RightShift)
+-- ============================================
+local uiVisible = true
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        uiVisible = not uiVisible
+        if uiVisible then
+            MainFrame.Visible = true
+            MainFrame.Size = UDim2.new(0, 0, 0, 0)
+            MainFrame.BackgroundTransparency = 1
+            TweenService:Create(MainFrame, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+                Size = UDim2.new(0, 520, 0, 380),
+                BackgroundTransparency = 0
+            }):Play()
+        else
+            TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                Size = UDim2.new(0, 0, 0, 0),
+                BackgroundTransparency = 1
+            }):Play()
+            task.wait(0.35)
+            MainFrame.Visible = false
+        end
+    end
+end)
+
+print("============================================")
+print(" MTS Masyarikul Anwar UI v4 | ANIMATED")
+print(" Tab: Combat | FPS Boost")
+print(" FPS Boost: 8 fitur lengkap")
+print(" RightShift = Show/Hide")
+print("============================================")
