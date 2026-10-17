@@ -1,6 +1,5 @@
 -- ============================================================
--- DARK ANGEL | MTS Masyarikul Anwar v9
--- FULL SOURCE: UI + Combat + FPS Boost + AUTO BYPASS
+-- DARK ANGEL | MTS Masyarikul Anwar v9 + FLOAT BUTTON
 -- ============================================================
 
 -- ============================================================
@@ -258,6 +257,32 @@ ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.IgnoreGuiInset = true
 ScreenGui.Parent = localPlayer:WaitForChild("PlayerGui")
 
+-- ============================================
+-- FLOAT BUTTON (BUKA TUTUP UI DI LUAR)
+-- ============================================
+local FloatBtn = Instance.new("TextButton")
+FloatBtn.Name = "FloatToggleBtn"
+FloatBtn.Size = UDim2.new(0, 46, 0, 46)
+FloatBtn.Position = UDim2.new(0, 20, 0.5, -23) -- Posisi awal di kiri tengah
+FloatBtn.BackgroundColor3 = Palette.Dark
+FloatBtn.Text = "MTS"
+FloatBtn.TextColor3 = Palette.Pink
+FloatBtn.TextSize = 14
+FloatBtn.Font = Enum.Font.GothamBold
+FloatBtn.BorderSizePixel = 0
+FloatBtn.Active = true
+FloatBtn.Draggable = true -- Bisa digeser
+FloatBtn.Parent = ScreenGui
+
+local FloatCorner = Instance.new("UICorner")
+FloatCorner.CornerRadius = UDim.new(1, 0)
+FloatCorner.Parent = FloatBtn
+
+local FloatStroke = Instance.new("UIStroke")
+FloatStroke.Color = Palette.Pink
+FloatStroke.Thickness = 2
+FloatStroke.Parent = FloatBtn
+
 -- MAIN FRAME
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
@@ -283,15 +308,16 @@ MainGrad.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0, Palette.Pink),
     ColorSequenceKeypoint.new(0.33, Palette.Blue),
     ColorSequenceKeypoint.new(0.66, Palette.Red),
-    ColorSequenceKeypoint.new(1, Palette.Gray),
+    ColorSequenceKeypoint.new(1, Palette.Pink),
 }
 MainGrad.Rotation = 45
 MainGrad.Parent = MainStroke
 
 task.spawn(function()
     while MainFrame.Parent do
-        TweenService:Create(MainGrad, TweenInfo.new(3, Enum.EasingStyle.Linear), {Rotation = MainGrad.Rotation + 360}):Play()
+        TweenService:Create(MainGrad, TweenInfo.new(3, Enum.EasingStyle.Linear), {Offset = Vector2.new(1, 0)}):Play()
         task.wait(3)
+        MainGrad.Offset = Vector2.new(-1, 0)
     end
 end)
 
@@ -320,17 +346,17 @@ HeaderCorner.Parent = Header
 local HeaderGrad = Instance.new("UIGradient")
 HeaderGrad.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0, Palette.Pink),
-    ColorSequenceKeypoint.new(0.5, Palette.Blue),
-    ColorSequenceKeypoint.new(1, Palette.Red),
+    ColorSequenceKeypoint.new(0.33, Palette.Blue),
+    ColorSequenceKeypoint.new(0.66, Palette.Red),
+    ColorSequenceKeypoint.new(1, Palette.Pink),
 }
 HeaderGrad.Parent = Header
 
 task.spawn(function()
     while Header.Parent do
-        TweenService:Create(HeaderGrad, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Offset = Vector2.new(1, 0)}):Play()
+        TweenService:Create(HeaderGrad, TweenInfo.new(2, Enum.EasingStyle.Linear), {Offset = Vector2.new(1, 0)}):Play()
         task.wait(2)
-        TweenService:Create(HeaderGrad, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Offset = Vector2.new(-1, 0)}):Play()
-        task.wait(2)
+        HeaderGrad.Offset = Vector2.new(-1, 0)
     end
 end)
 
@@ -373,13 +399,41 @@ CloseBtn.MouseLeave:Connect(function()
     TweenService:Create(CloseBtn, TweenInfo.new(0.15), {Size = UDim2.new(0, 30, 0, 30), Position = UDim2.new(1, -38, 0, 8), Rotation = 0}):Play()
 end)
 
-CloseBtn.MouseButton1Click:Connect(function()
+-- Fungsi Sembunyikan UI
+local function HideUI()
     TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
         Size = UDim2.new(0, 0, 0, 0),
         BackgroundTransparency = 1
     }):Play()
-    task.wait(0.35)
-    ScreenGui:Destroy()
+    task.wait(0.3)
+    MainFrame.Visible = false
+end
+
+-- Fungsi Tampilkan UI
+local function ShowUI()
+    MainFrame.Visible = true
+    MainFrame.Size = UDim2.new(0, 0, 0, 0)
+    MainFrame.BackgroundTransparency = 1
+    TweenService:Create(MainFrame, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+        Size = UDim2.new(0, 520, 0, 380),
+        BackgroundTransparency = 0
+    }):Play()
+end
+
+-- Tombol X di header (Hanya hide, tidak destroy)
+CloseBtn.MouseButton1Click:Connect(HideUI)
+
+-- LOGIKA FLOAT BUTTON
+FloatBtn.MouseButton1Click:Connect(function()
+    if MainFrame.Visible then
+        HideUI()
+        FloatBtn.TextColor3 = Palette.Gray
+        FloatStroke.Color = Palette.Gray
+    else
+        ShowUI()
+        FloatBtn.TextColor3 = Palette.Pink
+        FloatStroke.Color = Palette.Pink
+    end
 end)
 
 -- SIDEBAR
@@ -1016,7 +1070,7 @@ TweenService:Create(firstFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.
 }):Play()
 activeTab = "Combat"
 
--- ISI TAB COMBAT (Bypass SUDAH DIHAPUS DARI SINI)
+-- ISI TAB COMBAT
 createLabel(CombatTab, "COMBAT SECTION", Palette.Red)
 
 createToggle(CombatTab, "Macro", "Auto-fire saat tahan LMB", Palette.Red, false, function(s)
@@ -1073,33 +1127,24 @@ createToggle(FPSTab, "Day Sky", "Langit siang cerah", Palette.Blue, false, funct
 end)
 
 -- TOGGLE UI (RightShift)
-local uiVisible = true
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
     if input.KeyCode == Enum.KeyCode.RightShift then
-        uiVisible = not uiVisible
-        if uiVisible then
-            MainFrame.Visible = true
-            MainFrame.Size = UDim2.new(0, 0, 0, 0)
-            MainFrame.BackgroundTransparency = 1
-            TweenService:Create(MainFrame, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-                Size = UDim2.new(0, 520, 0, 380),
-                BackgroundTransparency = 0
-            }):Play()
+        if MainFrame.Visible then
+            HideUI()
+            FloatBtn.TextColor3 = Palette.Gray
+            FloatStroke.Color = Palette.Gray
         else
-            TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-                Size = UDim2.new(0, 0, 0, 0),
-                BackgroundTransparency = 1
-            }):Play()
-            task.wait(0.35)
-            MainFrame.Visible = false
+            ShowUI()
+            FloatBtn.TextColor3 = Palette.Pink
+            FloatStroke.Color = Palette.Pink
         end
     end
 end)
 
 print("============================================")
 print(" MTS Masyarikul Anwar UI v9")
-print(" Bypass: AUTO START (Tanpa Toggle)")
-print(" Fitur : Combat & FPS Boost")
-print(" Tombol: [RightShift] = Show/Hide UI")
+print(" Float Button : [MTS] di kiri layar")
+print(" Bypass       : AUTO START")
+print(" Tombol       : [RightShift] = Show/Hide UI")
 print("============================================")
