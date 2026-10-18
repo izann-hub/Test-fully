@@ -1,6 +1,14 @@
 --[[
     JENOWA STORE | Silent Aim + VISUAL
-    Fixed: Default OFF, UI muncul, no duplicate toggle.
+    Anti-Freeze Edition
+    Valid. Konsisten. Praktik.
+    
+    Perbaikan:
+    - Satu RenderStepped (FOV + RGB)
+    - RGB update tiap 3 frame
+    - Decorate hanya 2 level (GetChildren rekursif)
+    - Cache target di Heartbeat
+    - task.wait sebelum Decorate
 ]]
 
 -- ============================================================
@@ -37,7 +45,7 @@ _G.SilentAim    = false
 _G.AimPart      = "Head"
 _G.FOVRadius    = 120
 _G.TeamCheck    = false
-_G.ShowFOV      = false   -- default OFF
+_G.ShowFOV      = false
 _G.FOVThickness = 1
 _G.FOVColor     = Color3.fromRGB(255, 255, 255)
 
@@ -69,8 +77,11 @@ FOVCircle.Color        = _G.FOVColor
 FOVCircle.Visible      = false
 
 -- ============================================================
--- UTIL
+-- CACHE TARGET (Heartbeat, bukan tiap hook)
 -- ============================================================
+local cachedTarget = nil
+local cachedTargetTime = 0
+
 local function GetTarget()
     local mousePos = UserInputService:GetMouseLocation()
     local closest, closestDist = nil, _G.FOVRadius
@@ -97,6 +108,16 @@ local function GetTarget()
     return closest
 end
 
+-- Update cache tiap 0.1 detik (bukan tiap frame)
+task.spawn(function()
+    while task.wait(0.1) do
+        cachedTarget = GetTarget()
+    end
+end)
+
+-- ============================================================
+-- PATCH ARGUMEN
+-- ============================================================
 local function PatchArgs(args, origin, targetPos)
     if type(args[1]) == "table" then
         local t = args[1]
@@ -128,32 +149,16 @@ oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
     local method = getnamecallmethod()
 
     if _G.SilentAim and method == "FireServer" and validRemotes[self.Name] then
-        local target = GetTarget()
-        if target then
+        local target = cachedTarget
+        if target and target.Parent then
             local origin = Camera.CFrame.Position
-            local targetPos = target.Position
             local args = {...}
-            args = PatchArgs(args, origin, targetPos)
+            args = PatchArgs(args, origin, target.Position)
             return oldNamecall(self, unpack(args))
         end
     end
 
     return oldNamecall(self, ...)
-end)
-
--- ============================================================
--- RENDER LOOP (FOV)
--- ============================================================
-RunService.RenderStepped:Connect(function()
-    if _G.ShowFOV then
-        FOVCircle.Position  = UserInputService:GetMouseLocation()
-        FOVCircle.Radius    = _G.FOVRadius
-        FOVCircle.Thickness = _G.FOVThickness
-        FOVCircle.Color     = _G.FOVColor
-        FOVCircle.Visible   = true
-    else
-        FOVCircle.Visible = false
-    end
 end)
 
 -- ============================================================
@@ -173,10 +178,10 @@ local Window = Rayfield:CreateWindow({
     KeySystem = false
 })
 
-task.wait(0.1) -- beri waktu Rayfield render
+task.wait(0.3)
 
 -- ============================================================
--- TAB 1: SILENT AIM
+-- TAB 1
 -- ============================================================
 local Tab1 = Window:CreateTab("Silent Aim", 4483362458)
 Tab1:CreateSection("Silent Aim")
@@ -221,7 +226,7 @@ Tab1:CreateToggle({
 })
 
 -- ============================================================
--- TAB 2: VISUAL (tanpa toggle FOV — sudah ada di Tab1)
+-- TAB 2
 -- ============================================================
 local Tab2 = Window:CreateTab("VISUAL", 4483362458)
 Tab2:CreateSection("FOV Visual")
@@ -253,18 +258,16 @@ Tab2:CreateColorPicker({
 })
 
 -- ============================================================
--- BLACK BG + WHITE + RGB
+-- DECORATE (2 LEVEL, RINGAN)
 -- ============================================================
 local rgbStrokes   = {}
 local whiteStrokes = {}
 
 local function ApplyBackgroundBlack(instance)
-    if not instance then return end
     pcall(function() instance.BackgroundColor3 = BLACK end)
 end
 
 local function ApplyWhiteStroke(instance, thickness)
-    if not instance then return end
     pcall(function()
         local stroke = Instance.new("UIStroke")
         stroke.Color = WHITE
@@ -277,7 +280,6 @@ local function ApplyWhiteStroke(instance, thickness)
 end
 
 local function ApplyRGBStroke(instance, thickness)
-    if not instance then return end
     pcall(function()
         local stroke = Instance.new("UIStroke")
         stroke.Color = Color3.fromRGB(255, 0, 0)
@@ -296,24 +298,34 @@ local function Decorate(instance, whiteThickness, rgbThickness)
     ApplyRGBStroke(instance, rgbThickness)
 end
 
+task.wait(0.5) -- beri waktu Rayfield render
+
 pcall(function()
     local mainFrame = Window.Frame or Window.Main or Window.Root
     if mainFrame then Decorate(mainFrame, 2, 1) end
 end)
 
-local allTabs = {Tab1, Tab2}
-for _, tab in ipairs(allTabs) do
+for _, tab in ipairs({Tab1, Tab2}) do
     pcall(function()
         if tab and tab.Frame then Decorate(tab.Frame, 2, 1) end
     end)
+    -- Hanya 2 level: Frame → children → grandchildren
     pcall(function()
         if tab and tab.Frame then
-            for _, descendant in ipairs(tab.Frame:GetDescendants()) do
-                if descendant:IsA("Frame") then
-                    Decorate(descendant, 1, 1)
-                elseif descendant:IsA("TextButton") then
-                    ApplyBackgroundBlack(descendant)
-                    ApplyRGBStroke(descendant, 1)
+            for _, child in ipairs(tab.Frame:GetChildren()) do
+                if child:IsA("Frame") then
+                    Decorate(child, 1, 1)
+                    for _, grandchild in ipairs(child:GetChildren()) do
+                        if grandchild:IsA("Frame") then
+                            Decorate(grandchild, 1, 1)
+                        elseif grandchild:IsA("TextButton") then
+                            ApplyBackgroundBlack(grandchild)
+                            ApplyRGBStroke(grandchild, 1)
+                        end
+                    end
+                elseif child:IsA("TextButton") then
+                    ApplyBackgroundBlack(child)
+                    ApplyRGBStroke(child, 1)
                 end
             end
         end
@@ -321,18 +333,36 @@ for _, tab in ipairs(allTabs) do
 end
 
 -- ============================================================
--- RGB LOOP
+-- SATU LOOP: FOV + RGB (RGB tiap 3 frame)
 -- ============================================================
 local hue = 0
+local frameCount = 0
+
 RunService.RenderStepped:Connect(function()
-    hue = (hue + RGB_SPEED) % 1
-    local color = Color3.fromHSV(hue, RGB_SATURATION, RGB_VALUE)
-    for i = #rgbStrokes, 1, -1 do
-        local stroke = rgbStrokes[i]
-        if stroke and stroke.Parent then
-            stroke.Color = color
-        else
-            table.remove(rgbStrokes, i)
+    frameCount = frameCount + 1
+
+    -- FOV circle
+    if _G.ShowFOV then
+        FOVCircle.Position  = UserInputService:GetMouseLocation()
+        FOVCircle.Radius    = _G.FOVRadius
+        FOVCircle.Thickness = _G.FOVThickness
+        FOVCircle.Color     = _G.FOVColor
+        FOVCircle.Visible   = true
+    else
+        FOVCircle.Visible = false
+    end
+
+    -- RGB tiap 3 frame
+    if frameCount % 3 == 0 and #rgbStrokes > 0 then
+        hue = (hue + RGB_SPEED * 3) % 1
+        local color = Color3.fromHSV(hue, RGB_SATURATION, RGB_VALUE)
+        for i = #rgbStrokes, 1, -1 do
+            local stroke = rgbStrokes[i]
+            if stroke and stroke.Parent then
+                stroke.Color = color
+            else
+                table.remove(rgbStrokes, i)
+            end
         end
     end
 end)
@@ -342,8 +372,8 @@ end)
 -- ============================================================
 Rayfield:Notify({
     Title = "JENOWA STORE",
-    Content = bypassOk and "Bypass ON. Silent Aim + VISUAL loaded. Semua off." or "Bypass OFF. Silent Aim + VISUAL loaded. Semua off.",
+    Content = bypassOk and "Bypass ON. Anti-freeze aktif." or "Bypass OFF. Anti-freeze aktif.",
     Duration = 4
 })
 
-print("[JENOWA STORE] Loaded. Default OFF. Bypass:", bypassOk and "ON" or "OFF")
+print("[JENOWA STORE] Loaded. Anti-freeze. Default OFF. Bypass:", bypassOk and "ON" or "OFF")
