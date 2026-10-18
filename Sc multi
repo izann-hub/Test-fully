@@ -1,6 +1,7 @@
 -- ============================================================
 -- MULTIFARM SB ULTIMATE - SEPARATED SERVICE
 -- GHOST.LOL STYLE + HIDE NAME + AUTO SIT MOTOR
+-- DELTA COMPATIBLE (UI di PlayerGui)
 -- ============================================================
 
 print("LOADING MULTIFARM ULTIMATE...")
@@ -79,7 +80,7 @@ if not bit32.bxor then
     end
 end
 
-local emOk, emErr = pcall(function()
+pcall(function()
     local gv = getgenv()
     local function tryFind(name, ln)
         local fn = filtergc("function", { StartLine = ln }, true)
@@ -96,39 +97,6 @@ local emOk, emErr = pcall(function()
         gv.Hyphon_Encode = debug.getupvalue(gv.Hyphon_2102, 1)
         gv.Hyphon_Decode = debug.getupvalue(gv.Hyphon_2102, 21)
     end
-    gv.Hyphon_Script = nil
-    pcall(function()
-        for _, o in pairs(getnilinstances()) do
-            if o:IsA("Script") and o.Name:len() == 32 then gv.Hyphon_Script = o; break end
-        end
-    end)
-    if gv.Hyphon_2102 and gv.Hyphon_2247 and gv.Hyphon_2846 and gv.Hyphon_fake_dec then
-        pcall(function()
-            local HC = cloneref(game:GetService("MemoryStoreService")):FindFirstChild("Hyphon_Check")
-            local RF = debug.getupvalue(gv.Hyphon_2247, 6)
-            if HC then local o = hookfunction(HC.FireServer, function(s, ...) return o(s, ...) end) end
-            if RF then local o = hookfunction(RF.InvokeServer, function(s, ...)
-                local a = table.pack(...)
-                if type(a[1]) == "table" and a[1][1] then gv.T1 = a[1][1]; gv.T2 = a[1][2]; gv.T3 = a[1][6]; gv.T4 = a[1][11] end
-                return o(s, ...)
-            end) end
-        end)
-        if bit32 and bit32.bxor and gv.Hyphon_Script and checkcaller and getcallingscript then
-            pcall(function()
-                local o = hookfunction(bit32.bxor, function(a, b)
-                    if not checkcaller() and getcallingscript() == gv.Hyphon_Script then return task.wait(9e9) end
-                    return o(a, b)
-                end)
-            end)
-        end
-    end
-    pcall(function()
-        for _, Object in pairs(getgc(true)) do
-            if typeof(Object) == "table" and typeof(rawget(Object, "Homeless")) == "table" then
-                if rawget(Object.Homeless, "MaxDistance") then Object.Homeless.MaxDistance = 9e9 end
-            end
-        end
-    end)
 end)
 getgenv().HyphonReady = true
 getgenv().Emulator_Set = true
@@ -137,32 +105,6 @@ pcall(function()
     local player = game:GetService("Players").LocalPlayer
     if player then player.Kick = function() return end end
     game:GetService("Players").Kick = function() return end
-end)
-
-task.spawn(function()
-    while getgenv().MULTIFARM_ULTIMATE do
-        pcall(function()
-            local coregui = game:GetService("CoreGui")
-            local playerGui = game:GetService("Players").LocalPlayer and game:GetService("Players").LocalPlayer.PlayerGui
-            for _, gui in pairs(coregui:GetChildren()) do
-                local name = tostring(gui.Name or ""):lower()
-                if name:find("kick") or name:find("ban") or name:find("disconnect") or
-                   name:find("error") or name:find("moderation") or name:find("warning") or
-                   name:find("detection") or name:find("handshake") then
-                    gui:Destroy()
-                end
-            end
-            if playerGui then
-                for _, gui in pairs(playerGui:GetChildren()) do
-                    local name = tostring(gui.Name or ""):lower()
-                    if name:find("kick") or name:find("ban") or name:find("detection") then
-                        gui:Destroy()
-                    end
-                end
-            end
-        end)
-        task.wait(0.5)
-    end
 end)
 
 print("BYPASS ACTIVE")
@@ -177,7 +119,7 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local VirtualUser = game:GetService("VirtualUser")
 local TweenService = game:GetService("TweenService")
-local VirtualInputManager = cloneref(game:GetService("VirtualInputManager"))
+local VirtualInputManager = game:GetService("VirtualInputManager")
 local ProximityPromptService = game:GetService("ProximityPromptService")
 local CoreGui = game:GetService("CoreGui")
 
@@ -198,7 +140,7 @@ local DRIVER_SEAT_NAMES        = { "DriveSeat", "DriverSeat", "Driver", "Drive",
 local HOLD_DURATION            = 5
 local WALK_BEFORE_SIT_DURATION = 0.9
 local SIDE_OFFSET              = 3.5
-local REQUIRE_OWN_BIKE         = true
+local REQUIRE_OWN_BIKE         = false
 
 -- ============================================================
 -- STATE
@@ -243,6 +185,9 @@ local Locations = {
 local RemoteEvents = ReplicatedStorage:FindFirstChild("RemoteEvents")
 local Reliable = RemoteEvents and RemoteEvents:FindFirstChild("ReliableRemoteEvent")
 local RPC = RemoteEvents and RemoteEvents:FindFirstChild("RPC")
+
+if not RemoteEvents then warn("[INIT] RemoteEvents nil") end
+if not Reliable then warn("[INIT] ReliableRemoteEvent nil") end
 
 -- ============================================================
 -- BUFFER
@@ -503,64 +448,6 @@ local function TeleportDeath(targetPos)
 end
 
 -- ============================================================
--- TWEEN KE BIKE
--- ============================================================
-local function TweenToBike(targetPos, duration)
-    duration = duration or 3
-    
-    local char = LP.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return false end
-    
-    local startPos = hrp.Position
-    local dist = (targetPos - startPos).Magnitude
-    
-    local speed = SIT_BIKE_TWEEN_SPEED
-    local calculatedDuration = math.clamp(dist / speed, 1, 10)
-    
-    local style = Enum.EasingStyle.Linear
-    local dir = Enum.EasingDirection.Out
-    
-    local charParts = {}
-    for _, part in pairs(char:GetDescendants()) do
-        if part:IsA("BasePart") then
-            charParts[part] = {
-                Anchored = part.Anchored,
-                CFrame = part.CFrame
-            }
-            part.Anchored = true
-        end
-    end
-    
-    local tweens = {}
-    local startCF = hrp.CFrame
-    local offset = CFrame.new(targetPos) * (startCF - startCF.Position) - startCF
-    
-    for part, data in pairs(charParts) do
-        if part and part.Parent then
-            local targetCF = data.CFrame + offset.Position
-            local t = TweenService:Create(part, 
-                TweenInfo.new(calculatedDuration, style, dir),
-                { CFrame = targetCF })
-            table.insert(tweens, t)
-        end
-    end
-    
-    for _, t in ipairs(tweens) do t:Play() end
-    if tweens[1] then tweens[1].Completed:Wait() end
-    
-    for part, data in pairs(charParts) do
-        if part and part.Parent then
-            part.Anchored = data.Anchored
-            part.AssemblyLinearVelocity = Vector3.zero
-            part.AssemblyAngularVelocity = Vector3.zero
-        end
-    end
-    
-    return true
-end
-
--- ============================================================
 -- TELEPORT AUTO DETECT
 -- ============================================================
 local function TeleportTo(targetPos)
@@ -597,27 +484,6 @@ local function ClickButton(btn)
     end)
     if ok then task.wait(0.2) end
     return ok
-end
-
-local function ClickDialogOption(o1)
-    if not o1 then return end
-    local done = false
-    
-    local c = getconnections(o1.MouseButton1Click)
-    if #c > 0 then
-        pcall(function() c[1].Function(o1); done = true end)
-        if not done then pcall(function() c[1]:Fire(); done = true end) end
-    end
-    
-    if not done then
-        local c2 = getconnections(o1.Activated)
-        if #c2 > 0 then
-            pcall(function() c2[1].Function(o1); done = true end)
-            if not done then pcall(function() c2[1]:Fire(); done = true end) end
-        end
-    end
-    
-    if not done then ClickButton(o1) end
 end
 
 local function findClearSpot(target, radius)
@@ -917,7 +783,7 @@ local function AutoSitMotor()
         local t0 = os.clock()
         repeat
             task.wait(0.15)
-            bike = FindMyBikeAuto()
+            bike = FindMyBikeAuto() or FindBike()
         until bike or (os.clock() - t0) > 5
         if not bike then
             print("AutoSit: bike not spawned")
@@ -992,13 +858,6 @@ end
 getgenv().AutoSitMotor = AutoSitMotor
 
 -- ============================================================
--- SPAWN + SIT (MANUAL BUTTON)
--- ============================================================
-local function SpawnAndSitOnBike()
-    return AutoSitMotor()
-end
-
--- ============================================================
 -- TELEPORT TO DEALER
 -- ============================================================
 local function TeleportToDealerOnly()
@@ -1007,22 +866,6 @@ local function TeleportToDealerOnly()
     task.wait(0.5)
     print("Di Dealer")
 end
-
--- ============================================================
--- INSTANT INTERACT
--- ============================================================
-pcall(function()
-    local pps = ProximityPromptService
-    if pps then
-        pps.PromptShown:Connect(function(prompt)
-            pcall(function()
-                if prompt and prompt.HoldDuration and prompt.HoldDuration > 0 then
-                    prompt.HoldDuration = 0.1
-                end
-            end)
-        end)
-    end
-end)
 
 -- ============================================================
 -- EQUIP / UNEQUIP
@@ -1745,17 +1588,19 @@ local function StartFarmFlow()
 
     if Reliable and RELIABLE_ARG_SPAWN_MOTOR then
         pcall(function() Reliable:FireServer(RELIABLE_ARG_SPAWN_MOTOR) end)
+    else
+        warn("[FLOW] Reliable atau buffer nil — spawn tidak jalan")
     end
 
     local t0 = os.clock()
     local bike
     repeat
         task.wait(0.15)
-        bike = FindMyBikeAuto()
-    until bike or (os.clock() - t0) > 5
+        bike = FindBike() or FindMyBikeAuto()
+    until bike or (os.clock() - t0) > 6
 
     if not bike then
-        print("[FLOW] Motor gagal spawn")
+        warn("[FLOW] Motor tidak muncul setelah 6 detik")
         return false
     end
     FarmState.BikeSpawned = true
@@ -1765,7 +1610,12 @@ local function StartFarmFlow()
 
     local seat = FindDriveSeat(bike)
     if not seat or not IsDriverSeat(seat) then
-        print("[FLOW] Seat tidak ada")
+        warn("[FLOW] Seat tidak ada di motor: " .. tostring(bike))
+        for _, d in ipairs(bike:GetDescendants()) do
+            if d:IsA("Seat") or d:IsA("VehicleSeat") then
+                warn("[FLOW] Seat: " .. d.Name .. " (" .. d.ClassName .. ")")
+            end
+        end
         return false
     end
 
@@ -1803,7 +1653,7 @@ local function StartFarmFlow()
     until (os.clock() - t1) > 3
 
     if not okSit then
-        print("[FLOW] Gagal duduk motor")
+        warn("[FLOW] Gagal duduk motor")
         return false
     end
 
@@ -1959,13 +1809,11 @@ LP.CharacterAdded:Connect(function()
 end)
 
 -- ============================================================
--- UI
+-- UI (DELTA COMPATIBLE — pakai PlayerGui)
 -- ============================================================
 pcall(function()
     local old = PlayerGui:FindFirstChild("MultiFarmUI")
     if old then old:Destroy() end
-    local old2 = CoreGui:FindFirstChild("MultiFarmUI")
-    if old2 then old2:Destroy() end
 end)
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -1973,10 +1821,11 @@ ScreenGui.Name = "MultiFarmUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.IgnoreGuiInset = true
-ScreenGui.Parent = CoreGui
+ScreenGui.DisplayOrder = 999
+ScreenGui.Parent = PlayerGui
 
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 320, 0, 420)
+MainFrame.Size = UDim2.new(0, 320, 0, 440)
 MainFrame.Position = UDim2.new(0.5, -160, 0.3, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 30)
 MainFrame.BackgroundTransparency = 0.05
@@ -2351,7 +2200,7 @@ task.spawn(function()
 end)
 
 print("========================================")
-print("MULTIFARM ULTIMATE LOADED")
+print("MULTIFARM ULTIMATE LOADED (DELTA)")
 print("========================================")
 print("F9 = Toggle UI")
 print("F6 = Start Farm")
