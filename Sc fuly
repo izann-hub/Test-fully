@@ -1,10 +1,6 @@
 --[[
     JENOWA STORE | Silent Aim + VISUAL
-    RGB Border + Black Background Edition
-    Valid. Konsisten. Praktik.
-    
-    Tab 1: Silent Aim
-    Tab 2: VISUAL (FOV only)
+    Fixed: Default OFF, UI muncul, no duplicate toggle.
 ]]
 
 -- ============================================================
@@ -18,7 +14,7 @@ local Camera            = Workspace.CurrentCamera
 local LocalPlayer       = Players.LocalPlayer
 
 -- ============================================================
--- BYPASS (UNIVERSAL)
+-- BYPASS
 -- ============================================================
 local bypassOk, bypass = pcall(function()
     local src = game:HttpGet("https://raw.githubusercontent.com/Securedlinks/Bypass.com/main/universalbypass.lua")
@@ -35,24 +31,22 @@ else
 end
 
 -- ============================================================
--- STATE / FLAGS
+-- STATE / FLAGS — SEMUA DEFAULT FALSE
 -- ============================================================
 _G.SilentAim    = false
 _G.AimPart      = "Head"
 _G.FOVRadius    = 120
 _G.TeamCheck    = false
-_G.ShowFOV      = true
+_G.ShowFOV      = false   -- default OFF
 _G.FOVThickness = 1
 _G.FOVColor     = Color3.fromRGB(255, 255, 255)
 
--- RGB Config
 local RGB_SPEED      = 0.005
 local RGB_SATURATION = 1
 local RGB_VALUE      = 1
 local BLACK          = Color3.fromRGB(0, 0, 0)
 local WHITE          = Color3.fromRGB(255, 255, 255)
 
--- Nama remote gun yang valid
 local validRemotes = {
     ["RE_Fire"]    = true,
     ["RE_Shoot"]   = true,
@@ -63,7 +57,7 @@ local validRemotes = {
 }
 
 -- ============================================================
--- DRAWING (FOV CIRCLE)
+-- DRAWING
 -- ============================================================
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Thickness    = _G.FOVThickness
@@ -72,10 +66,10 @@ FOVCircle.Radius       = _G.FOVRadius
 FOVCircle.Filled       = false
 FOVCircle.Transparency = 0.8
 FOVCircle.Color        = _G.FOVColor
-FOVCircle.Visible      = _G.ShowFOV
+FOVCircle.Visible      = false
 
 -- ============================================================
--- UTIL: CARI TARGET
+-- UTIL
 -- ============================================================
 local function GetTarget()
     local mousePos = UserInputService:GetMouseLocation()
@@ -103,9 +97,6 @@ local function GetTarget()
     return closest
 end
 
--- ============================================================
--- UTIL: PATCH ARGUMEN
--- ============================================================
 local function PatchArgs(args, origin, targetPos)
     if type(args[1]) == "table" then
         local t = args[1]
@@ -130,7 +121,7 @@ local function PatchArgs(args, origin, targetPos)
 end
 
 -- ============================================================
--- HOOK __namecall
+-- HOOK
 -- ============================================================
 local oldNamecall
 oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
@@ -182,6 +173,8 @@ local Window = Rayfield:CreateWindow({
     KeySystem = false
 })
 
+task.wait(0.1) -- beri waktu Rayfield render
+
 -- ============================================================
 -- TAB 1: SILENT AIM
 -- ============================================================
@@ -222,23 +215,16 @@ Tab1:CreateToggle({
 
 Tab1:CreateToggle({
     Name = "Show FOV Circle",
-    CurrentValue = true,
+    CurrentValue = false,
     Flag = "ShowFOVToggle",
     Callback = function(v) _G.ShowFOV = v end
 })
 
 -- ============================================================
--- TAB 2: VISUAL
+-- TAB 2: VISUAL (tanpa toggle FOV — sudah ada di Tab1)
 -- ============================================================
 local Tab2 = Window:CreateTab("VISUAL", 4483362458)
 Tab2:CreateSection("FOV Visual")
-
-Tab2:CreateToggle({
-    Name = "Show FOV Circle",
-    CurrentValue = true,
-    Flag = "VisualShowFOVToggle",
-    Callback = function(v) _G.ShowFOV = v end
-})
 
 Tab2:CreateSlider({
     Name = "FOV Radius",
@@ -267,7 +253,7 @@ Tab2:CreateColorPicker({
 })
 
 -- ============================================================
--- BLACK BACKGROUND + WHITE + RGB STROKE
+-- BLACK BG + WHITE + RGB
 -- ============================================================
 local rgbStrokes   = {}
 local whiteStrokes = {}
@@ -335,7 +321,7 @@ for _, tab in ipairs(allTabs) do
 end
 
 -- ============================================================
--- RGB ANIMATION LOOP
+-- RGB LOOP
 -- ============================================================
 local hue = 0
 RunService.RenderStepped:Connect(function()
@@ -356,8 +342,8 @@ end)
 -- ============================================================
 Rayfield:Notify({
     Title = "JENOWA STORE",
-    Content = bypassOk and "Bypass ON. Silent Aim + VISUAL loaded." or "Bypass OFF. Silent Aim + VISUAL loaded.",
+    Content = bypassOk and "Bypass ON. Silent Aim + VISUAL loaded. Semua off." or "Bypass OFF. Silent Aim + VISUAL loaded. Semua off.",
     Duration = 4
 })
 
-print("[JENOWA STORE] Silent Aim + VISUAL loaded. Bypass:", bypassOk and "ON" or "OFF")
+print("[JENOWA STORE] Loaded. Default OFF. Bypass:", bypassOk and "ON" or "OFF")
