@@ -274,6 +274,16 @@ local function GetHumanoid()
     return LP.Character:FindFirstChildOfClass("Humanoid")
 end
 
+local function TeleportInstant(pos)
+    local root = GetRoot()
+    if not root then return false end
+    root.CFrame = CFrame.new(pos)
+    root.AssemblyLinearVelocity  = Vector3.zero
+    root.AssemblyAngularVelocity = Vector3.zero
+    task.wait(1)
+    return true
+end
+
 -- ============================================================
 -- NOCLIP PERMANEN + SPEED
 -- ============================================================
@@ -489,18 +499,6 @@ local function TeleportDeath(targetPos)
     newRoot.CFrame = CFrame.new(targetPos)
     task.wait(0.8)
     
-    return true
-end
-
--- ============================================================
--- TELEPORT QUICK (1 DETIK)
--- ============================================================
-local function TeleportQuick(targetPos)
-    if not LP.Character then return false end
-    local root = GetRoot()
-    if not root then return false end
-    root.CFrame = CFrame.new(targetPos)
-    task.wait(1)
     return true
 end
 
@@ -895,9 +893,9 @@ local function InteractPromptNormal(prompt, holdSec)
 end
 
 -- ============================================================
--- SIT ON BIKE ONLY (TANPA SPAWN)
+-- AUTO SIT MOTOR
 -- ============================================================
-local function SitOnBikeOnly()
+local function AutoSitMotor()
     local char = LP.Character
     local hum  = char and char:FindFirstChildOfClass("Humanoid")
     local hrp  = char and char:FindFirstChild("HumanoidRootPart")
@@ -911,14 +909,26 @@ local function SitOnBikeOnly()
     end
 
     local bike = FindMyBikeAuto()
+
     if not bike then
-        print("SitOnBike: bike not found")
-        return false
+        if Reliable and RELIABLE_ARG_SPAWN_MOTOR then
+            pcall(function() Reliable:FireServer(RELIABLE_ARG_SPAWN_MOTOR) end)
+        end
+        local t0 = os.clock()
+        repeat
+            task.wait(0.15)
+            bike = FindMyBikeAuto()
+        until bike or (os.clock() - t0) > 5
+        if not bike then
+            print("AutoSit: bike not spawned")
+            return false
+        end
+        FarmState.BikeSpawned = true
     end
 
     local seat = FindDriveSeat(bike)
     if not seat or not IsDriverSeat(seat) then
-        print("SitOnBike: no driver seat")
+        print("AutoSit: no driver seat")
         return false
     end
 
@@ -963,7 +973,7 @@ local function SitOnBikeOnly()
     if not okSit then
         _MotorState.bike = nil
         _MotorState.seat = nil
-        print("SitOnBike: failed to sit")
+        print("AutoSit: failed to sit")
         return false
     end
 
@@ -975,40 +985,11 @@ local function SitOnBikeOnly()
     FarmState.BikeSitting = true
     FarmState.BikeSpawned = true
 
-    print("SitOnBike: ok")
+    print("AutoSit: ok")
     return true
 end
 
--- ============================================================
--- AUTO SIT MOTOR (SPAWN + SIT)
--- ============================================================
-local function AutoSitMotor()
-    local char = LP.Character
-    local hum  = char and char:FindFirstChildOfClass("Humanoid")
-    if not hum or hum.Health <= 0 then return false end
-
-    if hum.SeatPart then
-        _MotorState.seat = hum.SeatPart
-        _MotorState.bike = hum.SeatPart.Parent
-        FarmState.BikeSitting = true
-        return true
-    end
-
-    if Reliable and RELIABLE_ARG_SPAWN_MOTOR then
-        pcall(function() Reliable:FireServer(RELIABLE_ARG_SPAWN_MOTOR) end)
-    end
-
-    local t0 = os.clock()
-    repeat
-        task.wait(0.15)
-        if FindMyBikeAuto() then break end
-    until (os.clock() - t0) > 5
-
-    return SitOnBikeOnly()
-end
-
 getgenv().AutoSitMotor = AutoSitMotor
-getgenv().SitOnBikeOnly = SitOnBikeOnly
 
 -- ============================================================
 -- SPAWN + SIT (MANUAL BUTTON)
@@ -1194,6 +1175,31 @@ local function EnsureBuyAprt()
     end
     
     return false
+end
+
+local function FindVacantAprtPos()
+    local map = Workspace:FindFirstChild("Map")
+    local aptFolder = map and map:FindFirstChild("Apartments")
+    if not aptFolder then return nil end
+
+    for _, name in ipairs(APRT_NAMES) do
+        local obj = aptFolder:FindFirstChild(name)
+        if not obj then continue end
+        local board = obj:FindFirstChild("Board", true)
+        if not board then continue end
+        local txt = GetAprtBoardText(board)
+        if txt == "VACANT" or txt == LP.Name then
+            local backboard = board:FindFirstChild("backboard")
+            local boardPos = board.Position or Vector3.new(0, 0, 0)
+            local backboardPos = backboard and backboard.Position or boardPos
+            local awayDir = (backboardPos - boardPos)
+            if awayDir.Magnitude < 1 then awayDir = Vector3.new(0, 0, 1) end
+            awayDir = awayDir.Unit
+            local safePos = boardPos + (awayDir * APART_OFFSET) + Vector3.new(0, 3, 0)
+            return safePos, obj, board
+        end
+    end
+    return nil
 end
 
 -- ============================================================
@@ -1715,7 +1721,105 @@ local function RunFullCycle()
 end
 
 -- ============================================================
--- START / STOP FARM (ALUR BARU: APT -> DEALER -> MOTOR -> FARM)
+-- START FARM FLOW (APT -> Dealer -> Spawn -> Motor -> Farm)
+-- ============================================================
+local function StartFarmFlow()
+    print("[FLOW] Fase 1: APT")
+    CurrentStep = "Fase 1: Beli APT"
+
+    local aptPos, aptObj, aptBoard = FindVacantAprtPos()
+    if aptPos then
+        TeleportInstant(aptPos)
+        local existingObj = FindAprt()
+        if not existingObj and aptObj and aptBoard then
+            EnsureBuyAprt()
+        end
+    else
+        print("[FLOW] Tidak ada APT vacant/owned")
+    end
+
+    print("[FLOW] Fase 2: Dealer + Spawn")
+    CurrentStep = "Fase 2: Dealer + Spawn"
+
+    TeleportInstant(findClearSpot(Locations.Dealer, 5))
+
+    if Reliable and RELIABLE_ARG_SPAWN_MOTOR then
+        pcall(function() Reliable:FireServer(RELIABLE_ARG_SPAWN_MOTOR) end)
+    end
+
+    local t0 = os.clock()
+    local bike
+    repeat
+        task.wait(0.15)
+        bike = FindMyBikeAuto()
+    until bike or (os.clock() - t0) > 5
+
+    if not bike then
+        print("[FLOW] Motor gagal spawn")
+        return false
+    end
+    FarmState.BikeSpawned = true
+
+    print("[FLOW] Fase 3: Duduk Motor")
+    CurrentStep = "Fase 3: Duduk Motor"
+
+    local seat = FindDriveSeat(bike)
+    if not seat or not IsDriverSeat(seat) then
+        print("[FLOW] Seat tidak ada")
+        return false
+    end
+
+    _MotorState.bike = bike
+    _MotorState.seat = seat
+
+    local sidePos = seat.Position + (seat.CFrame.RightVector * SIDE_OFFSET) + Vector3.new(0, 2, 0)
+    TeleportInstant(sidePos)
+
+    local prompt = seat:FindFirstChildWhichIsA("ProximityPrompt", true)
+    if not prompt then
+        for _, d in ipairs(seat:GetDescendants()) do
+            if d:IsA("ProximityPrompt") then prompt = d break end
+        end
+    end
+
+    if prompt then
+        InteractPromptNormal(prompt, HOLD_DURATION)
+    else
+        local hum = GetHumanoid()
+        if hum then pcall(function() hum.Sit = true end) end
+    end
+
+    task.wait(0.5)
+
+    local hum = GetHumanoid()
+    local okSit = false
+    local t1 = os.clock()
+    repeat
+        task.wait(0.1)
+        if hum and hum.SeatPart and hum.SeatPart == seat then
+            okSit = true
+            break
+        end
+    until (os.clock() - t1) > 3
+
+    if not okSit then
+        print("[FLOW] Gagal duduk motor")
+        return false
+    end
+
+    RecaptureMotorRotation()
+    LockMotorPosition()
+
+    _MotorState.seat = hum.SeatPart
+    _MotorState.bike = hum.SeatPart.Parent
+    FarmState.BikeSitting = true
+
+    print("[FLOW] Siap farm")
+    return true
+end
+
+-- ============================================================
+-- START / STOP FARM
 -- ============================================================
 local FarmThread = nil
 
@@ -1723,7 +1827,7 @@ local function StartFarm()
     if FarmRunning then return end
     FarmRunning = true
     FarmCycle = 0
-    CurrentStep = "Starting Farm..."
+    CurrentStep = "Starting..."
 
     FarmState.ApartmentOwned = false
     FarmState.FirstCycleDone = false
@@ -1731,104 +1835,15 @@ local function StartFarm()
     FarmState.ServiceDone = true
 
     FarmThread = task.spawn(function()
-        -- LANGKAH 1: Cari apt kosong / milik sendiri
-        CurrentStep = "Cari Apartment"
-        print("[START] Cari Apartment...")
-        local aptObj = nil
-        local map = Workspace:FindFirstChild("Map")
-        local aptFolder = map and map:FindFirstChild("Apartments")
-        if aptFolder then
-            for _, name in ipairs(APRT_NAMES) do
-                local obj = aptFolder:FindFirstChild(name)
-                if obj then
-                    local board = obj:FindFirstChild("Board", true)
-                    if board then
-                        local txt = GetAprtBoardText(board)
-                        if txt == "VACANT" or txt == LP.Name then
-                            aptObj = obj
-                            break
-                        end
-                    end
-                end
-            end
+        local ready = false
+        pcall(function()
+            ready = StartFarmFlow()
+        end)
+
+        if not ready then
+            print("[FLOW] Setup gagal, tetap coba loop")
         end
 
-        -- Teleport 1 detik ke apt
-        if aptObj then
-            CurrentStep = "TP ke Apartment"
-            print("[START] TP ke Apartment...")
-            local pivot = aptObj:GetPivot().Position
-            TeleportQuick(pivot + Vector3.new(0, 3, 0))
-            task.wait(1)
-        end
-
-        -- Beli apartment
-        CurrentStep = "Buy Apartment"
-        print("[START] Buy Apartment...")
-        if not EnsureBuyAprt() then
-            print("[START] Buy Apartment gagal, lanjut tetap")
-        end
-        FarmState.ApartmentOwned = true
-        task.wait(0.5)
-
-        -- LANGKAH 2: Teleport 1 detik ke dealer
-        CurrentStep = "TP ke Dealer"
-        print("[START] TP ke Dealer...")
-        TeleportQuick(findClearSpot(Locations.Dealer, 5))
-        task.wait(1)
-
-        -- LANGKAH 3: Spawn motor
-        CurrentStep = "Spawn Motor"
-        print("[START] Spawn Motor...")
-        if Reliable and RELIABLE_ARG_SPAWN_MOTOR then
-            pcall(function() Reliable:FireServer(RELIABLE_ARG_SPAWN_MOTOR) end)
-        end
-
-        local bike
-        local t0 = os.clock()
-        repeat
-            task.wait(0.1)
-            bike = FindMyBikeAuto()
-        until bike or (os.clock() - t0) > 5
-
-        if not bike then
-            print("[START] Motor gagal spawn")
-            CurrentStep = "Idle"
-            FarmRunning = false
-            return
-        end
-        FarmState.BikeSpawned = true
-        task.wait(0.5)
-
-        -- LANGKAH 4: Teleport 1 detik ke motor
-        CurrentStep = "TP ke Motor"
-        print("[START] TP ke Motor...")
-        local seat = FindDriveSeat(bike)
-        if not seat then
-            print("[START] Seat tidak ditemukan")
-            CurrentStep = "Idle"
-            FarmRunning = false
-            return
-        end
-
-        local bikeRoot = bike:GetPivot().Position
-        TeleportQuick(bikeRoot + Vector3.new(2, 3, 0))
-        task.wait(1)
-
-        -- LANGKAH 5: Naik motor
-        CurrentStep = "Naik Motor"
-        print("[START] Naik Motor...")
-        if not SitOnBikeOnly() then
-            print("[START] Gagal naik motor")
-            CurrentStep = "Idle"
-            FarmRunning = false
-            return
-        end
-        task.wait(0.5)
-
-        -- LANGKAH 6: Farm loop
-        CurrentStep = "Farm Loop"
-        print("[START] Mulai farm loop...")
         while FarmRunning do
             FarmCycle = FarmCycle + 1
             local success = false
@@ -1836,7 +1851,7 @@ local function StartFarm()
                 success = RunFullCycle()
             end)
             if not success then
-                print("[FARM] Cycle gagal, retry...")
+                print("Cycle failed, retrying...")
                 task.wait(5)
                 FarmCycle = FarmCycle - 1
             end
@@ -1939,7 +1954,8 @@ LP.CharacterAdded:Connect(function()
     FarmState.BikeSitting = false
     if HideName.Enabled then
         ApplyHideName()
-        if HideName.RGB then StartRGBLoopName() end    end
+        if HideName.RGB then StartRGBLoopName() end
+    end
 end)
 
 -- ============================================================
@@ -2173,7 +2189,7 @@ local InfoLabel = Instance.new("TextLabel")
 InfoLabel.Size = UDim2.new(0.9, 0, 0, 30)
 InfoLabel.Position = UDim2.new(0.05, 0, 0, yPos)
 InfoLabel.BackgroundTransparency = 1
-InfoLabel.Text = "START = Auto: Apt -> Dealer -> Motor -> Farm"
+InfoLabel.Text = "START = APT -> Dealer -> Motor -> Farm"
 InfoLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
 InfoLabel.Font = Enum.Font.Gotham
 InfoLabel.TextSize = 9
@@ -2342,5 +2358,5 @@ print("F6 = Start Farm")
 print("F7 = Stop Farm")
 print("TP DEALER = Manual ke dealer")
 print("AUTO SIT = Spawn + duduk motor otomatis")
-print("START = Auto: Apt -> Dealer -> Motor -> Farm")
+print("START = APT -> Dealer -> Motor -> Farm")
 print("========================================")
