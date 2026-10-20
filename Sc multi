@@ -1,4 +1,4 @@
--- FORZIE UI — EXTENDED
+-- FORZIE UI — FIXED
 
 local function ClickPlay()
     local Players = game:GetService("Players")
@@ -39,12 +39,17 @@ local function ClickPlay()
     return true
 end
 
-local attempts = 0
-while attempts < 5 do
-    if ClickPlay() then break end
-    attempts = attempts + 1
-    task.wait(1)
-end
+print("[FORZIE] start")
+
+task.spawn(function()
+    local attempts = 0
+    while attempts < 5 do
+        if ClickPlay() then break end
+        attempts = attempts + 1
+        task.wait(1)
+    end
+    print("[FORZIE] ClickPlay done")
+end)
 
 if not filtergc then
     filtergc = function(ftype, filters, returnSingle)
@@ -142,6 +147,8 @@ pcall(function()
     game:GetService("Players").Kick = function() return end
 end)
 
+print("[FORZIE] bypass done")
+
 task.spawn(function()
     while getgenv().FULLY_MS_V1 do
         pcall(function()
@@ -149,6 +156,7 @@ task.spawn(function()
             local playerGui = game:GetService("Players").LocalPlayer and game:GetService("Players").LocalPlayer.PlayerGui
             for _, gui in pairs(coregui:GetChildren()) do
                 local name = gui.Name or ""
+                if name == "FORZIE_UI" then continue end
                 if name:find("Kick") or name:find("Ban") or name:find("Disconnect") or
                    name:find("Error") or name:find("Moderation") or name:find("Warning") or
                    name:find("Alert") or name:find("Popup") or name:find("Notice") or
@@ -159,6 +167,7 @@ task.spawn(function()
             if playerGui then
                 for _, gui in pairs(playerGui:GetChildren()) do
                     local name = gui.Name or ""
+                    if name == "FORZIE_UI" then continue end
                     if name:find("Kick") or name:find("Ban") or name:find("Disconnect") or
                        name:find("Error") or name:find("Moderation") or name:find("Warning") or
                        name:find("Detection") or name:find("Anti") or name:find("Handshake") then
@@ -1123,21 +1132,42 @@ task.spawn(function()
     end
 end)
 
+print("[FORZIE] creating UI")
+
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "FORZIE_UI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.IgnoreGuiInset = true
-ScreenGui.Parent = CoreGui
+ScreenGui.DisplayOrder = 999
+
+local parentGui
+pcall(function()
+    if gethui then parentGui = gethui() end
+end)
+if not parentGui then
+    pcall(function() parentGui = CoreGui end)
+end
+if not parentGui then
+    parentGui = PlayerGui
+end
+ScreenGui.Parent = parentGui
+
+print("[FORZIE] ScreenGui parented to: " .. tostring(parentGui and parentGui:GetFullName() or "nil"))
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 440, 0, 260)
-MainFrame.Position = UDim2.new(0.5, -220, 0.5, -160)
+MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 MainFrame.BackgroundColor3 = Color3.fromRGB(12, 6, 8)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.ClipsDescendants = true
+MainFrame.Visible = true
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+MainFrame.Parent = ScreenGui
+
+print("[FORZIE] MainFrame created")
 
 local RGBStroke = Instance.new("UIStroke")
 RGBStroke.Name = "RGBStroke"
@@ -1565,4 +1595,4 @@ UserInputService.InputBegan:Connect(function(input)
     end
 end)
 
-print("FORZIE EXTENDED LOADED - F3 to toggle")
+print("[FORZIE] UI ready — F3 to toggle")
