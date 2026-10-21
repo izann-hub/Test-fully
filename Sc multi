@@ -3,7 +3,7 @@
 -- Display: FAHRIL
 -- Background: rbxassetid://86196334070679
 -- NoClip: FIXED (Permanent + Anti-Balik + Auto Re-attach)
--- Tween Speed: 21
+-- Tween Speed: 24
 -- ============================================================
 
 -- ============================================================
@@ -917,7 +917,7 @@ local function af_Tween(cf)
     local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
     local dist = (hrp.Position - cf.Position).Magnitude
-    local tw = TweenService:Create(hrp, TweenInfo.new(math.max(dist / 21, 0.05), Enum.EasingStyle.Linear), { CFrame = cf })
+    local tw = TweenService:Create(hrp, TweenInfo.new(math.max(dist / 24, 0.05), Enum.EasingStyle.Linear), { CFrame = cf })
     tw:Play()
     tw.Completed:Wait()
 end
@@ -1746,7 +1746,7 @@ print("🎀 MTS MASYARIKUL ANWAR UI — LOADED")
 print("👤 Display Name: FAHRIL")
 print("🖼️ Background: rbxassetid://86196334070679")
 print("🚪 NoClip: FIXED (Permanent + Anti-Balik)")
-print("🏃 Tween Speed: 21")
+print("🏃 Tween Speed: 24")
 print("========================================")
 print("📌 F3 = Toggle UI")
 print("🎨 Warna: Pink · Abu-abu · Biru · Merah")
