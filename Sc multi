@@ -4,6 +4,7 @@
 -- Background: rbxassetid://86196334070679
 -- NoClip: FIXED (Permanent + Anti-Balik + Auto Re-attach)
 -- Tween Speed: 24
+-- WalkSpeed: 21
 -- ============================================================
 
 -- ============================================================
@@ -565,7 +566,7 @@ local function tpToPos(cx, cy, cz)
     end
     pcall(function() ground:Destroy() end)
     local hum2 = Player.Character and Player.Character:FindFirstChildOfClass("Humanoid")
-    if hum2 then hum2.WalkSpeed = 16 end
+    if hum2 then hum2.WalkSpeed = 21 end
     if deathConn then deathConn:Disconnect(); deathConn = nil end
     tpActive = false
 end
@@ -880,7 +881,7 @@ local function DisableFlyLock()
     local char = Player.Character
     if not char then return end
     local hum = char:FindFirstChildOfClass("Humanoid")
-    if hum then hum.PlatformStand = false; hum.WalkSpeed = 16 end
+    if hum then hum.PlatformStand = false; hum.WalkSpeed = 21 end
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if hrp then
         for _, v in pairs(hrp:GetChildren()) do
@@ -1747,6 +1748,7 @@ print("👤 Display Name: FAHRIL")
 print("🖼️ Background: rbxassetid://86196334070679")
 print("🚪 NoClip: FIXED (Permanent + Anti-Balik)")
 print("🏃 Tween Speed: 24")
+print("🚶 WalkSpeed: 21")
 print("========================================")
 print("📌 F3 = Toggle UI")
 print("🎨 Warna: Pink · Abu-abu · Biru · Merah")
