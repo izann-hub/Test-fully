@@ -758,7 +758,7 @@ local function findLamont()
 end
 
 -- ============================================================
--- 🚪 NOCLIP FIXED — Permanent + Anti-Balik + Auto Re-attach
+-- 🚪 NOCLIP FIXED
 -- ============================================================
 local NoClipEnabled = false
 local NoClipConnection = nil
@@ -784,11 +784,9 @@ end
 local function EnableNoClipPermanent()
     if NoClipEnabled then return end
     NoClipEnabled = true
-
     if Player.Character then
         ApplyNoClipToCharacter(Player.Character)
     end
-
     NoClipConnection = RunService.RenderStepped:Connect(function()
         if not NoClipEnabled then return end
         local char = Player.Character
@@ -801,7 +799,6 @@ local function EnableNoClipPermanent()
             end
         end
     end)
-
     if NoClipCharConn then NoClipCharConn:Disconnect() end
     NoClipCharConn = Player.CharacterAdded:Connect(function(newChar)
         task.wait(0.5)
@@ -809,18 +806,14 @@ local function EnableNoClipPermanent()
             ApplyNoClipToCharacter(newChar)
         end
     end)
-
-    print("🚪 [NOCLIP] Enabled")
 end
 
 local function DisableNoClipPermanent()
     if not NoClipEnabled then return end
     NoClipEnabled = false
-
     if NoClipConnection then NoClipConnection:Disconnect(); NoClipConnection = nil end
     if NoClipCharConn then NoClipCharConn:Disconnect(); NoClipCharConn = nil end
     if NoClipDescConn then NoClipDescConn:Disconnect(); NoClipDescConn = nil end
-
     pcall(function()
         local char = Player.Character
         if char then
@@ -831,7 +824,6 @@ local function DisableNoClipPermanent()
             end
         end
     end)
-    print("🚪 [NOCLIP] Disabled")
 end
 
 local function QuickTeleportToPot(Pot)
@@ -1746,7 +1738,7 @@ print("========================================")
 print("🎀 MTS MASYARIKUL ANWAR UI — LOADED")
 print("👤 Display Name: FAHRIL")
 print("🖼️ Background: rbxassetid://86196334070679")
-print("🚪 NoClip: FIXED (Permanent + Anti-Balik)")
+print("🚪 NoClip: FIXED")
 print("🏃 Tween Speed: 24")
 print("🚶 WalkSpeed: 21")
 print("========================================")
