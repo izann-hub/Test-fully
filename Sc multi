@@ -1,7 +1,7 @@
 -- ============================================================
 -- 🏭 MULTIFARM SB ULTIMATE - SEPARATED SERVICE
 -- GHOST.LOL STYLE + HIDE NAME
--- PATCHED: RELIABLE_ARG_SPAWN_MOTOR + ALUR FARM BARU
+-- PATCHED: RELIABLE_ARG_SPAWN_MOTOR + ALUR FARM BARU + FORCE SIT
 -- ============================================================
 
 print("🚀 LOADING MULTIFARM ULTIMATE...")
@@ -634,6 +634,7 @@ end
 
 -- ============================================================
 -- 🏍️ SPAWN + SIT ON BIKE (MANUAL)
+-- PATCH: FORCE SIT + FALLBACK
 -- ============================================================
 local function SpawnAndSitOnBike()
     local h = LP.Character and LP.Character:FindFirstChild("Humanoid")
@@ -678,13 +679,14 @@ local function SpawnAndSitOnBike()
         return false 
     end
     
-    local tp = ds.CFrame * CFrame.new(3, 1, 0)
-    task.wait(2)
+    -- TP tepat di atas seat (offset 0,3,0) biar server detect
+    local tp = ds.CFrame * CFrame.new(0, 3, 0)
+    task.wait(1)
     
     print("🐢 Tween pelan ke motor (speed 1)...")
     TweenToBike(tp.Position, nil)
     
-    task.wait(1)
+    task.wait(0.5)
     
     -- AUTO-SIT via Reliable (buffer baru)
     if Reliable then
@@ -693,25 +695,66 @@ local function SpawnAndSitOnBike()
         end)
     end
     
-    task.wait(1)
+    task.wait(0.5)
     
-    -- Fallback proximity prompt
-    local prom = ds:FindFirstChildWhichIsA("ProximityPrompt", true)
-    if not prom and ds:FindFirstChild("Attachment") then 
-        prom = ds.Attachment:FindFirstChildWhichIsA("ProximityPrompt") 
+    -- FORCE SIT: paksa Humanoid duduk di seat
+    local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+    if hum and ds and not ds.Occupant then
+        pcall(function()
+            ds:Sit(hum)
+            print("✅ Force sit via Seat:Sit()")
+        end)
     end
     
-    if prom then 
-        prom.HoldDuration = 0
-        prom.RequiresLineOfSight = false
-        prom.MaxActivationDistance = 9e9
-        fireproximityprompt(prom)
+    task.wait(0.5)
+    
+    -- Fallback: proximity prompt
+    if not IsOnBike() then
+        local prom = ds:FindFirstChildWhichIsA("ProximityPrompt", true)
+        if not prom and ds:FindFirstChild("Attachment") then 
+            prom = ds.Attachment:FindFirstChildWhichIsA("ProximityPrompt") 
+        end
+        
+        if prom then 
+            prom.HoldDuration = 0
+            prom.RequiresLineOfSight = false
+            prom.MaxActivationDistance = 9e9
+            fireproximityprompt(prom)
+        end
     end
     
     task.wait(1)
-    FarmState.BikeSitting = true
-    FarmState.BikeSpawned = true
-    return true
+    
+    -- Cek terakhir
+    if IsOnBike() then
+        print("✅ Berhasil duduk di motor!")
+        FarmState.BikeSitting = true
+        FarmState.BikeSpawned = true
+        return true
+    else
+        print("❌ Gagal duduk di motor. Retry via TeleportDeath...")
+        -- Retry sekali: TP mati tepat ke seat
+        TeleportDeath(ds.Position)
+        task.wait(0.5)
+        
+        local hum2 = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+        if hum2 and ds and not ds.Occupant then
+            pcall(function()
+                ds:Sit(hum2)
+                print("✅ Force sit retry berhasil!")
+            end)
+        end
+        
+        task.wait(1)
+        
+        if IsOnBike() then
+            FarmState.BikeSitting = true
+            FarmState.BikeSpawned = true
+            return true
+        end
+    end
+    
+    return false
 end
 
 -- ============================================================
@@ -1363,10 +1406,6 @@ end
 
 -- ============================================================
 -- 🔄 RUN FULL CYCLE (ALUR BARU)
--- STEP 1: TP mati 1s → beli apartment
--- STEP 2: TP mati 1s → ke Dealer
--- STEP 3: Spawn motor + naik motor
--- STEP 4+: Langsung farm
 -- ============================================================
 local function RunFullCycle()
     print("\n" .. string.rep("=", 50))
@@ -1971,10 +2010,11 @@ task.spawn(function()
 end)
 
 print("========================================")
-print("🏭 MULTIFARM ULTIMATE LOADED (NEW FLOW)")
+print("🏭 MULTIFARM ULTIMATE LOADED (FIXED SIT)")
 print("========================================")
 print("📍 F9 = Toggle UI")
 print("📍 F6 = Start Farm")
 print("📍 F7 = Stop Farm")
 print("🎯 START = Auto: Apt → Dealer → Bike → Farm")
+print("✅ FORCE SIT = Seat:Sit() + Fallback")
 print("========================================")
