@@ -1,257 +1,292 @@
+-- ============================================================
+-- JENOWA STORE | PREMIUM UI V5
+-- + CLIENT-SIDE BYPASS LAYER (TEMPEL DI PALING ATAS)
+-- ============================================================
 
---==================================================
--- JENOWA STORE V2
--- BLACK / WHITE / GREY EDITION
---==================================================
+-- ============================================================
+-- BYPASS LAYER — CLIENT SIDE
+-- ============================================================
+
+-- 1. Hook __index: sembunyikan WalkSpeed / JumpPower
+if hookfunction and getrawmetatable and setreadonly then
+    local mt = getrawmetatable(game)
+    local oldIndex = mt.__index
+    setreadonly(mt, false)
+    mt.__index = newcclosure(function(self, key)
+        if key == "WalkSpeed" and self:IsA("Humanoid") then
+            return 16
+        end
+        if key == "JumpPower" and self:IsA("Humanoid") then
+            return 50
+        end
+        return oldIndex(self, key)
+    end)
+    setreadonly(mt, true)
+end
+
+-- 2. Sapu LocalScript deteksi lokal
+do
+    local Players = game:GetService("Players")
+    local LP = Players.LocalPlayer
+    local RF = game:GetService("ReplicatedFirst")
+    local function nuke(c)
+        for _, v in pairs(c:GetDescendants()) do
+            if v:IsA("LocalScript") then
+                local n = string.lower(v.Name)
+                if n:find("anti") or n:find("cheat") or n:find("detect")
+                or n:find("guard") or n:find("protect") or n:find("ban") then
+                    pcall(function() v:Destroy() end)
+                end
+            end
+        end
+    end
+    nuke(LP.PlayerScripts)
+    nuke(RF)
+end
+
+-- 3. Hook ProximityPrompt HoldDuration
+do
+    local PPS = game:GetService("ProximityPromptService")
+    if hookfunction then
+        local old = PPS.PromptButtonHoldBegan
+        PPS.PromptButtonHoldBegan = newcclosure(function(v)
+            pcall(function() v.HoldDuration = 0 end)
+            return old(v)
+        end)
+    end
+end
+
+-- 4. Hook FireServer: pastikan table tidak kosong
+if hookfunction and getrawmetatable then
+    local mt = getrawmetatable(game)
+    local oldNamecall = mt.__namecall
+    setreadonly(mt, false)
+    mt.__namecall = newcclosure(function(self, ...)
+        local method = getnamecallmethod()
+        if method == "FireServer" and self:IsA("RemoteEvent") then
+            local args = {...}
+            for i, v in ipairs(args) do
+                if type(v) == "table" and next(v) == nil then
+                    args[i] = {Response = {true}}
+                end
+            end
+            return oldNamecall(self, unpack(args))
+        end
+        return oldNamecall(self, ...)
+    end)
+    setreadonly(mt, true)
+end
+
+-- 5. Anti-kick lokal
+pcall(function()
+    local Players = game:GetService("Players")
+    local LP = Players.LocalPlayer
+    if LP then LP.Kick = function() return end end
+    Players.Kick = function() return end
+end)
+
+-- 6. Kick popup destroyer
+task.spawn(function()
+    while true do
+        pcall(function()
+            local CoreGui = game:GetService("CoreGui")
+            local LP = game:GetService("Players").LocalPlayer
+            local PG = LP and LP:FindFirstChild("PlayerGui")
+            local function sweep(container)
+                for _, gui in pairs(container:GetChildren()) do
+                    local n = gui.Name or ""
+                    if n:find("Kick") or n:find("Ban") or n:find("Disconnect")
+                    or n:find("Error") or n:find("Moderation") or n:find("Warning")
+                    or n:find("Alert") or n:find("Popup") or n:find("Notice")
+                    or n:find("Detection") or n:find("Anti") or n:find("Handshake") then
+                        gui:Destroy()
+                    end
+                end
+            end
+            sweep(CoreGui)
+            if PG then sweep(PG) end
+        end)
+        task.wait(0.1)
+    end
+end)
+
+print("âœ… BYPASS LAYER ACTIVE")
+
+-- ============================================================
+-- JENOWA STORE | PREMIUM UI V5
+-- UI ONLY - Roblox Studio LocalScript
+-- ============================================================
 
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
 
-local Player = Players.LocalPlayer
-local PlayerGui = Player:WaitForChild("PlayerGui")
+local player = Players.LocalPlayer
 
-local CURSOR_IMAGE = "rbxassetid://134036635371962"
+local gui = Instance.new("ScreenGui")
+gui.Name = "JENOWASTORE"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
 
--- CLEAN OLD GUI
-local OldGui = PlayerGui:FindFirstChild("JENOWA_STORE")
-if OldGui then
-    OldGui:Destroy()
-end
+local main = Instance.new("Frame")
+main.Name = "Main"
+main.Size = UDim2.fromOffset(270, 175)
+main.Position = UDim2.new(0.5, -135, 0.5, -87)
+main.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+main.BorderSizePixel = 0
+main.Active = true
+main.Parent = gui
 
---==================================================
--- SCREEN GUI
---==================================================
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 14)
+corner.Parent = main
 
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "JENOWA_STORE"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = PlayerGui
+local outline = Instance.new("UIStroke")
+outline.Color = Color3.fromRGB(190, 190, 190)
+outline.Thickness = 1.3
+outline.Parent = main
 
---==================================================
--- MAIN FRAME
---==================================================
-
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.fromOffset(230, 160)
-MainFrame.Position = UDim2.new(0.5, -115, 0.5, -80)
-MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
-MainFrame.BackgroundTransparency = 0.05
-MainFrame.BorderSizePixel = 0
-MainFrame.ClipsDescendants = true
-MainFrame.Parent = ScreenGui
-
-local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 12)
-MainCorner.Parent = MainFrame
-
---==================================================
--- MAIN BORDER
---==================================================
-
-local MainStroke = Instance.new("UIStroke")
-MainStroke.Thickness = 2.5
-MainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-MainStroke.Parent = MainFrame
-
-local MainGrad = Instance.new("UIGradient")
-MainGrad.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 0)),
-    ColorSequenceKeypoint.new(0.33, Color3.fromRGB(255, 255, 255)),
-    ColorSequenceKeypoint.new(0.66, Color3.fromRGB(120, 120, 120)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
-})
-MainGrad.Parent = MainStroke
-
---==================================================
 -- HEADER
---==================================================
+local header = Instance.new("Frame")
+header.Size = UDim2.new(1, 0, 0, 48)
+header.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+header.BorderSizePixel = 0
+header.Parent = main
 
-local Header = Instance.new("Frame")
-Header.Size = UDim2.new(1, 0, 0, 42)
-Header.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-Header.BorderSizePixel = 0
-Header.ZIndex = 2
-Header.Parent = MainFrame
+local headerCorner = Instance.new("UICorner")
+headerCorner.CornerRadius = UDim.new(0, 14)
+headerCorner.Parent = header
 
-local HeaderCorner = Instance.new("UICorner")
-HeaderCorner.CornerRadius = UDim.new(0, 12)
-HeaderCorner.Parent = Header
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -65, 1, 0)
+title.Position = UDim2.fromOffset(14, 0)
+title.BackgroundTransparency = 1
+title.Text = "JENOWA STORE"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = header
 
-local HeaderGrad = Instance.new("UIGradient")
-HeaderGrad.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 0)),
-    ColorSequenceKeypoint.new(0.33, Color3.fromRGB(255, 255, 255)),
-    ColorSequenceKeypoint.new(0.66, Color3.fromRGB(120, 120, 120)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
-})
-HeaderGrad.Parent = Header
+-- MINIMIZE
+local mini = Instance.new("TextButton")
+mini.Size = UDim2.fromOffset(32, 30)
+mini.Position = UDim2.new(1, -42, 0, 9)
+mini.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
+mini.Text = "-"
+mini.TextColor3 = Color3.new(1, 1, 1)
+mini.Font = Enum.Font.GothamBold
+mini.TextSize = 20
+mini.Parent = header
 
---==================================================
--- TITLE
---==================================================
+Instance.new("UICorner", mini).CornerRadius =
+    UDim.new(0, 8)
 
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -55, 1, 0)
-Title.Position = UDim2.fromOffset(12, 0)
-Title.BackgroundTransparency = 1
-Title.Text = "JENOWA STORE"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 16
-Title.Font = Enum.Font.GothamBold
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.ZIndex = 3
-Title.Parent = Header
-
---==================================================
--- MINIMIZE BUTTON
---==================================================
-
-local Minimize = Instance.new("TextButton")
-Minimize.Size = UDim2.fromOffset(30, 30)
-Minimize.Position = UDim2.new(1, -36, 0, 6)
-Minimize.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
-Minimize.Text = "−"
-Minimize.TextColor3 = Color3.new(1, 1, 1)
-Minimize.TextSize = 22
-Minimize.Font = Enum.Font.GothamBold
-Minimize.ZIndex = 4
-Minimize.Parent = Header
-
-local MinCorner = Instance.new("UICorner")
-MinCorner.CornerRadius = UDim.new(0, 7)
-MinCorner.Parent = Minimize
-
---==================================================
 -- SUBTITLE
---==================================================
+local subtitle = Instance.new("TextLabel")
+subtitle.Size = UDim2.new(1, -20, 0, 25)
+subtitle.Position = UDim2.fromOffset(10, 55)
+subtitle.BackgroundTransparency = 1
+subtitle.Text = "PREMIUM CONTROL PANEL"
+subtitle.TextColor3 = Color3.fromRGB(150, 150, 150)
+subtitle.Font = Enum.Font.Gotham
+subtitle.TextSize = 11
+subtitle.Parent = main
 
-local Subtitle = Instance.new("TextLabel")
-Subtitle.Size = UDim2.new(1, -20, 0, 22)
-Subtitle.Position = UDim2.fromOffset(10, 49)
-Subtitle.BackgroundTransparency = 1
-Subtitle.Text = "PREMIUM CONTROL PANEL"
-Subtitle.TextColor3 = Color3.fromRGB(170, 170, 170)
-Subtitle.TextSize = 10
-Subtitle.Font = Enum.Font.GothamBold
-Subtitle.Parent = MainFrame
-
---==================================================
 -- STATUS
---==================================================
+local status = Instance.new("TextLabel")
+status.Size = UDim2.new(1, -20, 0, 25)
+status.Position = UDim2.fromOffset(10, 82)
+status.BackgroundTransparency = 1
+status.Text = "STATUS : OFF"
+status.TextColor3 = Color3.fromRGB(180, 180, 180)
+status.Font = Enum.Font.GothamBold
+status.TextSize = 13
+status.Parent = main
 
-local Status = Instance.new("TextLabel")
-Status.Size = UDim2.new(1, -20, 0, 25)
-Status.Position = UDim2.fromOffset(10, 78)
-Status.BackgroundTransparency = 1
-Status.Text = "STATUS : OFF"
-Status.TextColor3 = Color3.fromRGB(180, 180, 180)
-Status.TextSize = 13
-Status.Font = Enum.Font.GothamBold
-Status.Parent = MainFrame
+-- ON OFF BUTTON
+local toggle = Instance.new("TextButton")
+toggle.Size = UDim2.new(1, -30, 0, 45)
+toggle.Position = UDim2.fromOffset(15, 118)
+toggle.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+toggle.Text = "TURN ON"
+toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggle.Font = Enum.Font.GothamBold
+toggle.TextSize = 16
+toggle.Parent = main
 
---==================================================
--- TOGGLE BUTTON
---==================================================
+Instance.new("UICorner", toggle).CornerRadius =
+    UDim.new(0, 9)
 
-local Toggle = Instance.new("TextButton")
-Toggle.Size = UDim2.new(1, -30, 0, 32)
-Toggle.Position = UDim2.fromOffset(15, 116)
-Toggle.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
-Toggle.Text = "ACTIVATE"
-Toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-Toggle.TextSize = 12
-Toggle.Font = Enum.Font.GothamBold
-Toggle.AutoButtonColor = false
-Toggle.Parent = MainFrame
+local buttonStroke = Instance.new("UIStroke")
+buttonStroke.Color = Color3.fromRGB(130, 130, 130)
+buttonStroke.Thickness = 1
+buttonStroke.Parent = toggle
 
-local ToggleCorner = Instance.new("UICorner")
-ToggleCorner.CornerRadius = UDim.new(0, 8)
-ToggleCorner.Parent = Toggle
+-- TOGGLE STATE
+local enabled = false
+local minimized = false
 
---==================================================
--- TOGGLE ANIMATION (VISUAL ONLY)
---==================================================
+toggle.MouseButton1Click:Connect(function()
+    enabled = not enabled
 
-local IsActive = false
-
-Toggle.MouseButton1Click:Connect(function()
-    IsActive = not IsActive
-
-    if IsActive then
-        Status.Text = "STATUS : ON"
-        Status.TextColor3 = Color3.fromRGB(255, 255, 255)
-        Toggle.Text = "DEACTIVATE"
-
-        TweenService:Create(Toggle, TweenInfo.new(0.2), {
-            BackgroundColor3 = Color3.fromRGB(110, 110, 110)
-        }):Play()
+    if enabled then
+        toggle.Text = "TURN OFF"
+        toggle.BackgroundColor3 = Color3.fromRGB(235, 235, 235)
+        toggle.TextColor3 = Color3.fromRGB(10, 10, 10)
+        status.Text = "STATUS : ON"
+        status.TextColor3 = Color3.fromRGB(255, 255, 255)
     else
-        Status.Text = "STATUS : OFF"
-        Status.TextColor3 = Color3.fromRGB(180, 180, 180)
-        Toggle.Text = "ACTIVATE"
-
-        TweenService:Create(Toggle, TweenInfo.new(0.2), {
-            BackgroundColor3 = Color3.fromRGB(55, 55, 55)
-        }):Play()
+        toggle.Text = "TURN ON"
+        toggle.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+        toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+        status.Text = "STATUS : OFF"
+        status.TextColor3 = Color3.fromRGB(180, 180, 180)
     end
 end)
 
---==================================================
--- MINIMIZE / MAXIMIZE
---==================================================
+-- MINIMIZE
+mini.MouseButton1Click:Connect(function()
+    minimized = not minimized
 
-local Minimized = false
+    subtitle.Visible = not minimized
+    status.Visible = not minimized
+    toggle.Visible = not minimized
 
-Minimize.MouseButton1Click:Connect(function()
-    Minimized = not Minimized
+    main.Size = minimized
+        and UDim2.fromOffset(270, 48)
+        or UDim2.fromOffset(270, 175)
 
-    if Minimized then
-        Minimize.Text = "+"
-        TweenService:Create(MainFrame, TweenInfo.new(0.25), {
-            Size = UDim2.fromOffset(230, 42)
-        }):Play()
-    else
-        Minimize.Text = "−"
-        TweenService:Create(MainFrame, TweenInfo.new(0.25), {
-            Size = UDim2.fromOffset(230, 160)
-        }):Play()
-    end
+    mini.Text = minimized and "+" or "-"
 end)
 
---==================================================
--- DRAG UI (MOUSE + TOUCH)
---==================================================
+-- DRAG SUPPORT PC + MOBILE
+local dragging = false
+local dragStart
+local startPosition
 
-local Dragging = false
-local DragStart
-local StartPosition
-
-Header.InputBegan:Connect(function(input)
+header.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
     or input.UserInputType == Enum.UserInputType.Touch then
 
-        Dragging = true
-        DragStart = input.Position
-        StartPosition = MainFrame.Position
+        dragging = true
+        dragStart = input.Position
+        startPosition = main.Position
     end
 end)
 
 UIS.InputChanged:Connect(function(input)
-    if Dragging and (
+    if dragging and (
         input.UserInputType == Enum.UserInputType.MouseMovement
         or input.UserInputType == Enum.UserInputType.Touch
     ) then
 
-        local Delta = input.Position - DragStart
+        local delta = input.Position - dragStart
 
-        MainFrame.Position = UDim2.new(
-            StartPosition.X.Scale,
-            StartPosition.X.Offset + Delta.X,
-            StartPosition.Y.Scale,
-            StartPosition.Y.Offset + Delta.Y
+        main.Position = UDim2.new(
+            startPosition.X.Scale,
+            startPosition.X.Offset + delta.X,
+            startPosition.Y.Scale,
+            startPosition.Y.Offset + delta.Y
         )
     end
 end)
@@ -259,90 +294,6 @@ end)
 UIS.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
     or input.UserInputType == Enum.UserInputType.Touch then
-        Dragging = false
+        dragging = false
     end
 end)
-
---==================================================
--- CUSTOM CURSOR
--- DEFAULT CURSOR STAYS VISIBLE
---==================================================
-
-UIS.MouseIconEnabled = true
-
-local Cursor = Instance.new("ImageLabel")
-Cursor.Name = "CustomCursor"
-Cursor.Size = UDim2.fromOffset(32, 32)
-Cursor.BackgroundTransparency = 1
-Cursor.Image = CURSOR_IMAGE
-Cursor.ZIndex = 100
-Cursor.Visible = false
-Cursor.Parent = ScreenGui
-
-RunService.RenderStepped:Connect(function()
-    if UIS.MouseEnabled then
-        local MousePosition = UIS:GetMouseLocation()
-
-        Cursor.Position = UDim2.fromOffset(
-            MousePosition.X + 12,
-            MousePosition.Y + 12
-        )
-
-        Cursor.Visible = true
-    else
-        Cursor.Visible = false
-    end
-end)
-
---==================================================
--- BLACK / WHITE / GREY ANIMATION
---==================================================
-
-local ColorTime = 0
-
-task.spawn(function()
-    while ScreenGui.Parent do
-        ColorTime = (ColorTime + 0.01) % 1
-
-        MainGrad.Offset = Vector2.new(ColorTime, 0)
-        HeaderGrad.Offset = Vector2.new(-ColorTime, 0)
-
-        task.wait(0.03)
-    end
-end)
-
---==================================================
--- HOVER ANIMATION
---==================================================
-
-Toggle.MouseEnter:Connect(function()
-    TweenService:Create(Toggle, TweenInfo.new(0.15), {
-        Size = UDim2.new(1, -25, 0, 34)
-    }):Play()
-end)
-
-Toggle.MouseLeave:Connect(function()
-    TweenService:Create(Toggle, TweenInfo.new(0.15), {
-        Size = UDim2.new(1, -30, 0, 32)
-    }):Play()
-end)
-
---==================================================
--- ENTRANCE ANIMATION
---==================================================
-
-MainFrame.Size = UDim2.fromOffset(0, 0)
-
-TweenService:Create(
-    MainFrame,
-    TweenInfo.new(
-        0.4,
-        Enum.EasingStyle.Back,
-        Enum.EasingDirection.Out
-    ),
-    {
-        Size = UDim2.fromOffset(230, 160)
-    }
-):Play()
-
-print("JENOWA STORE LOADED")
