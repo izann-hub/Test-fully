@@ -1,4 +1,4 @@
--- JENOWA CROSSHAIR
+-- JENOWA CROSSHAIR (Size + Color)
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -7,6 +7,23 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local pg = player:WaitForChild("PlayerGui")
 
+-- ===== Config =====
+local SIZE_MIN, SIZE_MAX = 2, 16
+local currentSize = 6
+local currentColor = Color3.fromRGB(255, 255, 255)
+
+local palette = {
+    {name="White",   color=Color3.fromRGB(255, 255, 255)},
+    {name="Red",     color=Color3.fromRGB(255, 60, 60)},
+    {name="Lime",    color=Color3.fromRGB(80, 230, 120)},
+    {name="Cyan",    color=Color3.fromRGB(80, 220, 255)},
+    {name="Yellow",  color=Color3.fromRGB(255, 220, 80)},
+    {name="Magenta", color=Color3.fromRGB(255, 80, 220)},
+    {name="Orange",  color=Color3.fromRGB(255, 150, 60)},
+    {name="Black",   color=Color3.fromRGB(20, 20, 20)},
+}
+
+-- ===== Root =====
 local gui = Instance.new("ScreenGui")
 gui.Name = "JenowaCrosshair"
 gui.IgnoreGuiInset = true
@@ -14,23 +31,48 @@ gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.Parent = pg
 
--- Crosshair
-local crosshair = Instance.new("ImageLabel")
-crosshair.Name = "Crosshair"
-crosshair.AnchorPoint = Vector2.new(0.5, 0.5)
-crosshair.Position = UDim2.fromScale(0.5, 0.5)
-crosshair.Size = UDim2.fromOffset(32, 32)
-crosshair.BackgroundTransparency = 1
-crosshair.Image = "rbxassetid://134036635371962"
-crosshair.ScaleType = Enum.ScaleType.Fit
-crosshair.ZIndex = 5
-crosshair.Parent = gui
+-- ===== Crosshair dot =====
+local dotHolder = Instance.new("Frame")
+dotHolder.Name = "DotHolder"
+dotHolder.AnchorPoint = Vector2.new(0.5, 0.5)
+dotHolder.Position = UDim2.fromScale(0.5, 0.5)
+dotHolder.Size = UDim2.fromOffset(currentSize, currentSize)
+dotHolder.BackgroundTransparency = 1
+dotHolder.ZIndex = 5
+dotHolder.Parent = gui
 
--- Card
+local dotOutline = Instance.new("Frame")
+dotOutline.Name = "DotOutline"
+dotOutline.AnchorPoint = Vector2.new(0.5, 0.5)
+dotOutline.Position = UDim2.fromScale(0.5, 0.5)
+dotOutline.Size = UDim2.new(1, 2, 1, 2)
+dotOutline.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+dotOutline.BackgroundTransparency = 0.35
+dotOutline.BorderSizePixel = 0
+dotOutline.ZIndex = 5
+dotOutline.Parent = dotHolder
+
+local dotOutlineCorner = Instance.new("UICorner")
+dotOutlineCorner.CornerRadius = UDim.new(1, 0)
+dotOutlineCorner.Parent = dotOutline
+
+local dotMain = Instance.new("Frame")
+dotMain.Name = "DotMain"
+dotMain.Size = UDim2.fromScale(1, 1)
+dotMain.BackgroundColor3 = currentColor
+dotMain.BorderSizePixel = 0
+dotMain.ZIndex = 6
+dotMain.Parent = dotHolder
+
+local dotMainCorner = Instance.new("UICorner")
+dotMainCorner.CornerRadius = UDim.new(1, 0)
+dotMainCorner.Parent = dotMain
+
+-- ===== Card =====
 local card = Instance.new("Frame")
 card.Name = "Card"
 card.Position = UDim2.fromOffset(20, 20)
-card.Size = UDim2.fromOffset(240, 58)
+card.Size = UDim2.fromOffset(260, 156)
 card.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
 card.BorderSizePixel = 0
 card.ZIndex = 10
@@ -55,36 +97,34 @@ cardStroke.Transparency = 0.55
 cardStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 cardStroke.Parent = card
 
--- Dot
-local dot = Instance.new("Frame")
-dot.Name = "Dot"
-dot.AnchorPoint = Vector2.new(0, 0.5)
-dot.Position = UDim2.new(0, 18, 0.5, 0)
-dot.Size = UDim2.fromOffset(10, 10)
-dot.BackgroundColor3 = Color3.fromRGB(80, 230, 140)
-dot.BorderSizePixel = 0
-dot.ZIndex = 11
-dot.Parent = card
+-- ===== Header =====
+local hdrDot = Instance.new("Frame")
+hdrDot.AnchorPoint = Vector2.new(0, 0.5)
+hdrDot.Position = UDim2.new(0, 18, 0, 26)
+hdrDot.Size = UDim2.fromOffset(10, 10)
+hdrDot.BackgroundColor3 = Color3.fromRGB(80, 230, 140)
+hdrDot.BorderSizePixel = 0
+hdrDot.ZIndex = 11
+hdrDot.Parent = card
 
-local dotCorner = Instance.new("UICorner")
-dotCorner.CornerRadius = UDim.new(1, 0)
-dotCorner.Parent = dot
+local hdrDotCorner = Instance.new("UICorner")
+hdrDotCorner.CornerRadius = UDim.new(1, 0)
+hdrDotCorner.Parent = hdrDot
 
-local dotGlow = Instance.new("ImageLabel")
-dotGlow.Size = UDim2.fromScale(3, 3)
-dotGlow.AnchorPoint = Vector2.new(0.5, 0.5)
-dotGlow.Position = UDim2.fromScale(0.5, 0.5)
-dotGlow.BackgroundTransparency = 1
-dotGlow.Image = "rbxassetid://5028857084"
-dotGlow.ImageColor3 = Color3.fromRGB(80, 230, 140)
-dotGlow.ImageTransparency = 0.35
-dotGlow.ZIndex = 10
-dotGlow.Parent = dot
+local hdrDotGlow = Instance.new("ImageLabel")
+hdrDotGlow.Size = UDim2.fromScale(3, 3)
+hdrDotGlow.AnchorPoint = Vector2.new(0.5, 0.5)
+hdrDotGlow.Position = UDim2.fromScale(0.5, 0.5)
+hdrDotGlow.BackgroundTransparency = 1
+hdrDotGlow.Image = "rbxassetid://5028857084"
+hdrDotGlow.ImageColor3 = Color3.fromRGB(80, 230, 140)
+hdrDotGlow.ImageTransparency = 0.35
+hdrDotGlow.ZIndex = 10
+hdrDotGlow.Parent = hdrDot
 
--- Title + status
 local title = Instance.new("TextLabel")
-title.Size = UDim2.fromOffset(110, 14)
-title.Position = UDim2.fromOffset(40, 12)
+title.Size = UDim2.fromOffset(120, 14)
+title.Position = UDim2.fromOffset(40, 8)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
 title.TextSize = 11
@@ -95,8 +135,8 @@ title.ZIndex = 12
 title.Parent = card
 
 local status = Instance.new("TextLabel")
-status.Size = UDim2.fromOffset(110, 18)
-status.Position = UDim2.fromOffset(40, 26)
+status.Size = UDim2.fromOffset(120, 18)
+status.Position = UDim2.fromOffset(40, 24)
 status.BackgroundTransparency = 1
 status.Font = Enum.Font.GothamMedium
 status.TextSize = 13
@@ -106,10 +146,9 @@ status.Text = "Enabled"
 status.ZIndex = 12
 status.Parent = card
 
--- Hotkey badge
 local badge = Instance.new("TextLabel")
 badge.AnchorPoint = Vector2.new(0, 0.5)
-badge.Position = UDim2.new(0, 152, 0.5, 0)
+badge.Position = UDim2.new(1, -90, 0, 26)
 badge.Size = UDim2.fromOffset(22, 18)
 badge.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 badge.BackgroundTransparency = 0.2
@@ -131,11 +170,10 @@ badgeStroke.Color = Color3.fromRGB(80, 80, 100)
 badgeStroke.Transparency = 0.5
 badgeStroke.Parent = badge
 
--- Switch
+-- ===== Switch =====
 local sw = Instance.new("Frame")
-sw.Name = "Switch"
 sw.AnchorPoint = Vector2.new(1, 0.5)
-sw.Position = UDim2.new(1, -16, 0.5, 0)
+sw.Position = UDim2.new(1, -16, 0, 26)
 sw.Size = UDim2.fromOffset(44, 24)
 sw.BackgroundColor3 = Color3.fromRGB(60, 200, 130)
 sw.BorderSizePixel = 0
@@ -166,12 +204,166 @@ local knobCorner = Instance.new("UICorner")
 knobCorner.CornerRadius = UDim.new(1, 0)
 knobCorner.Parent = knob
 
--- Interaction
+-- ===== Divider =====
+local divider = Instance.new("Frame")
+divider.Position = UDim2.fromOffset(16, 52)
+divider.Size = UDim2.new(1, -32, 0, 1)
+divider.BackgroundColor3 = Color3.fromRGB(70, 70, 90)
+divider.BackgroundTransparency = 0.6
+divider.BorderSizePixel = 0
+divider.ZIndex = 11
+divider.Parent = card
+
+-- ===== Size section =====
+local sizeLabel = Instance.new("TextLabel")
+sizeLabel.Position = UDim2.fromOffset(16, 64)
+sizeLabel.Size = UDim2.fromOffset(60, 14)
+sizeLabel.BackgroundTransparency = 1
+sizeLabel.Font = Enum.Font.GothamBold
+sizeLabel.TextSize = 11
+sizeLabel.TextColor3 = Color3.fromRGB(200, 200, 210)
+sizeLabel.TextXAlignment = Enum.TextXAlignment.Left
+sizeLabel.Text = "SIZE"
+sizeLabel.ZIndex = 12
+sizeLabel.Parent = card
+
+local sizeValue = Instance.new("TextLabel")
+sizeValue.AnchorPoint = Vector2.new(1, 0)
+sizeValue.Position = UDim2.new(1, -16, 0, 64)
+sizeValue.Size = UDim2.fromOffset(60, 14)
+sizeValue.BackgroundTransparency = 1
+sizeValue.Font = Enum.Font.GothamBold
+sizeValue.TextSize = 11
+sizeValue.TextColor3 = Color3.fromRGB(80, 230, 140)
+sizeValue.TextXAlignment = Enum.TextXAlignment.Right
+sizeValue.Text = currentSize .. "px"
+sizeValue.ZIndex = 12
+sizeValue.Parent = card
+
+local sizeTrack = Instance.new("Frame")
+sizeTrack.Position = UDim2.fromOffset(16, 86)
+sizeTrack.Size = UDim2.new(1, -32, 0, 6)
+sizeTrack.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+sizeTrack.BorderSizePixel = 0
+sizeTrack.ZIndex = 12
+sizeTrack.Parent = card
+
+local sizeTrackCorner = Instance.new("UICorner")
+sizeTrackCorner.CornerRadius = UDim.new(1, 0)
+sizeTrackCorner.Parent = sizeTrack
+
+local sizeFill = Instance.new("Frame")
+sizeFill.Size = UDim2.new(0, 0, 1, 0)
+sizeFill.BackgroundColor3 = Color3.fromRGB(80, 230, 140)
+sizeFill.BorderSizePixel = 0
+sizeFill.ZIndex = 13
+sizeFill.Parent = sizeTrack
+
+local sizeFillCorner = Instance.new("UICorner")
+sizeFillCorner.CornerRadius = UDim.new(1, 0)
+sizeFillCorner.Parent = sizeFill
+
+local sizeKnob = Instance.new("Frame")
+sizeKnob.AnchorPoint = Vector2.new(0.5, 0.5)
+sizeKnob.Size = UDim2.fromOffset(14, 14)
+sizeKnob.Position = UDim2.new(0, 0, 0.5, 0)
+sizeKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+sizeKnob.BorderSizePixel = 0
+sizeKnob.ZIndex = 14
+sizeKnob.Parent = sizeTrack
+
+local sizeKnobCorner = Instance.new("UICorner")
+sizeKnobCorner.CornerRadius = UDim.new(1, 0)
+sizeKnobCorner.Parent = sizeKnob
+
+local sizeKnobStroke = Instance.new("UIStroke")
+sizeKnobStroke.Thickness = 2
+sizeKnobStroke.Color = Color3.fromRGB(80, 230, 140)
+sizeKnobStroke.Parent = sizeKnob
+
+local sizeBtn = Instance.new("TextButton")
+sizeBtn.Size = UDim2.fromScale(1, 1)
+sizeBtn.BackgroundTransparency = 1
+sizeBtn.Text = ""
+sizeBtn.ZIndex = 15
+sizeBtn.Parent = sizeTrack
+
+-- ===== Color section =====
+local colorLabel = Instance.new("TextLabel")
+colorLabel.Position = UDim2.fromOffset(16, 104)
+colorLabel.Size = UDim2.fromOffset(60, 14)
+colorLabel.BackgroundTransparency = 1
+colorLabel.Font = Enum.Font.GothamBold
+colorLabel.TextSize = 11
+colorLabel.TextColor3 = Color3.fromRGB(200, 200, 210)
+colorLabel.TextXAlignment = Enum.TextXAlignment.Left
+colorLabel.Text = "COLOR"
+colorLabel.ZIndex = 12
+colorLabel.Parent = card
+
+local swatchButtons = {}
+local SWATCH_SIZE = 22
+local SWATCH_GAP = 6
+local SWATCH_START = 21
+local SWATCH_Y = 122
+
+for i, entry in ipairs(palette) do
+    local swatch = Instance.new("TextButton")
+    swatch.Size = UDim2.fromOffset(SWATCH_SIZE, SWATCH_SIZE)
+    swatch.Position = UDim2.fromOffset(SWATCH_START + (i-1)*(SWATCH_SIZE+SWATCH_GAP), SWATCH_Y)
+    swatch.BackgroundColor3 = entry.color
+    swatch.BorderSizePixel = 0
+    swatch.Text = ""
+    swatch.AutoButtonColor = false
+    swatch.ZIndex = 12
+    swatch.Parent = card
+
+    local sc = Instance.new("UICorner")
+    sc.CornerRadius = UDim.new(1, 0)
+    sc.Parent = swatch
+
+    local sst = Instance.new("UIStroke")
+    sst.Thickness = 1
+    sst.Color = Color3.fromRGB(120, 120, 130)
+    sst.Transparency = 0.6
+    sst.Parent = swatch
+
+    swatchButtons[i] = {button = swatch, stroke = sst, color = entry.color}
+
+    swatch.MouseButton1Click:Connect(function()
+        currentColor = entry.color
+        dotMain.BackgroundColor3 = entry.color
+        local b = entry.color.R + entry.color.G + entry.color.B
+        if b > 1.5 then
+            dotOutline.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        else
+            dotOutline.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        end
+        for j, data in ipairs(swatchButtons) do
+            if j == i then
+                data.stroke.Color = Color3.fromRGB(255, 255, 255)
+                data.stroke.Transparency = 0
+                data.stroke.Thickness = 2
+            else
+                data.stroke.Color = Color3.fromRGB(120, 120, 130)
+                data.stroke.Transparency = 0.6
+                data.stroke.Thickness = 1
+            end
+        end
+    end)
+end
+
+-- set default selected = white
+swatchButtons[1].stroke.Color = Color3.fromRGB(255, 255, 255)
+swatchButtons[1].stroke.Transparency = 0
+swatchButtons[1].stroke.Thickness = 2
+
+-- ===== Switch buttons =====
 local swBtn = Instance.new("TextButton")
 swBtn.Size = UDim2.fromScale(1, 1)
 swBtn.BackgroundTransparency = 1
 swBtn.Text = ""
-swBtn.ZIndex = 14
+swBtn.ZIndex = 15
 swBtn.Parent = sw
 
 local cardBtn = Instance.new("TextButton")
@@ -181,11 +373,21 @@ cardBtn.Text = ""
 cardBtn.ZIndex = 9
 cardBtn.Parent = card
 
+-- ===== State =====
 local enabled = true
 local TWEEN = TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
+local function setSize(px)
+    currentSize = math.clamp(math.round(px), SIZE_MIN, SIZE_MAX)
+    dotHolder.Size = UDim2.fromOffset(currentSize, currentSize)
+    local t = (currentSize - SIZE_MIN) / (SIZE_MAX - SIZE_MIN)
+    sizeFill.Size = UDim2.new(t, 0, 1, 0)
+    sizeKnob.Position = UDim2.new(t, 0, 0.5, 0)
+    sizeValue.Text = currentSize .. "px"
+end
+
 local function apply()
-    crosshair.Visible = enabled
+    dotHolder.Visible = enabled
 
     local onColor  = Color3.fromRGB(60, 200, 130)
     local offColor = Color3.fromRGB(90, 90, 100)
@@ -196,8 +398,8 @@ local function apply()
     TweenService:Create(knob, TWEEN, {
         Position = enabled and UDim2.new(1, -22, 0.5, 0) or UDim2.new(0, 2, 0.5, 0)
     }):Play()
-    TweenService:Create(dot, TWEEN, {BackgroundColor3 = enabled and dotOn or dotOff}):Play()
-    TweenService:Create(dotGlow, TWEEN, {ImageColor3 = enabled and dotOn or dotOff}):Play()
+    TweenService:Create(hdrDot, TWEEN, {BackgroundColor3 = enabled and dotOn or dotOff}):Play()
+    TweenService:Create(hdrDotGlow, TWEEN, {ImageColor3 = enabled and dotOn or dotOff}):Play()
 
     status.Text = enabled and "Enabled" or "Disabled"
     status.TextColor3 = enabled and Color3.fromRGB(240, 240, 245) or Color3.fromRGB(200, 150, 150)
@@ -218,15 +420,41 @@ UIS.InputBegan:Connect(function(input, gp)
     end
 end)
 
--- Dot pulse
+-- ===== Size slider drag =====
+local draggingSize = false
+sizeBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        draggingSize = true
+        local rel = input.Position.X - sizeTrack.AbsolutePosition.X
+        local t = math.clamp(rel / sizeTrack.AbsoluteSize.X, 0, 1)
+        setSize(SIZE_MIN + t * (SIZE_MAX - SIZE_MIN))
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                draggingSize = false
+            end
+        end)
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if draggingSize and (input.UserInputType == Enum.UserInputType.MouseMovement
+    or input.UserInputType == Enum.UserInputType.Touch) then
+        local rel = input.Position.X - sizeTrack.AbsolutePosition.X
+        local t = math.clamp(rel / sizeTrack.AbsoluteSize.X, 0, 1)
+        setSize(SIZE_MIN + t * (SIZE_MAX - SIZE_MIN))
+    end
+end)
+
+-- ===== Pulse =====
 local pulse = 0
 RunService.Heartbeat:Connect(function(dt)
     pulse += dt * 3
     local a = 0.25 + math.abs(math.sin(pulse)) * 0.35
-    dotGlow.ImageTransparency = enabled and a or 0.9
+    hdrDotGlow.ImageTransparency = enabled and a or 0.9
 end)
 
--- Drag card
+-- ===== Drag card =====
 local dragging, dragStart, startPos
 cardBtn.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
@@ -253,4 +481,6 @@ UIS.InputChanged:Connect(function(input)
     end
 end)
 
+-- ===== Init =====
+setSize(currentSize)
 apply()
