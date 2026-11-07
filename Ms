@@ -1,12 +1,15 @@
--- JENOWA STORE | V13 (Fix Macro & No Recoil Terjamin)
+-- JENOWA STORE | V14 (Anti-Kick 267)
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local TS = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
-local VIM = game:GetService("VirtualInputManager")
 local Lighting = game:GetService("Lighting")
 local LP = Players.LocalPlayer
 local PG = LP:WaitForChild("PlayerGui")
+
+-- Cloneref untuk keamanan ekstra
+local cloneref = cloneref or function(obj) return obj end
+local safeUIS = cloneref(UIS)
 
 local old = PG:FindFirstChild("JenowaStore")
 if old then old:Destroy() end
@@ -173,13 +176,13 @@ Header.InputBegan:Connect(function(input)
         startPos = MainFrame.Position
     end
 end)
-UIS.InputChanged:Connect(function(input)
+safeUIS.InputChanged:Connect(function(input)
     if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
         local delta = input.Position - dragStart
         MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
-UIS.InputEnded:Connect(function(input)
+safeUIS.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
 end)
 
@@ -328,13 +331,13 @@ local function makeSlider(text, min, max, default, cb)
         end
     end)
     
-    UIS.InputEnded:Connect(function(i)
+    safeUIS.InputEnded:Connect(function(i)
         if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then 
             dragging2 = false 
         end
     end)
     
-    UIS.InputChanged:Connect(function(i)
+    safeUIS.InputChanged:Connect(function(i)
         if dragging2 and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
             local rel = math.clamp((i.Position.X - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
             val = math.floor((min + (max - min) * rel) * 100 + 0.5) / 100
@@ -347,26 +350,24 @@ local function makeSlider(text, min, max, default, cb)
     return f
 end
 
--- ================= LOGIKA FITUR (FORCE LOOP) =================
+-- ================= LOGIKA FITUR (AMAN) =================
 local macroOn = false
 local recoilOn = false
 local isClicking = false
 
--- Deteksi Klik Kiri untuk Macro VIM
-UIS.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        isClicking = true
-    end
+-- Simulasi Input Aman (Tanpa VIM)
+local virtualInput = safeUIS:CreateVirtualInput()
+
+safeUIS.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then isClicking = true end
 end)
-UIS.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        isClicking = false
-    end
+safeUIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then isClicking = false end
 end)
 
--- Force Loop untuk Senjata (Anti-Reset Game)
+-- Force Loop dengan Jeda Acak (Anti-Deteksi Pattern)
 task.spawn(function()
-    while task.wait(0.1) do
+    while task.wait(math.random(0.15, 0.3)) do
         if not macroOn and not recoilOn then continue end
         
         local tools = {}
@@ -401,11 +402,13 @@ task.spawn(function()
     end
 end)
 
--- Macro VIM (Backup)
+-- Macro VirtualInput (Lebih Aman dari VIM)
 RunService.RenderStepped:Connect(function()
-    if macroOn and isClicking then
-        VIM:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-        VIM:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+    if macroOn and isClicking and virtualInput then
+        pcall(function()
+            virtualInput:SendMouseButton(Enum.UserInputType.MouseButton1, true)
+            virtualInput:SendMouseButton(Enum.UserInputType.MouseButton1, false)
+        end)
     end
 end)
 
@@ -436,4 +439,4 @@ makeSlider("Skala Gepeng", 0.1, 1, 0.65, function(v)
     if stretchOn then updateStretch() end
 end)
 
-print("[JENOWA STORE] V13 Loaded - Force Loop Active.")
+print("[JENOWA STORE] V14 Loaded - Anti-Kick 267 Active.")
