@@ -1,19 +1,18 @@
--- JENOWA STORE | V17 (Fail-Safe Loader)
+-- JENOWA STORE | V18 (Stable Mode - Anti Weapon Break)
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local TS = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
+local VIM = game:GetService("VirtualInputManager")
 local Lighting = game:GetService("Lighting")
 local LP = Players.LocalPlayer
 local PG = LP:WaitForChild("PlayerGui")
 
--- 1. AMANKAN FUNGSI EXECUTOR (Jangan sampai error)
 local safeUIS = UIS
 pcall(function()
     if cloneref then safeUIS = cloneref(UIS) end
 end)
 
--- 2. HAPUS UI LAMA
 pcall(function()
     local old = PG:FindFirstChild("JenowaStore")
     if old then old:Destroy() end
@@ -21,7 +20,6 @@ pcall(function()
     if oldBlur then oldBlur:Destroy() end
 end)
 
--- 3. SETUP UI (DIJAMIN MUNCUL)
 local Palette = {
     Red = Color3.fromRGB(255, 0, 0),
     Black = Color3.fromRGB(0, 0, 0),
@@ -41,7 +39,7 @@ gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.Parent = PG
 
--- Floating Button
+-- ================= FLOATING BUTTON =================
 local floatBtn = Instance.new("TextButton")
 floatBtn.Name = "FloatBtn"
 floatBtn.Size = UDim2.new(0, 46, 0, 46)
@@ -72,7 +70,7 @@ fbGrad.Color = ColorSequence.new{
 }
 fbGrad.Parent = fbStroke
 
--- Main Frame
+-- ================= MAIN FRAME =================
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 0, 0, 0)
 MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -227,7 +225,7 @@ RunService.RenderStepped:Connect(function()
     end)
 end)
 
--- Komponen Toggle
+-- Komponen
 local function makeToggle(text, state, cb)
     local f = Instance.new("Frame")
     f.Size = UDim2.new(1, 0, 0, 46)
@@ -277,7 +275,6 @@ local function makeToggle(text, state, cb)
     return f
 end
 
--- Komponen Slider
 local function makeSlider(text, min, max, default, cb)
     local f = Instance.new("Frame")
     f.Size = UDim2.new(1, 0, 0, 50)
@@ -347,7 +344,7 @@ local function makeSlider(text, min, max, default, cb)
     return f
 end
 
--- STATE
+-- ================= LOGIKA STABIL =================
 local macroOn = false
 local recoilOn = false
 local soundOn = false
@@ -360,71 +357,53 @@ safeUIS.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then isClicking = false end
 end)
 
--- UI TOGGLES
-makeToggle("Macro Tembak (Auto)", false, function(s) macroOn = s end)
-makeToggle("No Recoil & Spread", false, function(s) recoilOn = s end)
-makeToggle("Hit Sound (Mark)", false, function(s) soundOn = s end)
-
--- ================= LOGIKA BYPASS (DIJALANKAN SETELAH UI) =================
+-- Loop Aman (0.5s) - Hanya menyentuh properti yang aman
 task.spawn(function()
-    task.wait(1) -- Beri waktu UI untuk muncul
-    
-    -- 1. COBA HOOK REQUIRE (Metatable Stealth)
-    pcall(function()
-        if hookfunction and getrawmetatable then
-            local oldRequire = require
-            local hookedRequire
-            hookedRequire = hookfunction(oldRequire, function(module)
-                local result = oldRequire(module)
-                
-                if type(result) == "table" and rawget(result, "Recoil") ~= nil and rawget(result, "SpreadX") ~= nil then
-                    local mt = {
-                        __index = result,
-                        __newindex = function(t, k, v)
-                            if recoilOn then
-                                if k == "Recoil" or k == "SpreadX" or k == "SpreadY" or k == "CameraRecoil" then
-                                    rawset(t, k, 0)
-                                    return
-                                end
-                            end
-                            if macroOn and k == "Auto" then
-                                rawset(t, k, true)
-                                return
-                            end
-                            if macroOn and k == "FireRate" then
-                                rawset(t, k, 0.04)
-                                return
-                            end
-                            if soundOn and (k == "HitCharSndIDs" or k == "HitSndIDs") then
-                                rawset(t, k, {9125402735})
-                                return
-                            end
-                            rawset(t, k, v)
-                        end
-                    }
-                    return setmetatable({}, mt)
-                end
-                return result
-            end)
+    while task.wait(0.5) do
+        if not recoilOn and not soundOn then continue end
+        
+        local tools = {}
+        if LP.Character then
+            for _, v in pairs(LP.Character:GetChildren()) do if v:IsA("Tool") then table.insert(tools, v) end end
         end
-    end)
 
-    -- 2. MACRO LOOP (Fallback)
-    while task.wait(0.1) do
-        if macroOn and isClicking then
-            pcall(function()
-                if mouse1press and mouse1release then
-                    mouse1press()
-                    task.wait(0.02)
-                    mouse1release()
-                elseif VirtualInputManager then
-                    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-                    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+        for _, tool in pairs(tools) do
+            local sm = tool:FindFirstChild("Setting")
+            if sm and sm:IsA("ModuleScript") then
+                local ok, s = pcall(require, sm)
+                if ok and type(s) == "table" then
+                    -- No Recoil (Hanya ubah Recoil & Spread)
+                    if recoilOn then
+                        if s.Recoil then s.Recoil = 0 end
+                        if s.SpreadX then s.SpreadX = 0 end
+                        if s.SpreadY then s.SpreadY = 0 end
+                        if s.CameraRecoil then s.CameraRecoil = 0 end
+                    end
+                    
+                    -- Hit Sound
+                    if soundOn then
+                        if s.HitCharSndIDs then s.HitCharSndIDs = {9125402735} end
+                        if s.HitSndIDs then s.HitSndIDs = {9125402735} end
+                    end
                 end
-            end)
+            end
         end
     end
 end)
+
+-- Macro (VIM) - Tembak spam
+RunService.RenderStepped:Connect(function()
+    if macroOn and isClicking then
+        pcall(function()
+            VIM:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+            VIM:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+        end)
+    end
+end)
+
+makeToggle("Macro Tembak (Auto)", false, function(s) macroOn = s end)
+makeToggle("No Recoil & Spread", false, function(s) recoilOn = s end)
+makeToggle("Hit Sound (Mark)", false, function(s) soundOn = s end)
 
 -- ================= FITUR GEPENG =================
 local stretchOn = false
@@ -450,4 +429,4 @@ makeSlider("Skala Gepeng", 0.1, 1, 0.65, function(v)
     if stretchOn then updateStretch() end
 end)
 
-print("[JENOWA STORE] V17 Loaded - Fail-Safe Active.")
+print("[JENOWA STORE] V18 Loaded - Stable Weapon Mode.")
