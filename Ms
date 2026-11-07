@@ -1,17 +1,14 @@
--- JENOWA STORE | V18 (Stable Mode - Anti Weapon Break)
+-- JENOWA STORE | V19 (Ultimate Stealth - No 267)
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local TS = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
-local VIM = game:GetService("VirtualInputManager")
 local Lighting = game:GetService("Lighting")
 local LP = Players.LocalPlayer
 local PG = LP:WaitForChild("PlayerGui")
 
-local safeUIS = UIS
-pcall(function()
-    if cloneref then safeUIS = cloneref(UIS) end
-end)
+-- Gunakan gethui() atau CoreGui agar UI tidak mudah dideteksi game
+local safeGui = pcall(function() return gethui() end) and gethui() or game:GetService("CoreGui")
 
 pcall(function()
     local old = PG:FindFirstChild("JenowaStore")
@@ -37,7 +34,7 @@ local gui = Instance.new("ScreenGui")
 gui.Name = "JenowaStore"
 gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-gui.Parent = PG
+gui.Parent = safeGui
 
 -- ================= FLOATING BUTTON =================
 local floatBtn = Instance.new("TextButton")
@@ -175,13 +172,13 @@ Header.InputBegan:Connect(function(input)
         startPos = MainFrame.Position
     end
 end)
-safeUIS.InputChanged:Connect(function(input)
+UIS.InputChanged:Connect(function(input)
     if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
         local delta = input.Position - dragStart
         MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
-safeUIS.InputEnded:Connect(function(input)
+UIS.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
 end)
 
@@ -325,13 +322,13 @@ local function makeSlider(text, min, max, default, cb)
         end
     end)
     
-    safeUIS.InputEnded:Connect(function(i)
+    UIS.InputEnded:Connect(function(i)
         if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then 
             dragging2 = false 
         end
     end)
     
-    safeUIS.InputChanged:Connect(function(i)
+    UIS.InputChanged:Connect(function(i)
         if dragging2 and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
             local rel = math.clamp((i.Position.X - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
             val = math.floor((min + (max - min) * rel) * 100 + 0.5) / 100
@@ -344,66 +341,68 @@ local function makeSlider(text, min, max, default, cb)
     return f
 end
 
--- ================= LOGIKA STABIL =================
-local macroOn = false
+-- ================= LOGIKA FITUR (EVENT-BASED) =================
 local recoilOn = false
 local soundOn = false
-local isClicking = false
+local macroOn = false
 
-safeUIS.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then isClicking = true end
-end)
-safeUIS.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then isClicking = false end
-end)
-
--- Loop Aman (0.5s) - Hanya menyentuh properti yang aman
-task.spawn(function()
-    while task.wait(0.5) do
-        if not recoilOn and not soundOn then continue end
-        
-        local tools = {}
-        if LP.Character then
-            for _, v in pairs(LP.Character:GetChildren()) do if v:IsA("Tool") then table.insert(tools, v) end end
+-- Event saat senjata di-equip (Sangat aman dari anti-cheat)
+local function onToolAdded(tool)
+    if not tool:IsA("Tool") then return end
+    local sm = tool:FindFirstChild("Setting")
+    if not (sm and sm:IsA("ModuleScript")) then return end
+    
+    task.wait(0.1) -- Tunggu script game load
+    local ok, s = pcall(require, sm)
+    if ok and type(s) == "table" then
+        if recoilOn then
+            s.Recoil = 0
+            s.SpreadX = 0
+            s.SpreadY = 0
+            s.Accuracy = 1
+            s.CameraRecoil = 0
         end
-
-        for _, tool in pairs(tools) do
-            local sm = tool:FindFirstChild("Setting")
-            if sm and sm:IsA("ModuleScript") then
-                local ok, s = pcall(require, sm)
-                if ok and type(s) == "table" then
-                    -- No Recoil (Hanya ubah Recoil & Spread)
-                    if recoilOn then
-                        if s.Recoil then s.Recoil = 0 end
-                        if s.SpreadX then s.SpreadX = 0 end
-                        if s.SpreadY then s.SpreadY = 0 end
-                        if s.CameraRecoil then s.CameraRecoil = 0 end
-                    end
-                    
-                    -- Hit Sound
-                    if soundOn then
-                        if s.HitCharSndIDs then s.HitCharSndIDs = {9125402735} end
-                        if s.HitSndIDs then s.HitSndIDs = {9125402735} end
-                    end
-                end
-            end
+        if soundOn then
+            s.HitCharSndIDs = {9125402735}
+            s.HitSndIDs = {9125402735}
+            s.HitCharSndVolume = 3
         end
+        if macroOn then
+            s.Auto = true
+            s.FireRate = 0.05
+        end
+    end
+end
+
+if LP.Character then
+    LP.Character.ChildAdded:Connect(onToolAdded)
+end
+LP.CharacterAdded:Connect(function(char)
+    char.ChildAdded:Connect(onToolAdded)
+end)
+
+-- Toggle UI
+makeToggle("Macro Tembak (Auto)", false, function(s) 
+    macroOn = s 
+    -- Paksa update ke senjata saat ini
+    if LP.Character then
+        for _, v in pairs(LP.Character:GetChildren()) do onToolAdded(v) end
     end
 end)
 
--- Macro (VIM) - Tembak spam
-RunService.RenderStepped:Connect(function()
-    if macroOn and isClicking then
-        pcall(function()
-            VIM:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-            VIM:SendMouseButtonEvent(0, 0, 0, false, game, 1)
-        end)
+makeToggle("No Recoil & Spread", false, function(s) 
+    recoilOn = s 
+    if LP.Character then
+        for _, v in pairs(LP.Character:GetChildren()) do onToolAdded(v) end
     end
 end)
 
-makeToggle("Macro Tembak (Auto)", false, function(s) macroOn = s end)
-makeToggle("No Recoil & Spread", false, function(s) recoilOn = s end)
-makeToggle("Hit Sound (Mark)", false, function(s) soundOn = s end)
+makeToggle("Hit Sound (Mark)", false, function(s) 
+    soundOn = s
+    if LP.Character then
+        for _, v in pairs(LP.Character:GetChildren()) do onToolAdded(v) end
+    end
+end)
 
 -- ================= FITUR GEPENG =================
 local stretchOn = false
@@ -429,4 +428,4 @@ makeSlider("Skala Gepeng", 0.1, 1, 0.65, function(v)
     if stretchOn then updateStretch() end
 end)
 
-print("[JENOWA STORE] V18 Loaded - Stable Weapon Mode.")
+print("[JENOWA STORE] V19 Loaded - 267 Bypass Active.")
