@@ -1,486 +1,439 @@
--- JENOWA CROSSHAIR (Size + Color)
+-- JENOWA STORE | V13 (Fix Macro & No Recoil Terjamin)
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
+local TS = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
+local VIM = game:GetService("VirtualInputManager")
+local Lighting = game:GetService("Lighting")
+local LP = Players.LocalPlayer
+local PG = LP:WaitForChild("PlayerGui")
 
-local player = Players.LocalPlayer
-local pg = player:WaitForChild("PlayerGui")
+local old = PG:FindFirstChild("JenowaStore")
+if old then old:Destroy() end
+local oldBlur = Lighting:FindFirstChild("JenowaBlur")
+if oldBlur then oldBlur:Destroy() end
 
--- ===== Config =====
-local SIZE_MIN, SIZE_MAX = 2, 16
-local currentSize = 6
-local currentColor = Color3.fromRGB(255, 255, 255)
-
-local palette = {
-    {name="White",   color=Color3.fromRGB(255, 255, 255)},
-    {name="Red",     color=Color3.fromRGB(255, 60, 60)},
-    {name="Lime",    color=Color3.fromRGB(80, 230, 120)},
-    {name="Cyan",    color=Color3.fromRGB(80, 220, 255)},
-    {name="Yellow",  color=Color3.fromRGB(255, 220, 80)},
-    {name="Magenta", color=Color3.fromRGB(255, 80, 220)},
-    {name="Orange",  color=Color3.fromRGB(255, 150, 60)},
-    {name="Black",   color=Color3.fromRGB(20, 20, 20)},
+local Palette = {
+    Red = Color3.fromRGB(255, 0, 0),
+    Black = Color3.fromRGB(0, 0, 0),
+    White = Color3.fromRGB(255, 255, 255),
+    ElementBg = Color3.fromRGB(18, 18, 20),
+    Text = Color3.fromRGB(240, 240, 240)
 }
 
--- ===== Root =====
+local blur = Instance.new("BlurEffect")
+blur.Name = "JenowaBlur"
+blur.Size = 0
+blur.Parent = Lighting
+
 local gui = Instance.new("ScreenGui")
-gui.Name = "JenowaCrosshair"
-gui.IgnoreGuiInset = true
+gui.Name = "JenowaStore"
 gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-gui.Parent = pg
+gui.Parent = PG
 
--- ===== Crosshair dot =====
-local dotHolder = Instance.new("Frame")
-dotHolder.Name = "DotHolder"
-dotHolder.AnchorPoint = Vector2.new(0.5, 0.5)
-dotHolder.Position = UDim2.fromScale(0.5, 0.5)
-dotHolder.Size = UDim2.fromOffset(currentSize, currentSize)
-dotHolder.BackgroundTransparency = 1
-dotHolder.ZIndex = 5
-dotHolder.Parent = gui
+-- ================= FLOATING BUTTON =================
+local floatBtn = Instance.new("TextButton")
+floatBtn.Name = "FloatBtn"
+floatBtn.Size = UDim2.new(0, 46, 0, 46)
+floatBtn.Position = UDim2.new(1, -70, 0.5, -23)
+floatBtn.BackgroundColor3 = Palette.Black
+floatBtn.Text = "JS"
+floatBtn.TextColor3 = Palette.White
+floatBtn.Font = Enum.Font.GothamBlack
+floatBtn.TextSize = 16
+floatBtn.AutoButtonColor = false
+floatBtn.Parent = gui
 
-local dotOutline = Instance.new("Frame")
-dotOutline.Name = "DotOutline"
-dotOutline.AnchorPoint = Vector2.new(0.5, 0.5)
-dotOutline.Position = UDim2.fromScale(0.5, 0.5)
-dotOutline.Size = UDim2.new(1, 2, 1, 2)
-dotOutline.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-dotOutline.BackgroundTransparency = 0.35
-dotOutline.BorderSizePixel = 0
-dotOutline.ZIndex = 5
-dotOutline.Parent = dotHolder
+local fbCorner = Instance.new("UICorner")
+fbCorner.CornerRadius = UDim.new(1, 0)
+fbCorner.Parent = floatBtn
 
-local dotOutlineCorner = Instance.new("UICorner")
-dotOutlineCorner.CornerRadius = UDim.new(1, 0)
-dotOutlineCorner.Parent = dotOutline
+local fbStroke = Instance.new("UIStroke")
+fbStroke.Thickness = 3
+fbStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+fbStroke.Parent = floatBtn
 
-local dotMain = Instance.new("Frame")
-dotMain.Name = "DotMain"
-dotMain.Size = UDim2.fromScale(1, 1)
-dotMain.BackgroundColor3 = currentColor
-dotMain.BorderSizePixel = 0
-dotMain.ZIndex = 6
-dotMain.Parent = dotHolder
-
-local dotMainCorner = Instance.new("UICorner")
-dotMainCorner.CornerRadius = UDim.new(1, 0)
-dotMainCorner.Parent = dotMain
-
--- ===== Card =====
-local card = Instance.new("Frame")
-card.Name = "Card"
-card.Position = UDim2.fromOffset(20, 20)
-card.Size = UDim2.fromOffset(260, 156)
-card.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
-card.BorderSizePixel = 0
-card.ZIndex = 10
-card.Parent = gui
-
-local cardGrad = Instance.new("UIGradient")
-cardGrad.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(30, 30, 38)),
-    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(14, 14, 18)),
+local fbGrad = Instance.new("UIGradient")
+fbGrad.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Palette.Red),
+    ColorSequenceKeypoint.new(0.33, Palette.White),
+    ColorSequenceKeypoint.new(0.66, Palette.Black),
+    ColorSequenceKeypoint.new(1, Palette.Red),
 }
-cardGrad.Rotation = 90
-cardGrad.Parent = card
+fbGrad.Parent = fbStroke
 
-local cardCorner = Instance.new("UICorner")
-cardCorner.CornerRadius = UDim.new(0, 16)
-cardCorner.Parent = card
+floatBtn.MouseEnter:Connect(function() TS:Create(floatBtn, TweenInfo.new(0.2), {TextColor3 = Palette.Red}):Play() end)
+floatBtn.MouseLeave:Connect(function() TS:Create(floatBtn, TweenInfo.new(0.2), {TextColor3 = Palette.White}):Play() end)
 
-local cardStroke = Instance.new("UIStroke")
-cardStroke.Thickness = 1
-cardStroke.Color = Color3.fromRGB(70, 70, 90)
-cardStroke.Transparency = 0.55
-cardStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-cardStroke.Parent = card
+-- ================= MAIN FRAME =================
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 0, 0, 0)
+MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+MainFrame.BackgroundColor3 = Palette.Black
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Visible = false
+MainFrame.ClipsDescendants = true
+MainFrame.Parent = gui
 
--- ===== Header =====
-local hdrDot = Instance.new("Frame")
-hdrDot.AnchorPoint = Vector2.new(0, 0.5)
-hdrDot.Position = UDim2.new(0, 18, 0, 26)
-hdrDot.Size = UDim2.fromOffset(10, 10)
-hdrDot.BackgroundColor3 = Color3.fromRGB(80, 230, 140)
-hdrDot.BorderSizePixel = 0
-hdrDot.ZIndex = 11
-hdrDot.Parent = card
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 12)
+MainCorner.Parent = MainFrame
 
-local hdrDotCorner = Instance.new("UICorner")
-hdrDotCorner.CornerRadius = UDim.new(1, 0)
-hdrDotCorner.Parent = hdrDot
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Thickness = 3
+MainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+MainStroke.Parent = MainFrame
 
-local hdrDotGlow = Instance.new("ImageLabel")
-hdrDotGlow.Size = UDim2.fromScale(3, 3)
-hdrDotGlow.AnchorPoint = Vector2.new(0.5, 0.5)
-hdrDotGlow.Position = UDim2.fromScale(0.5, 0.5)
-hdrDotGlow.BackgroundTransparency = 1
-hdrDotGlow.Image = "rbxassetid://5028857084"
-hdrDotGlow.ImageColor3 = Color3.fromRGB(80, 230, 140)
-hdrDotGlow.ImageTransparency = 0.35
-hdrDotGlow.ZIndex = 10
-hdrDotGlow.Parent = hdrDot
+local MainStrokeGrad = Instance.new("UIGradient")
+MainStrokeGrad.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Palette.Red),
+    ColorSequenceKeypoint.new(0.33, Palette.White),
+    ColorSequenceKeypoint.new(0.66, Palette.Black),
+    ColorSequenceKeypoint.new(1, Palette.Red),
+}
+MainStrokeGrad.Parent = MainStroke
 
-local title = Instance.new("TextLabel")
-title.Size = UDim2.fromOffset(120, 14)
-title.Position = UDim2.fromOffset(40, 8)
-title.BackgroundTransparency = 1
-title.Font = Enum.Font.GothamBold
-title.TextSize = 11
-title.TextColor3 = Color3.fromRGB(200, 200, 210)
-title.TextXAlignment = Enum.TextXAlignment.Left
-title.Text = "JENOWA CROSSHAIR"
-title.ZIndex = 12
-title.Parent = card
+-- Header
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 50)
+Header.BackgroundColor3 = Palette.ElementBg
+Header.BorderSizePixel = 0
+Header.Parent = MainFrame
 
-local status = Instance.new("TextLabel")
-status.Size = UDim2.fromOffset(120, 18)
-status.Position = UDim2.fromOffset(40, 24)
-status.BackgroundTransparency = 1
-status.Font = Enum.Font.GothamMedium
-status.TextSize = 13
-status.TextColor3 = Color3.fromRGB(240, 240, 245)
-status.TextXAlignment = Enum.TextXAlignment.Left
-status.Text = "Enabled"
-status.ZIndex = 12
-status.Parent = card
+local HeaderCorner = Instance.new("UICorner")
+HeaderCorner.CornerRadius = UDim.new(0, 12)
+HeaderCorner.Parent = Header
 
-local badge = Instance.new("TextLabel")
-badge.AnchorPoint = Vector2.new(0, 0.5)
-badge.Position = UDim2.new(1, -90, 0, 26)
-badge.Size = UDim2.fromOffset(22, 18)
-badge.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-badge.BackgroundTransparency = 0.2
-badge.BorderSizePixel = 0
-badge.Font = Enum.Font.GothamBold
-badge.TextSize = 10
-badge.TextColor3 = Color3.fromRGB(190, 190, 200)
-badge.Text = "F8"
-badge.ZIndex = 12
-badge.Parent = card
+local HeaderFix = Instance.new("Frame")
+HeaderFix.Size = UDim2.new(1, 0, 0, 15)
+HeaderFix.Position = UDim2.new(0, 0, 1, -15)
+HeaderFix.BackgroundColor3 = Palette.ElementBg
+HeaderFix.BorderSizePixel = 0
+HeaderFix.Parent = Header
 
-local badgeCorner = Instance.new("UICorner")
-badgeCorner.CornerRadius = UDim.new(0, 6)
-badgeCorner.Parent = badge
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -70, 1, 0)
+Title.Position = UDim2.new(0, 25, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "JENOWA STORE"
+Title.TextColor3 = Palette.White
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 16
+Title.Parent = Header
 
-local badgeStroke = Instance.new("UIStroke")
-badgeStroke.Thickness = 1
-badgeStroke.Color = Color3.fromRGB(80, 80, 100)
-badgeStroke.Transparency = 0.5
-badgeStroke.Parent = badge
+local AccentLine = Instance.new("Frame")
+AccentLine.Size = UDim2.new(0, 3, 0, 18)
+AccentLine.Position = UDim2.new(0, 15, 0.5, -9)
+AccentLine.BackgroundColor3 = Palette.Red
+AccentLine.BorderSizePixel = 0
+AccentLine.Parent = Header
+local AL_Corner = Instance.new("UICorner"); AL_Corner.CornerRadius = UDim.new(1,0); AL_Corner.Parent = AccentLine
 
--- ===== Switch =====
-local sw = Instance.new("Frame")
-sw.AnchorPoint = Vector2.new(1, 0.5)
-sw.Position = UDim2.new(1, -16, 0, 26)
-sw.Size = UDim2.fromOffset(44, 24)
-sw.BackgroundColor3 = Color3.fromRGB(60, 200, 130)
-sw.BorderSizePixel = 0
-sw.ZIndex = 12
-sw.Parent = card
+-- Close Button
+local Close = Instance.new("TextButton")
+Close.Size = UDim2.new(0, 28, 0, 28)
+Close.Position = UDim2.new(1, -38, 0.5, -14)
+Close.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+Close.Text = "—"
+Close.TextColor3 = Palette.White
+Close.Font = Enum.Font.GothamBold
+Close.TextSize = 14
+Close.AutoButtonColor = false
+Close.Parent = Header
 
-local swCorner = Instance.new("UICorner")
-swCorner.CornerRadius = UDim.new(1, 0)
-swCorner.Parent = sw
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 8)
+CloseCorner.Parent = Close
 
-local swStroke = Instance.new("UIStroke")
-swStroke.Thickness = 1
-swStroke.Color = Color3.fromRGB(255, 255, 255)
-swStroke.Transparency = 0.75
-swStroke.Parent = sw
+Close.MouseEnter:Connect(function() TS:Create(Close, TweenInfo.new(0.2), {BackgroundColor3 = Palette.Red}):Play() end)
+Close.MouseLeave:Connect(function() TS:Create(Close, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(35, 35, 40)}):Play() end)
 
-local knob = Instance.new("Frame")
-knob.Name = "Knob"
-knob.AnchorPoint = Vector2.new(0, 0.5)
-knob.Size = UDim2.fromOffset(20, 20)
-knob.Position = UDim2.new(1, -22, 0.5, 0)
-knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-knob.BorderSizePixel = 0
-knob.ZIndex = 13
-knob.Parent = sw
+-- Body
+local Body = Instance.new("Frame")
+Body.Size = UDim2.new(1, -20, 1, -70)
+Body.Position = UDim2.new(0, 10, 0, 58)
+Body.BackgroundTransparency = 1
+Body.Parent = MainFrame
 
-local knobCorner = Instance.new("UICorner")
-knobCorner.CornerRadius = UDim.new(1, 0)
-knobCorner.Parent = knob
+local UIList = Instance.new("UIListLayout")
+UIList.Padding = UDim.new(0, 10)
+UIList.SortOrder = Enum.SortOrder.LayoutOrder
+UIList.Parent = Body
 
--- ===== Divider =====
-local divider = Instance.new("Frame")
-divider.Position = UDim2.fromOffset(16, 52)
-divider.Size = UDim2.new(1, -32, 0, 1)
-divider.BackgroundColor3 = Color3.fromRGB(70, 70, 90)
-divider.BackgroundTransparency = 0.6
-divider.BorderSizePixel = 0
-divider.ZIndex = 11
-divider.Parent = card
-
--- ===== Size section =====
-local sizeLabel = Instance.new("TextLabel")
-sizeLabel.Position = UDim2.fromOffset(16, 64)
-sizeLabel.Size = UDim2.fromOffset(60, 14)
-sizeLabel.BackgroundTransparency = 1
-sizeLabel.Font = Enum.Font.GothamBold
-sizeLabel.TextSize = 11
-sizeLabel.TextColor3 = Color3.fromRGB(200, 200, 210)
-sizeLabel.TextXAlignment = Enum.TextXAlignment.Left
-sizeLabel.Text = "SIZE"
-sizeLabel.ZIndex = 12
-sizeLabel.Parent = card
-
-local sizeValue = Instance.new("TextLabel")
-sizeValue.AnchorPoint = Vector2.new(1, 0)
-sizeValue.Position = UDim2.new(1, -16, 0, 64)
-sizeValue.Size = UDim2.fromOffset(60, 14)
-sizeValue.BackgroundTransparency = 1
-sizeValue.Font = Enum.Font.GothamBold
-sizeValue.TextSize = 11
-sizeValue.TextColor3 = Color3.fromRGB(80, 230, 140)
-sizeValue.TextXAlignment = Enum.TextXAlignment.Right
-sizeValue.Text = currentSize .. "px"
-sizeValue.ZIndex = 12
-sizeValue.Parent = card
-
-local sizeTrack = Instance.new("Frame")
-sizeTrack.Position = UDim2.fromOffset(16, 86)
-sizeTrack.Size = UDim2.new(1, -32, 0, 6)
-sizeTrack.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-sizeTrack.BorderSizePixel = 0
-sizeTrack.ZIndex = 12
-sizeTrack.Parent = card
-
-local sizeTrackCorner = Instance.new("UICorner")
-sizeTrackCorner.CornerRadius = UDim.new(1, 0)
-sizeTrackCorner.Parent = sizeTrack
-
-local sizeFill = Instance.new("Frame")
-sizeFill.Size = UDim2.new(0, 0, 1, 0)
-sizeFill.BackgroundColor3 = Color3.fromRGB(80, 230, 140)
-sizeFill.BorderSizePixel = 0
-sizeFill.ZIndex = 13
-sizeFill.Parent = sizeTrack
-
-local sizeFillCorner = Instance.new("UICorner")
-sizeFillCorner.CornerRadius = UDim.new(1, 0)
-sizeFillCorner.Parent = sizeFill
-
-local sizeKnob = Instance.new("Frame")
-sizeKnob.AnchorPoint = Vector2.new(0.5, 0.5)
-sizeKnob.Size = UDim2.fromOffset(14, 14)
-sizeKnob.Position = UDim2.new(0, 0, 0.5, 0)
-sizeKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-sizeKnob.BorderSizePixel = 0
-sizeKnob.ZIndex = 14
-sizeKnob.Parent = sizeTrack
-
-local sizeKnobCorner = Instance.new("UICorner")
-sizeKnobCorner.CornerRadius = UDim.new(1, 0)
-sizeKnobCorner.Parent = sizeKnob
-
-local sizeKnobStroke = Instance.new("UIStroke")
-sizeKnobStroke.Thickness = 2
-sizeKnobStroke.Color = Color3.fromRGB(80, 230, 140)
-sizeKnobStroke.Parent = sizeKnob
-
-local sizeBtn = Instance.new("TextButton")
-sizeBtn.Size = UDim2.fromScale(1, 1)
-sizeBtn.BackgroundTransparency = 1
-sizeBtn.Text = ""
-sizeBtn.ZIndex = 15
-sizeBtn.Parent = sizeTrack
-
--- ===== Color section =====
-local colorLabel = Instance.new("TextLabel")
-colorLabel.Position = UDim2.fromOffset(16, 104)
-colorLabel.Size = UDim2.fromOffset(60, 14)
-colorLabel.BackgroundTransparency = 1
-colorLabel.Font = Enum.Font.GothamBold
-colorLabel.TextSize = 11
-colorLabel.TextColor3 = Color3.fromRGB(200, 200, 210)
-colorLabel.TextXAlignment = Enum.TextXAlignment.Left
-colorLabel.Text = "COLOR"
-colorLabel.ZIndex = 12
-colorLabel.Parent = card
-
-local swatchButtons = {}
-local SWATCH_SIZE = 22
-local SWATCH_GAP = 6
-local SWATCH_START = 21
-local SWATCH_Y = 122
-
-for i, entry in ipairs(palette) do
-    local swatch = Instance.new("TextButton")
-    swatch.Size = UDim2.fromOffset(SWATCH_SIZE, SWATCH_SIZE)
-    swatch.Position = UDim2.fromOffset(SWATCH_START + (i-1)*(SWATCH_SIZE+SWATCH_GAP), SWATCH_Y)
-    swatch.BackgroundColor3 = entry.color
-    swatch.BorderSizePixel = 0
-    swatch.Text = ""
-    swatch.AutoButtonColor = false
-    swatch.ZIndex = 12
-    swatch.Parent = card
-
-    local sc = Instance.new("UICorner")
-    sc.CornerRadius = UDim.new(1, 0)
-    sc.Parent = swatch
-
-    local sst = Instance.new("UIStroke")
-    sst.Thickness = 1
-    sst.Color = Color3.fromRGB(120, 120, 130)
-    sst.Transparency = 0.6
-    sst.Parent = swatch
-
-    swatchButtons[i] = {button = swatch, stroke = sst, color = entry.color}
-
-    swatch.MouseButton1Click:Connect(function()
-        currentColor = entry.color
-        dotMain.BackgroundColor3 = entry.color
-        local b = entry.color.R + entry.color.G + entry.color.B
-        if b > 1.5 then
-            dotOutline.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-        else
-            dotOutline.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        end
-        for j, data in ipairs(swatchButtons) do
-            if j == i then
-                data.stroke.Color = Color3.fromRGB(255, 255, 255)
-                data.stroke.Transparency = 0
-                data.stroke.Thickness = 2
-            else
-                data.stroke.Color = Color3.fromRGB(120, 120, 130)
-                data.stroke.Transparency = 0.6
-                data.stroke.Thickness = 1
-            end
-        end
-    end)
-end
-
--- set default selected = white
-swatchButtons[1].stroke.Color = Color3.fromRGB(255, 255, 255)
-swatchButtons[1].stroke.Transparency = 0
-swatchButtons[1].stroke.Thickness = 2
-
--- ===== Switch buttons =====
-local swBtn = Instance.new("TextButton")
-swBtn.Size = UDim2.fromScale(1, 1)
-swBtn.BackgroundTransparency = 1
-swBtn.Text = ""
-swBtn.ZIndex = 15
-swBtn.Parent = sw
-
-local cardBtn = Instance.new("TextButton")
-cardBtn.Size = UDim2.fromScale(1, 1)
-cardBtn.BackgroundTransparency = 1
-cardBtn.Text = ""
-cardBtn.ZIndex = 9
-cardBtn.Parent = card
-
--- ===== State =====
-local enabled = true
-local TWEEN = TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-
-local function setSize(px)
-    currentSize = math.clamp(math.round(px), SIZE_MIN, SIZE_MAX)
-    dotHolder.Size = UDim2.fromOffset(currentSize, currentSize)
-    local t = (currentSize - SIZE_MIN) / (SIZE_MAX - SIZE_MIN)
-    sizeFill.Size = UDim2.new(t, 0, 1, 0)
-    sizeKnob.Position = UDim2.new(t, 0, 0.5, 0)
-    sizeValue.Text = currentSize .. "px"
-end
-
-local function apply()
-    dotHolder.Visible = enabled
-
-    local onColor  = Color3.fromRGB(60, 200, 130)
-    local offColor = Color3.fromRGB(90, 90, 100)
-    local dotOn    = Color3.fromRGB(80, 230, 140)
-    local dotOff   = Color3.fromRGB(255, 110, 110)
-
-    TweenService:Create(sw, TWEEN, {BackgroundColor3 = enabled and onColor or offColor}):Play()
-    TweenService:Create(knob, TWEEN, {
-        Position = enabled and UDim2.new(1, -22, 0.5, 0) or UDim2.new(0, 2, 0.5, 0)
-    }):Play()
-    TweenService:Create(hdrDot, TWEEN, {BackgroundColor3 = enabled and dotOn or dotOff}):Play()
-    TweenService:Create(hdrDotGlow, TWEEN, {ImageColor3 = enabled and dotOn or dotOff}):Play()
-
-    status.Text = enabled and "Enabled" or "Disabled"
-    status.TextColor3 = enabled and Color3.fromRGB(240, 240, 245) or Color3.fromRGB(200, 150, 150)
-end
-
-local function toggle()
-    enabled = not enabled
-    apply()
-end
-
-swBtn.MouseButton1Click:Connect(toggle)
-cardBtn.MouseButton1Click:Connect(toggle)
-
-UIS.InputBegan:Connect(function(input, gp)
-    if gp then return end
-    if input.KeyCode == Enum.KeyCode.F8 then
-        toggle()
-    end
-end)
-
--- ===== Size slider drag =====
-local draggingSize = false
-sizeBtn.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-    or input.UserInputType == Enum.UserInputType.Touch then
-        draggingSize = true
-        local rel = input.Position.X - sizeTrack.AbsolutePosition.X
-        local t = math.clamp(rel / sizeTrack.AbsoluteSize.X, 0, 1)
-        setSize(SIZE_MIN + t * (SIZE_MAX - SIZE_MIN))
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                draggingSize = false
-            end
-        end)
-    end
-end)
-
-UIS.InputChanged:Connect(function(input)
-    if draggingSize and (input.UserInputType == Enum.UserInputType.MouseMovement
-    or input.UserInputType == Enum.UserInputType.Touch) then
-        local rel = input.Position.X - sizeTrack.AbsolutePosition.X
-        local t = math.clamp(rel / sizeTrack.AbsoluteSize.X, 0, 1)
-        setSize(SIZE_MIN + t * (SIZE_MAX - SIZE_MIN))
-    end
-end)
-
--- ===== Pulse =====
-local pulse = 0
-RunService.Heartbeat:Connect(function(dt)
-    pulse += dt * 3
-    local a = 0.25 + math.abs(math.sin(pulse)) * 0.35
-    hdrDotGlow.ImageTransparency = enabled and a or 0.9
-end)
-
--- ===== Drag card =====
+-- Drag Logic
 local dragging, dragStart, startPos
-cardBtn.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-    or input.UserInputType == Enum.UserInputType.Touch then
+Header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
-        startPos = card.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
+        startPos = MainFrame.Position
+    end
+end)
+UIS.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
+end)
+
+-- Open/Close Logic
+local isOpen = false
+local function toggleUI()
+    isOpen = not isOpen
+    if isOpen then
+        floatBtn.Visible = false
+        MainFrame.Visible = true
+        
+        TS:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0, 460, 0, 340),
+            BackgroundTransparency = 0
+        }):Play()
+        TS:Create(blur, TweenInfo.new(0.4), {Size = 10}):Play()
+    else
+        TS:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+            Size = UDim2.new(0, 0, 0, 0),
+            BackgroundTransparency = 1
+        }):Play()
+        TS:Create(blur, TweenInfo.new(0.3), {Size = 0}):Play()
+        
+        task.delay(0.3, function()
+            MainFrame.Visible = false
+            floatBtn.Visible = true
         end)
     end
+end
+
+floatBtn.MouseButton1Click:Connect(toggleUI)
+Close.MouseButton1Click:Connect(toggleUI)
+
+-- ================= ANIMASI BORDER =================
+RunService.RenderStepped:Connect(function()
+    if not MainFrame.Visible then return end
+    local t = tick()
+    pcall(function()
+        MainStrokeGrad.Rotation = (t * 60) % 360
+        MainStrokeGrad.Offset = Vector2.new(math.sin(t * 2), math.cos(t * 2))
+        fbGrad.Rotation = (-t * 60) % 360
+        fbGrad.Offset = Vector2.new(math.cos(t * 2), math.sin(t * 2))
+    end)
 end)
 
-UIS.InputChanged:Connect(function(input)
-    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
-    or input.UserInputType == Enum.UserInputType.Touch) then
-        local d = input.Position - dragStart
-        card.Position = UDim2.new(
-            startPos.X.Scale, startPos.X.Offset + d.X,
-            startPos.Y.Scale, startPos.Y.Offset + d.Y
-        )
+-- ================= KOMPONEN =================
+local function makeToggle(text, state, cb)
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(1, 0, 0, 46)
+    f.BackgroundColor3 = Palette.ElementBg
+    f.Parent = Body
+    local fc = Instance.new("UICorner"); fc.CornerRadius = UDim.new(0, 8); fc.Parent = f
+    local fs = Instance.new("UIStroke"); fs.Color = Color3.fromRGB(40, 40, 45); fs.Thickness = 1; fs.Parent = f
+
+    local l = Instance.new("TextLabel")
+    l.Size = UDim2.new(1, -70, 1, 0)
+    l.Position = UDim2.new(0, 15, 0, 0)
+    l.BackgroundTransparency = 1
+    l.Text = text
+    l.TextColor3 = Palette.White
+    l.TextXAlignment = Enum.TextXAlignment.Left
+    l.Font = Enum.Font.GothamMedium
+    l.TextSize = 14
+    l.Parent = f
+
+    local track = Instance.new("TextButton")
+    track.Size = UDim2.new(0, 46, 0, 24)
+    track.Position = UDim2.new(1, -61, 0.5, -12)
+    track.BackgroundColor3 = state and Palette.Red or Color3.fromRGB(15, 15, 18)
+    track.Text = ""
+    track.AutoButtonColor = false
+    track.ClipsDescendants = true
+    track.Parent = f
+    local tc = Instance.new("UICorner"); tc.CornerRadius = UDim.new(1, 0); tc.Parent = track
+    local ts = Instance.new("UIStroke"); ts.Color = state and Palette.Red or Color3.fromRGB(40,40,45); ts.Parent = track
+
+    local knob = Instance.new("Frame")
+    knob.Size = UDim2.new(0, 16, 0, 16)
+    knob.Position = state and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)
+    knob.BackgroundColor3 = Palette.White
+    knob.Parent = track
+    local kc = Instance.new("UICorner"); kc.CornerRadius = UDim.new(1, 0); kc.Parent = knob
+
+    f.MouseEnter:Connect(function() TS:Create(f, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(28,28,32)}):Play() end)
+    f.MouseLeave:Connect(function() TS:Create(f, TweenInfo.new(0.2), {BackgroundColor3 = Palette.ElementBg}):Play() end)
+
+    local on = state
+    track.MouseButton1Click:Connect(function()
+        on = not on
+        local ti = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        TS:Create(track, ti, {BackgroundColor3 = on and Palette.Red or Color3.fromRGB(15, 15, 18)}):Play()
+        TS:Create(ts, ti, {Color = on and Palette.Red or Color3.fromRGB(40,40,45)}):Play()
+        TS:Create(knob, ti, {Position = on and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)}):Play()
+        if cb then cb(on) end
+    end)
+    return f
+end
+
+local function makeSlider(text, min, max, default, cb)
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(1, 0, 0, 50)
+    f.BackgroundColor3 = Palette.ElementBg
+    f.Parent = Body
+    local fc = Instance.new("UICorner"); fc.CornerRadius = UDim.new(0, 8); fc.Parent = f
+    local fs = Instance.new("UIStroke"); fs.Color = Color3.fromRGB(40, 40, 45); fs.Thickness = 1; fs.Parent = f
+
+    local l = Instance.new("TextLabel")
+    l.Size = UDim2.new(1, -20, 0, 16)
+    l.Position = UDim2.new(0, 15, 0, 8)
+    l.BackgroundTransparency = 1
+    l.Text = text .. ": " .. default
+    l.TextColor3 = Palette.White
+    l.TextXAlignment = Enum.TextXAlignment.Left
+    l.Font = Enum.Font.GothamMedium
+    l.TextSize = 13
+    l.Parent = f
+
+    local track = Instance.new("Frame")
+    track.Size = UDim2.new(1, -30, 0, 4)
+    track.Position = UDim2.new(0, 15, 0, 34)
+    track.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
+    track.Parent = f
+    local trc = Instance.new("UICorner"); trc.CornerRadius = UDim.new(1, 0); trc.Parent = track
+
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+    fill.BackgroundColor3 = Palette.Red
+    fill.Parent = track
+    local fc2 = Instance.new("UICorner"); fc2.CornerRadius = UDim.new(1, 0); fc2.Parent = fill
+    
+    local knob = Instance.new("Frame")
+    knob.Size = UDim2.new(0, 14, 0, 14)
+    knob.Position = UDim2.new(fill.Size.X.Scale, 0, 0.5, -7)
+    knob.BackgroundColor3 = Palette.White
+    knob.ZIndex = 3
+    knob.Parent = track
+    local kc = Instance.new("UICorner"); kc.CornerRadius = UDim.new(1, 0); kc.Parent = knob
+    local ks = Instance.new("UIStroke"); ks.Color = Palette.Red; ks.Thickness = 2; ks.Parent = knob
+
+    local val = default
+    local dragging2 = false
+    
+    track.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then 
+            dragging2 = true 
+        end
+    end)
+    
+    UIS.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then 
+            dragging2 = false 
+        end
+    end)
+    
+    UIS.InputChanged:Connect(function(i)
+        if dragging2 and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+            local rel = math.clamp((i.Position.X - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
+            val = math.floor((min + (max - min) * rel) * 100 + 0.5) / 100
+            fill.Size = UDim2.new(rel, 0, 1, 0)
+            knob.Position = UDim2.new(rel, 0, 0.5, -7)
+            l.Text = text .. ": " .. val
+            if cb then cb(val) end
+        end
+    end)
+    return f
+end
+
+-- ================= LOGIKA FITUR (FORCE LOOP) =================
+local macroOn = false
+local recoilOn = false
+local isClicking = false
+
+-- Deteksi Klik Kiri untuk Macro VIM
+UIS.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isClicking = true
+    end
+end)
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isClicking = false
     end
 end)
 
--- ===== Init =====
-setSize(currentSize)
-apply()
+-- Force Loop untuk Senjata (Anti-Reset Game)
+task.spawn(function()
+    while task.wait(0.1) do
+        if not macroOn and not recoilOn then continue end
+        
+        local tools = {}
+        if LP.Character then
+            for _, v in pairs(LP.Character:GetChildren()) do if v:IsA("Tool") then table.insert(tools, v) end end
+        end
+        if LP:FindFirstChild("Backpack") then
+            for _, v in pairs(LP.Backpack:GetChildren()) do if v:IsA("Tool") then table.insert(tools, v) end end
+        end
+
+        for _, tool in pairs(tools) do
+            local sm = tool:FindFirstChild("Setting")
+            if sm and sm:IsA("ModuleScript") then
+                local ok, s = pcall(require, sm)
+                if ok and type(s) == "table" then
+                    -- Paksa No Recoil
+                    if recoilOn then
+                        s.Recoil = 0
+                        s.SpreadX = 0
+                        s.SpreadY = 0
+                        s.Accuracy = 1
+                        s.CameraRecoil = 0
+                    end
+                    -- Paksa Macro (Auto Fire)
+                    if macroOn then
+                        s.Auto = true
+                        s.FireRate = 0.04
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- Macro VIM (Backup)
+RunService.RenderStepped:Connect(function()
+    if macroOn and isClicking then
+        VIM:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+        VIM:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+    end
+end)
+
+makeToggle("Macro Tembak (Auto)", false, function(s) macroOn = s end)
+makeToggle("No Recoil & Spread", false, function(s) recoilOn = s end)
+
+-- ================= FITUR GEPENG =================
+local stretchOn = false
+local stretchScale = 0.65
+
+local function updateStretch()
+    pcall(function() RunService:UnbindFromRenderStep("JenowaStretch") end)
+    if stretchOn then
+        RunService:BindToRenderStep("JenowaStretch", Enum.RenderPriority.Camera.Value + 1, function()
+            local cam = workspace.CurrentCamera
+            cam.CFrame = cam.CFrame * CFrame.new(0, 0, 0, 1, 0, 0, 0, stretchScale, 0, 0, 0, 1)
+        end)
+    end
+end
+
+makeToggle("Gepeng Layar", false, function(s)
+    stretchOn = s
+    updateStretch()
+end)
+
+makeSlider("Skala Gepeng", 0.1, 1, 0.65, function(v)
+    stretchScale = v
+    if stretchOn then updateStretch() end
+end)
+
+print("[JENOWA STORE] V13 Loaded - Force Loop Active.")
