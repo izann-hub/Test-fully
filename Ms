@@ -1,4 +1,4 @@
--- JENOWA STORE | V19 (Ultimate Stealth - No 267)
+-- JENOWA STORE | V20 (Zero-Exploit - 267 Safe)
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local TS = game:GetService("TweenService")
@@ -7,9 +7,7 @@ local Lighting = game:GetService("Lighting")
 local LP = Players.LocalPlayer
 local PG = LP:WaitForChild("PlayerGui")
 
--- Gunakan gethui() atau CoreGui agar UI tidak mudah dideteksi game
-local safeGui = pcall(function() return gethui() end) and gethui() or game:GetService("CoreGui")
-
+-- Hapus UI lama
 pcall(function()
     local old = PG:FindFirstChild("JenowaStore")
     if old then old:Destroy() end
@@ -34,7 +32,7 @@ local gui = Instance.new("ScreenGui")
 gui.Name = "JenowaStore"
 gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-gui.Parent = safeGui
+gui.Parent = PG
 
 -- ================= FLOATING BUTTON =================
 local floatBtn = Instance.new("TextButton")
@@ -341,50 +339,50 @@ local function makeSlider(text, min, max, default, cb)
     return f
 end
 
--- ================= LOGIKA FITUR (EVENT-BASED) =================
+-- ================= LOGIKA FITUR (MURNI) =================
+local macroOn = false
 local recoilOn = false
 local soundOn = false
-local macroOn = false
+local isClicking = false
 
--- Event saat senjata di-equip (Sangat aman dari anti-cheat)
+UIS.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then isClicking = true end
+end)
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then isClicking = false end
+end)
+
+-- Event saat senjata di-equip (Aman)
 local function onToolAdded(tool)
     if not tool:IsA("Tool") then return end
     local sm = tool:FindFirstChild("Setting")
     if not (sm and sm:IsA("ModuleScript")) then return end
     
-    task.wait(0.1) -- Tunggu script game load
+    task.wait(0.2)
     local ok, s = pcall(require, sm)
     if ok and type(s) == "table" then
         if recoilOn then
-            s.Recoil = 0
-            s.SpreadX = 0
-            s.SpreadY = 0
-            s.Accuracy = 1
-            s.CameraRecoil = 0
+            if s.Recoil then s.Recoil = 0 end
+            if s.SpreadX then s.SpreadX = 0 end
+            if s.SpreadY then s.SpreadY = 0 end
+            if s.CameraRecoil then s.CameraRecoil = 0 end
         end
         if soundOn then
-            s.HitCharSndIDs = {9125402735}
-            s.HitSndIDs = {9125402735}
-            s.HitCharSndVolume = 3
+            if s.HitCharSndIDs then s.HitCharSndIDs = {9125402735} end
+            if s.HitSndIDs then s.HitSndIDs = {9125402735} end
         end
         if macroOn then
-            s.Auto = true
-            s.FireRate = 0.05
+            if s.Auto then s.Auto = true end
+            if s.FireRate then s.FireRate = 0.05 end
         end
     end
 end
 
-if LP.Character then
-    LP.Character.ChildAdded:Connect(onToolAdded)
-end
-LP.CharacterAdded:Connect(function(char)
-    char.ChildAdded:Connect(onToolAdded)
-end)
+if LP.Character then LP.Character.ChildAdded:Connect(onToolAdded) end
+LP.CharacterAdded:Connect(function(char) char.ChildAdded:Connect(onToolAdded) end)
 
--- Toggle UI
 makeToggle("Macro Tembak (Auto)", false, function(s) 
     macroOn = s 
-    -- Paksa update ke senjata saat ini
     if LP.Character then
         for _, v in pairs(LP.Character:GetChildren()) do onToolAdded(v) end
     end
@@ -401,6 +399,23 @@ makeToggle("Hit Sound (Mark)", false, function(s)
     soundOn = s
     if LP.Character then
         for _, v in pairs(LP.Character:GetChildren()) do onToolAdded(v) end
+    end
+end)
+
+-- Loop Macro (Pakai fungsi executor asli, BUKAN VIM)
+task.spawn(function()
+    while task.wait(0.05) do
+        if macroOn and isClicking then
+            pcall(function()
+                if mouse1click then
+                    mouse1click()
+                elseif mouse1press and mouse1release then
+                    mouse1press()
+                    task.wait(0.02)
+                    mouse1release()
+                end
+            end)
+        end
     end
 end)
 
@@ -428,4 +443,4 @@ makeSlider("Skala Gepeng", 0.1, 1, 0.65, function(v)
     if stretchOn then updateStretch() end
 end)
 
-print("[JENOWA STORE] V19 Loaded - 267 Bypass Active.")
+print("[JENOWA STORE] V20 Loaded - Safe Mode.")
