@@ -1,16 +1,12 @@
 --[[
-    JENOWA STORE | ICE BLUE (ULTIMATE BYPASS)
-    Theme: charcoal + ice blue + custom background
+    JENOWA STORE | ICE BLUE (EXTERNAL FPS + LAYAR GEPENG)
 ]]
 
--- ============================================================
--- 0. BYPASS SYSTEM (ANTI-SCAN & ANTI-267)
--- ============================================================
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local Lighting = game:GetService("Lighting")
+local Players        = game:GetService("Players")
+local RunService     = game:GetService("RunService")
+local Lighting       = game:GetService("Lighting")
 
--- 1. Cloneref (Mencegah deteksi service)
+-- BYPASS SYSTEM
 local cloneref = cloneref or function(obj) return obj end
 local UIS = cloneref(game:GetService("UserInputService"))
 local TweenService = cloneref(game:GetService("TweenService"))
@@ -19,7 +15,6 @@ local SoundService = cloneref(game:GetService("SoundService"))
 local localPlayer = Players.LocalPlayer
 local playerGui = localPlayer:WaitForChild("PlayerGui")
 
--- 2. Gethui (Sembunyikan UI dari pendeteksi game)
 local safeGui = playerGui
 pcall(function()
     if gethui then 
@@ -29,7 +24,6 @@ pcall(function()
     end
 end)
 
--- Bersihkan UI lama
 pcall(function()
     local oldUI = safeGui:FindFirstChild("JenowaStoreUI")
     if oldUI then oldUI:Destroy() end
@@ -87,9 +81,7 @@ local defaultSettings = {}
 local originalData = { parts = {}, decals = {}, terrain = {} }
 local morningSnapshot = nil
 
--- ============================================================
--- SAFE GUN LOGIC (NO RECOIL)
--- ============================================================
+-- SAFE GUN LOGIC
 local function applyGunMods()
     local function processTool(child)
         if child:IsA("Tool") then
@@ -121,7 +113,6 @@ local function applyGunMods()
     if bp then for _, child in ipairs(bp:GetChildren()) do processTool(child) end end
 end
 
--- Safe Loop (Jeda Acak biar ga ketahuan anti-cheat)
 task.spawn(function()
     while task.wait(math.random(80, 120) / 100) do
         if state.zeroRecoil then applyGunMods() end
@@ -136,9 +127,7 @@ end
 if localPlayer.Character then hookCharacter(localPlayer.Character) end
 localPlayer.CharacterAdded:Connect(hookCharacter)
 
--- ============================================================
--- SAFE STRETCH RES (GEPENG)
--- ============================================================
+-- SAFE STRETCH RES
 local function updateStretch()
     pcall(function() RunService:UnbindFromRenderStep("JenowaStretch") end)
     if state.stretchOn then
@@ -149,9 +138,7 @@ local function updateStretch()
     end
 end
 
--- ============================================================
 -- SAFE FPS BOOST
--- ============================================================
 local function applyPostEffects(v) pcall(function() for _, p in ipairs(Lighting:GetChildren()) do if p:IsA("PostEffect") then p.Enabled = not v end end end) end
 local function applyShadows(v) pcall(function() Lighting.GlobalShadows = not v end) end
 local function applyMaterials(v)
@@ -226,10 +213,26 @@ end
 local SG = Instance.new("ScreenGui")
 SG.Name = "JenowaStoreUI" SG.ResetOnSpawn = false SG.IgnoreGuiInset = true SG.ZIndexBehavior = Enum.ZIndexBehavior.Sibling SG.Parent = safeGui
 
+-- EXTERNAL FPS MONITOR
+local fpsMonitor = Instance.new("TextLabel", SG)
+fpsMonitor.Size = UDim2.new(0, 90, 0, 30)
+fpsMonitor.Position = UDim2.new(1, -110, 0, 20)
+fpsMonitor.BackgroundColor3 = C.BG
+fpsMonitor.BackgroundTransparency = 0.5
+fpsMonitor.TextColor3 = C.ACCENT
+fpsMonitor.Font = Enum.Font.GothamBold
+fpsMonitor.TextSize = 14
+fpsMonitor.Text = "FPS: 60"
+fpsMonitor.ZIndex = 100
+fpsMonitor.Active = false
+Instance.new("UICorner", fpsMonitor).CornerRadius = UDim.new(0, 6)
+local fmStroke = Instance.new("UIStroke", fpsMonitor)
+fmStroke.Color = C.BORDER
+
 -- NOTIF
 local notifContainer = Instance.new("Frame", SG)
 notifContainer.Size = UDim2.new(0, 300, 0, 0) notifContainer.AutomaticSize = Enum.AutomaticSize.Y
-notifContainer.Position = UDim2.new(1, -320, 0, 20) notifContainer.BackgroundTransparency = 1
+notifContainer.Position = UDim2.new(1, -320, 0, 60) notifContainer.BackgroundTransparency = 1
 notifContainer.ZIndex = 50 notifContainer.Active = false
 
 local notifList = Instance.new("UIListLayout", notifContainer)
@@ -442,7 +445,9 @@ local lastTime = tick()
 RunService.RenderStepped:Connect(function()
     frames = frames + 1
     if tick() - lastTime >= 1 then
-        fpsTxt.Text = tostring(frames) .. " FPS"
+        local fText = tostring(frames) .. " FPS"
+        fpsTxt.Text = fText
+        fpsMonitor.Text = fText -- Update monitor luar
         frames = 0
         lastTime = tick()
     end
@@ -468,7 +473,7 @@ buatSectionLabel(warPage, "COMBAT TWEAKS", 1)
 buatToggle(warPage, "NO RECOIL", "Menghilangkan hentakan kamera", "zeroRecoil", nil, 2)
 
 buatSectionLabel(warPage, "CAMERA SETTINGS", 3)
-buatToggle(warPage, "STRETCH RES (GEPENG)", "Memperlebar pandangan layar", "stretchOn", function(v) updateStretch() end, 4)
+buatToggle(warPage, "LAYAR GEPENG", "Memperlebar pandangan layar", "stretchOn", function(v) updateStretch() end, 4)
 buatSlider(warPage, "STRETCH SCALE", 0.1, 1, 0.65, function(v) 
     stretchScale = v 
     if state.stretchOn then updateStretch() end 
@@ -592,4 +597,4 @@ UIS.InputChanged:Connect(function(i)
     end
 end)
 
-print("[JENOWA STORE] Ultimate Bypass Loaded.")
+print("[JENOWA STORE] Loaded with External FPS Monitor.")
