@@ -1,5 +1,5 @@
 -- LocalScript
--- JENOWA STORE ❄ | DECORATIVE TITLE & ASCII WELCOME
+-- JENOWA STORE ❄ | DECORATIVE MESSAGE & CREDITS
 
 local TweenService = game:GetService("TweenService")
 local Players      = game:GetService("Players")
@@ -192,17 +192,16 @@ strokeThin.Thickness = 1.5
 strokeThin.Color = Color3.fromRGB(255, 255, 255)
 strokeThin.Transparency = 0.2
 
--- JUDUL DEKORATIF
+-- JUDUL ATAS
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -60, 0, 32)
 title.Position = UDim2.fromOffset(28, 28)
 title.BackgroundTransparency = 1
-title.Text = "✦ ───────────────────────────── ✦\n          J  E  N  O  W  A   •   S  T  O  R  E\n✦ ───────────────────────────── ✦"
+title.Text = "JENOWA STORE ❄"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.TextXAlignment = Enum.TextXAlignment.Center
-title.TextYAlignment = Enum.TextYAlignment.Center
-title.Font = Enum.Font.Code
-title.TextSize = 14
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Font = Enum.Font.GothamBlack
+title.TextSize = 24
 title.ZIndex = 21
 title.Parent = card
 
@@ -235,32 +234,35 @@ divider.BackgroundTransparency = 0.7
 divider.BorderSizePixel = 0
 divider.ZIndex = 21
 
--- PESAN SELAMAT DATANG (ASCII ART)
-local asciiText = [[
-██╗    ██╗███████╗██╗      ██████╗ ██████╗ ███╗   ███╗███████╗
-██║    ██║██╔════╝██║     ██╔════╝██╔═══██╗████╗ ████║██╔════╝
-██║ █╗ ██║█████╗  ██║     ██║     ██║   ██║██╔████╔██║█████╗  
-██║███╗██║██╔══╝  ██║     ██║     ██║   ██║██║╚██╔╝██║██╔══╝  
-╚███╔███╔╝███████╗███████╗╚██████╗╚██████╔╝██║ ╚═╝ ██║███████╗
- ╚══╝╚══╝ ╚══════╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝
-]]
+-- PESAN DI TENGAH
+local centerMessage = Instance.new("TextLabel")
+centerMessage.Size = UDim2.new(1, -56, 0, 80)
+centerMessage.Position = UDim2.fromOffset(28, 120)
+centerMessage.BackgroundTransparency = 1
+centerMessage.Text = "✦ ───────────────────────────── ✦\n          J  E  N  O  W  A   •   S  T  O  R  E\n✦ ───────────────────────────── ✦"
+centerMessage.TextColor3 = Color3.fromRGB(255, 255, 255)
+centerMessage.Font = Enum.Font.Code
+centerMessage.TextSize = 16
+centerMessage.TextXAlignment = Enum.TextXAlignment.Center
+centerMessage.TextYAlignment = Enum.TextYAlignment.Center
+centerMessage.ZIndex = 21
+centerMessage.Parent = card
 
-local welcomeText = Instance.new("TextLabel")
-welcomeText.Size = UDim2.new(1, -56, 0, 120)
-welcomeText.Position = UDim2.fromOffset(28, 110)
-welcomeText.BackgroundTransparency = 1
-welcomeText.Text = asciiText
-welcomeText.TextColor3 = Color3.fromRGB(255, 255, 255)
-welcomeText.Font = Enum.Font.Code 
-welcomeText.TextSize = 10 
-welcomeText.TextXAlignment = Enum.TextXAlignment.Center
-welcomeText.TextYAlignment = Enum.TextYAlignment.Top
-welcomeText.ZIndex = 21
-welcomeText.Parent = card
+local msgStroke = Instance.new("UIStroke", centerMessage)
+msgStroke.Thickness = 1
+msgStroke.Color = Color3.fromRGB(100, 180, 255) 
 
-local welcomeStroke = Instance.new("UIStroke", welcomeText)
-welcomeStroke.Thickness = 1
-welcomeStroke.Color = Color3.fromRGB(100, 180, 255) 
+-- TEKS KREDIT DI BAWAH PESAN
+local creditText = Instance.new("TextLabel")
+creditText.Size = UDim2.new(1, -56, 0, 20)
+creditText.Position = UDim2.new(0, 28, 0, 205)
+creditText.BackgroundTransparency = 1
+creditText.Text = "SCRIPT INI DI BUAT OLEH JENOWA STORE"
+creditText.TextColor3 = Color3.fromRGB(150, 200, 240) -- Biru muda elegan
+creditText.Font = Enum.Font.GothamMedium
+creditText.TextSize = 12
+creditText.ZIndex = 21
+creditText.Parent = card
 
 -- TOMBOL EXECUTE SCRIPT
 local enterBtn = Instance.new("TextButton")
