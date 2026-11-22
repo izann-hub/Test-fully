@@ -1,5 +1,5 @@
 -- LocalScript
--- JENOWA STORE ❄ | ASCII WELCOME & EXECUTE
+-- JENOWA STORE ❄ | DECORATIVE TITLE & ASCII WELCOME
 
 local TweenService = game:GetService("TweenService")
 local Players      = game:GetService("Players")
@@ -80,14 +80,28 @@ blur.Parent = Lighting
 TweenService:Create(blur, TweenInfo.new(1), {Size = 2}):Play()
 
 -- ============================================
--- 1. LATAR BELAKANG GAMBAR
+-- 1. LATAR BELAKANG GAMBAR & FALLBACK
 -- ============================================
 local bg = Instance.new("Frame")
 bg.Size = UDim2.fromScale(1, 1)
-bg.BackgroundColor3 = Color3.fromRGB(15, 25, 40) 
+bg.BackgroundColor3 = Color3.fromRGB(10, 20, 35)
 bg.BorderSizePixel = 0
 bg.ZIndex = 1
 bg.Parent = SG
+
+local bgFallback = Instance.new("Frame")
+bgFallback.Size = UDim2.fromScale(1, 1)
+bgFallback.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+bgFallback.BorderSizePixel = 0
+bgFallback.ZIndex = 1
+bgFallback.Parent = bg
+
+local fallbackGrad = Instance.new("UIGradient", bgFallback)
+fallbackGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(15, 30, 60)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 160, 220))
+})
+fallbackGrad.Rotation = 90
 
 local bgImage = Instance.new("ImageLabel")
 bgImage.Size = UDim2.fromScale(1, 1)
@@ -155,14 +169,14 @@ end)
 -- ============================================
 -- 3. KARTU UTAMA (PREMIUM ICE GLASS)
 -- ============================================
-local W, H = 520, 380 -- Sedikit diperbesar untuk muat teks ASCII
+local W, H = 520, 380 
 local card = Instance.new("Frame")
 card.Name = "Card"
 card.AnchorPoint = Vector2.new(0.5, 0.5)
 card.Position = UDim2.new(0.5, 0, -0.6, 0) 
 card.Size = UDim2.fromOffset(W, H)
 card.BackgroundColor3 = Color3.fromRGB(10, 25, 45)
-card.BackgroundTransparency = 0.25
+card.BackgroundTransparency = 0.15 
 card.BorderSizePixel = 0
 card.ZIndex = 20
 card.Parent = SG
@@ -178,15 +192,17 @@ strokeThin.Thickness = 1.5
 strokeThin.Color = Color3.fromRGB(255, 255, 255)
 strokeThin.Transparency = 0.2
 
+-- JUDUL DEKORATIF
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -60, 0, 32)
 title.Position = UDim2.fromOffset(28, 28)
 title.BackgroundTransparency = 1
-title.Text = "JENOWA STORE ❄" 
+title.Text = "✦ ───────────────────────────── ✦\n          J  E  N  O  W  A   •   S  T  O  R  E\n✦ ───────────────────────────── ✦"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.TextXAlignment = Enum.TextXAlignment.Left
-title.Font = Enum.Font.GothamBlack
-title.TextSize = 26
+title.TextXAlignment = Enum.TextXAlignment.Center
+title.TextYAlignment = Enum.TextYAlignment.Center
+title.Font = Enum.Font.Code
+title.TextSize = 14
 title.ZIndex = 21
 title.Parent = card
 
@@ -231,12 +247,12 @@ local asciiText = [[
 
 local welcomeText = Instance.new("TextLabel")
 welcomeText.Size = UDim2.new(1, -56, 0, 120)
-welcomeText.Position = UDim2.fromOffset(28, 100)
+welcomeText.Position = UDim2.fromOffset(28, 110)
 welcomeText.BackgroundTransparency = 1
 welcomeText.Text = asciiText
 welcomeText.TextColor3 = Color3.fromRGB(255, 255, 255)
-welcomeText.Font = Enum.Font.Code -- Wajib Code agar rapi
-welcomeText.TextSize = 10 -- Ukuran kecil agar muat
+welcomeText.Font = Enum.Font.Code 
+welcomeText.TextSize = 10 
 welcomeText.TextXAlignment = Enum.TextXAlignment.Center
 welcomeText.TextYAlignment = Enum.TextYAlignment.Top
 welcomeText.ZIndex = 21
@@ -244,7 +260,7 @@ welcomeText.Parent = card
 
 local welcomeStroke = Instance.new("UIStroke", welcomeText)
 welcomeStroke.Thickness = 1
-welcomeStroke.Color = Color3.fromRGB(100, 180, 255) -- Efek Glow Biru Es
+welcomeStroke.Color = Color3.fromRGB(100, 180, 255) 
 
 -- TOMBOL EXECUTE SCRIPT
 local enterBtn = Instance.new("TextButton")
