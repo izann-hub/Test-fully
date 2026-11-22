@@ -266,19 +266,58 @@ local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "THB_STORE_UI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.Parent = CoreGui
+ScreenGui.DisplayOrder = 999
+ScreenGui.Parent = PlayerGui
 
--- BACKGROUND THB
+-- MAIN UI
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 520, 0, 380)
+MainFrame.Position = UDim2.new(0.5, -260, 0.5, -190)
+MainFrame.BackgroundColor3 = Pallete.Black
+MainFrame.BackgroundTransparency = 0.15
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+MainFrame.Active = true
+MainFrame.Visible = true
+MainFrame.ZIndex = 2
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
+MainFrame.Parent = ScreenGui
+
+-- BACKGROUND DI DALAM PANEL
 local BgImage = Instance.new("ImageLabel")
 BgImage.Name = "THB_Background"
 BgImage.Size = UDim2.new(1, 0, 1, 0)
 BgImage.Position = UDim2.new(0, 0, 0, 0)
 BgImage.BackgroundTransparency = 1
 BgImage.Image = "rbxassetid://103847419624330"
-BgImage.ImageTransparency = 0.5
+BgImage.ImageTransparency = 0.6
 BgImage.ScaleType = Enum.ScaleType.Crop
-BgImage.ZIndex = 0
-BgImage.Parent = ScreenGui
+BgImage.ZIndex = 1
+BgImage.Parent = MainFrame
+
+-- MAIN STROKE + GRADIENT BERPUTAR
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Thickness = 4
+MainStroke.Color = Pallete.White
+MainStroke.Transparency = 0.2
+MainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+MainStroke.Parent = MainFrame
+
+local MainGrad = Instance.new("UIGradient")
+MainGrad.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Pallete.UnguTua),
+    ColorSequenceKeypoint.new(0.33, Pallete.Ungu),
+    ColorSequenceKeypoint.new(0.66, Pallete.UnguTerang),
+    ColorSequenceKeypoint.new(1, Pallete.UnguTua),
+}
+MainGrad.Parent = MainStroke
+
+local GlowStroke = Instance.new("UIStroke")
+GlowStroke.Thickness = 8
+GlowStroke.Color = Pallete.Ungu
+GlowStroke.Transparency = 0.7
+GlowStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+GlowStroke.Parent = MainFrame
 
 -- FLOATING BUTTON
 local ToggleBtnMain = Instance.new("ImageButton")
@@ -291,6 +330,7 @@ ToggleBtnMain.ImageColor3 = Pallete.White
 ToggleBtnMain.BorderSizePixel = 0
 ToggleBtnMain.AutoButtonColor = false
 ToggleBtnMain.Active = true
+ToggleBtnMain.ZIndex = 999
 Instance.new("UICorner", ToggleBtnMain).CornerRadius = UDim.new(1, 0)
 ToggleBtnMain.Parent = ScreenGui
 
@@ -298,6 +338,7 @@ local ToggleStroke = Instance.new("UIStroke")
 ToggleStroke.Color = Pallete.White
 ToggleStroke.Thickness = 3
 ToggleStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+ToggleStroke.ZIndex = 1000
 ToggleStroke.Parent = ToggleBtnMain
 
 local ToggleGrad = Instance.new("UIGradient")
@@ -353,44 +394,7 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- MAIN UI
-local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 0, 0, 0)
-MainFrame.Position = UDim2.new(0.5, -260, 0.5, -190)
-MainFrame.BackgroundColor3 = Pallete.Black
-MainFrame.BackgroundTransparency = 1
-MainFrame.BorderSizePixel = 0
-MainFrame.ClipsDescendants = true
-MainFrame.Active = true
-MainFrame.Visible = false
-MainFrame.ZIndex = 2
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
-MainFrame.Parent = ScreenGui
-
-local MainStroke = Instance.new("UIStroke")
-MainStroke.Thickness = 4
-MainStroke.Color = Pallete.White
-MainStroke.Transparency = 0.2
-MainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-MainStroke.Parent = MainFrame
-
-local GlowStroke = Instance.new("UIStroke")
-GlowStroke.Thickness = 8
-GlowStroke.Color = Pallete.Ungu
-GlowStroke.Transparency = 0.7
-GlowStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-GlowStroke.Parent = MainFrame
-
-local MainGrad = Instance.new("UIGradient")
-MainGrad.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Pallete.UnguTua),
-    ColorSequenceKeypoint.new(0.33, Pallete.Ungu),
-    ColorSequenceKeypoint.new(0.66, Pallete.UnguTerang),
-    ColorSequenceKeypoint.new(1, Pallete.UnguTua),
-}
-MainGrad.Parent = MainStroke
-
-local isOpen = false
+local isOpen = true
 ToggleBtnMain.MouseButton1Click:Connect(function()
     PlayClickSound()
     isOpen = not isOpen
@@ -410,7 +414,7 @@ ToggleBtnMain.MouseButton1Click:Connect(function()
     end
 end)
 
--- NOTIF SYSTEM
+-- NOTIFIKASI
 local notificationCount = 0
 local function ShowNotification(title, text, icon)
     notificationCount = notificationCount + 1
@@ -519,7 +523,7 @@ local function ShowNotification(title, text, icon)
     end)
 end
 
--- HEADER
+-- HEADER + GRADIENT BERPUTAR
 local Header = Instance.new("Frame")
 Header.Size = UDim2.new(1, 0, 0, 46)
 Header.BackgroundColor3 = Pallete.DarkPurple
@@ -581,6 +585,7 @@ local MainBody = Instance.new("Frame")
 MainBody.Size = UDim2.new(1, 0, 1, -46)
 MainBody.Position = UDim2.new(0, 0, 0, 46)
 MainBody.BackgroundTransparency = 1
+MainBody.ZIndex = 3
 MainBody.Parent = MainFrame
 
 local Sidebar = Instance.new("Frame")
@@ -588,6 +593,7 @@ Sidebar.Size = UDim2.new(0, 120, 1, 0)
 Sidebar.BackgroundColor3 = Pallete.DarkPurple
 Sidebar.BackgroundTransparency = 0.5
 Sidebar.BorderSizePixel = 0
+Sidebar.ZIndex = 4
 Sidebar.Parent = MainBody
 
 local SidebarLayout = Instance.new("UIListLayout")
@@ -612,6 +618,7 @@ local function CreatePremiumTab(name, icon, order)
     btn.BorderSizePixel = 0
     btn.AutoButtonColor = false
     btn.LayoutOrder = order
+    btn.ZIndex = 5
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
     btn.Parent = Sidebar
     
@@ -636,23 +643,27 @@ local ContentArea = Instance.new("Frame")
 ContentArea.Size = UDim2.new(1, -130, 1, -20)
 ContentArea.Position = UDim2.new(0, 125, 0, 10)
 ContentArea.BackgroundTransparency = 1
+ContentArea.ZIndex = 4
 ContentArea.Parent = MainBody
 
 local PanelHome = Instance.new("Frame")
 PanelHome.Size = UDim2.new(1, 0, 1, 0)
 PanelHome.BackgroundTransparency = 1
+PanelHome.ZIndex = 5
 PanelHome.Parent = ContentArea
 
 local PanelFarm = Instance.new("Frame")
 PanelFarm.Size = UDim2.new(1, 0, 1, 0)
 PanelFarm.BackgroundTransparency = 1
 PanelFarm.Visible = false
+PanelFarm.ZIndex = 5
 PanelFarm.Parent = ContentArea
 
 local PanelSet = Instance.new("Frame")
 PanelSet.Size = UDim2.new(1, 0, 1, 0)
 PanelSet.BackgroundTransparency = 1
 PanelSet.Visible = false
+PanelSet.ZIndex = 5
 PanelSet.Parent = ContentArea
 
 local function CreateRipple(button, input)
@@ -708,6 +719,7 @@ local ProfileFrame = Instance.new("Frame")
 ProfileFrame.Size = UDim2.new(1, 0, 0, 120)
 ProfileFrame.Position = UDim2.new(0, 0, 0, 10)
 ProfileFrame.BackgroundTransparency = 1
+ProfileFrame.ZIndex = 6
 ProfileFrame.Parent = PanelHome
 
 local Avatar = Instance.new("ImageLabel")
@@ -716,6 +728,7 @@ Avatar.Position = UDim2.new(0.5, -30, 0, 0)
 Avatar.BackgroundColor3 = Pallete.DarkPurple
 Avatar.Image = "rbxthumb://type=AvatarHeadShot&id=" .. LocalPlayer.UserId .. "&w=150&h=150"
 Avatar.BorderSizePixel = 0
+Avatar.ZIndex = 6
 Instance.new("UICorner", Avatar).CornerRadius = UDim.new(1, 0)
 Avatar.Parent = ProfileFrame
 
@@ -742,6 +755,7 @@ NameLabel.Font = Enum.Font.GothamBold
 NameLabel.TextSize = 16
 NameLabel.TextColor3 = Pallete.White
 NameLabel.TextXAlignment = Enum.TextXAlignment.Center
+NameLabel.ZIndex = 6
 NameLabel.Parent = ProfileFrame
 
 local PlayerStatus = Instance.new("TextLabel")
@@ -753,6 +767,7 @@ PlayerStatus.Font = Enum.Font.Gotham
 PlayerStatus.TextSize = 11
 PlayerStatus.TextColor3 = Pallete.Ungu
 PlayerStatus.TextXAlignment = Enum.TextXAlignment.Center
+PlayerStatus.ZIndex = 6
 PlayerStatus.Parent = ProfileFrame
 
 task.spawn(function()
@@ -770,6 +785,7 @@ HomeStats.Position = UDim2.new(0, 0, 0, 140)
 HomeStats.BackgroundColor3 = Pallete.DarkPurple
 HomeStats.BackgroundTransparency = 0.5
 HomeStats.BorderSizePixel = 0
+HomeStats.ZIndex = 6
 Instance.new("UICorner", HomeStats).CornerRadius = UDim.new(0, 8)
 HomeStats.Parent = PanelHome
 
@@ -788,6 +804,7 @@ StatsTitle.Font = Enum.Font.GothamBold
 StatsTitle.TextSize = 11
 StatsTitle.TextColor3 = Pallete.Ungu
 StatsTitle.TextXAlignment = Enum.TextXAlignment.Left
+StatsTitle.ZIndex = 7
 StatsTitle.Parent = HomeStats
 
 local StatsData = Instance.new("TextLabel")
@@ -799,6 +816,7 @@ StatsData.Font = Enum.Font.Gotham
 StatsData.TextSize = 11
 StatsData.TextColor3 = Pallete.White
 StatsData.TextXAlignment = Enum.TextXAlignment.Left
+StatsData.ZIndex = 7
 StatsData.Parent = HomeStats
 
 -- FARM CONTENT
@@ -811,12 +829,14 @@ FarmTitle.Font = Enum.Font.GothamBold
 FarmTitle.TextSize = 14
 FarmTitle.TextColor3 = Pallete.White
 FarmTitle.TextXAlignment = Enum.TextXAlignment.Left
+FarmTitle.ZIndex = 6
 FarmTitle.Parent = PanelFarm
 
 local ToggleFrame = Instance.new("Frame")
 ToggleFrame.Size = UDim2.new(1, 0, 0, 30)
 ToggleFrame.Position = UDim2.new(0, 0, 0, 40)
 ToggleFrame.BackgroundTransparency = 1
+ToggleFrame.ZIndex = 6
 ToggleFrame.Parent = PanelFarm
 
 local ToggleLabel = Instance.new("TextLabel")
@@ -827,6 +847,7 @@ ToggleLabel.Font = Enum.Font.Gotham
 ToggleLabel.TextSize = 12
 ToggleLabel.TextColor3 = Pallete.White
 ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
+ToggleLabel.ZIndex = 6
 ToggleLabel.Parent = ToggleFrame
 
 local SwitchBg = Instance.new("TextButton")
@@ -836,6 +857,7 @@ SwitchBg.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
 SwitchBg.Text = ""
 SwitchBg.BorderSizePixel = 0
 SwitchBg.AutoButtonColor = false
+SwitchBg.ZIndex = 6
 Instance.new("UICorner", SwitchBg).CornerRadius = UDim.new(1, 0)
 SwitchBg.Parent = ToggleFrame
 
@@ -844,6 +866,7 @@ SwitchKnob.Size = UDim2.new(0, 18, 0, 18)
 SwitchKnob.Position = UDim2.new(0, 2, 0.5, -9)
 SwitchKnob.BackgroundColor3 = Pallete.White
 SwitchKnob.BorderSizePixel = 0
+SwitchKnob.ZIndex = 7
 Instance.new("UICorner", SwitchKnob).CornerRadius = UDim.new(1, 0)
 SwitchKnob.Parent = SwitchBg
 
@@ -868,6 +891,7 @@ local SliderFrame = Instance.new("Frame")
 SliderFrame.Size = UDim2.new(1, 0, 0, 60)
 SliderFrame.Position = UDim2.new(0, 0, 0, 80)
 SliderFrame.BackgroundTransparency = 1
+SliderFrame.ZIndex = 6
 SliderFrame.Parent = PanelFarm
 
 local SliderLabel = Instance.new("TextLabel")
@@ -879,6 +903,7 @@ SliderLabel.Font = Enum.Font.Gotham
 SliderLabel.TextSize = 11
 SliderLabel.TextColor3 = Pallete.White
 SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+SliderLabel.ZIndex = 6
 SliderLabel.Parent = SliderFrame
 
 local SliderTrack = Instance.new("Frame")
@@ -886,6 +911,7 @@ SliderTrack.Size = UDim2.new(1, -10, 0, 6)
 SliderTrack.Position = UDim2.new(0, 5, 0, 22)
 SliderTrack.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
 SliderTrack.BorderSizePixel = 0
+SliderTrack.ZIndex = 6
 Instance.new("UICorner", SliderTrack).CornerRadius = UDim.new(1, 0)
 SliderTrack.Parent = SliderFrame
 
@@ -894,6 +920,7 @@ local SliderFill = Instance.new("Frame")
 SliderFill.Size = UDim2.new((currentAmt - 1) / 49, 0, 1, 0)
 SliderFill.BackgroundColor3 = Pallete.Ungu
 SliderFill.BorderSizePixel = 0
+SliderFill.ZIndex = 7
 Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(1, 0)
 SliderFill.Parent = SliderTrack
 
@@ -902,6 +929,7 @@ SliderKnob.Size = UDim2.new(0, 14, 0, 14)
 SliderKnob.Position = UDim2.new((currentAmt - 1) / 49, -7, 0.5, -7)
 SliderKnob.BackgroundColor3 = Pallete.White
 SliderKnob.BorderSizePixel = 0
+SliderKnob.ZIndex = 7
 Instance.new("UICorner", SliderKnob).CornerRadius = UDim.new(1, 0)
 SliderKnob.Parent = SliderTrack
 
@@ -910,6 +938,7 @@ TextboxFrame.Size = UDim2.new(1, 0, 0, 24)
 TextboxFrame.Position = UDim2.new(0, 0, 0, 36)
 TextboxFrame.BackgroundColor3 = Pallete.DarkPurple
 TextboxFrame.BorderSizePixel = 0
+TextboxFrame.ZIndex = 6
 Instance.new("UICorner", TextboxFrame).CornerRadius = UDim.new(0, 5)
 TextboxFrame.Parent = SliderFrame
 
@@ -925,6 +954,7 @@ Textbox.TextColor3 = Pallete.White
 Textbox.PlaceholderColor3 = Color3.fromRGB(120, 120, 140)
 Textbox.TextXAlignment = Enum.TextXAlignment.Left
 Textbox.ClearTextOnFocus = false
+Textbox.ZIndex = 7
 Textbox.Parent = TextboxFrame
 
 local sliderDragging = false
@@ -979,6 +1009,7 @@ SetTitle.Font = Enum.Font.GothamBold
 SetTitle.TextSize = 14
 SetTitle.TextColor3 = Pallete.White
 SetTitle.TextXAlignment = Enum.TextXAlignment.Left
+SetTitle.ZIndex = 6
 SetTitle.Parent = PanelSet
 
 local SetDesc = Instance.new("TextLabel")
@@ -991,6 +1022,7 @@ SetDesc.TextSize = 11
 SetDesc.TextColor3 = Color3.fromRGB(180, 180, 190)
 SetDesc.TextXAlignment = Enum.TextXAlignment.Left
 SetDesc.TextWrapped = true
+SetDesc.ZIndex = 6
 SetDesc.Parent = PanelSet
 
 local ExitBtn = Instance.new("TextButton")
@@ -1003,6 +1035,7 @@ ExitBtn.TextSize = 13
 ExitBtn.TextColor3 = Pallete.White
 ExitBtn.BorderSizePixel = 0
 ExitBtn.AutoButtonColor = false
+ExitBtn.ZIndex = 6
 Instance.new("UICorner", ExitBtn).CornerRadius = UDim.new(0, 6)
 ExitBtn.Parent = PanelSet
 
@@ -1027,7 +1060,7 @@ ExitBtn.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
 
--- LOOP RGB MAIN
+-- LOOP WARNA BERPUTAR (MAIN & HEADER)
 task.spawn(function()
     local colorTime = 0
     while MainFrame.Parent do
