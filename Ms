@@ -1,5 +1,5 @@
 -- LocalScript
--- JENOWA STORE ❄ | DECORATIVE MESSAGE & CREDITS
+-- JENOWA STORE ❄ | FULL SCREEN IMAGE & CREDITS
 
 local TweenService = game:GetService("TweenService")
 local Players      = game:GetService("Players")
@@ -80,7 +80,7 @@ blur.Parent = Lighting
 TweenService:Create(blur, TweenInfo.new(1), {Size = 2}):Play()
 
 -- ============================================
--- 1. LATAR BELAKANG GAMBAR & FALLBACK
+-- 1. LATAR BELAKANG GAMBAR FULL SCREEN
 -- ============================================
 local bg = Instance.new("Frame")
 bg.Size = UDim2.fromScale(1, 1)
@@ -89,22 +89,9 @@ bg.BorderSizePixel = 0
 bg.ZIndex = 1
 bg.Parent = SG
 
-local bgFallback = Instance.new("Frame")
-bgFallback.Size = UDim2.fromScale(1, 1)
-bgFallback.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-bgFallback.BorderSizePixel = 0
-bgFallback.ZIndex = 1
-bgFallback.Parent = bg
-
-local fallbackGrad = Instance.new("UIGradient", bgFallback)
-fallbackGrad.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(15, 30, 60)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 160, 220))
-})
-fallbackGrad.Rotation = 90
-
+-- Gambar Full Screen
 local bgImage = Instance.new("ImageLabel")
-bgImage.Size = UDim2.fromScale(1, 1)
+bgImage.Size = UDim2.fromScale(1, 1) -- Full Screen
 bgImage.BackgroundTransparency = 1
 bgImage.Image = "rbxassetid://137882830968159" 
 bgImage.ScaleType = Enum.ScaleType.Crop
@@ -114,10 +101,11 @@ bgImage.Parent = bg
 
 TweenService:Create(bgImage, TweenInfo.new(1.5), {ImageTransparency = 0}):Play()
 
+-- Overlay Transparan (Agar UI Terbaca)
 local overlay = Instance.new("Frame")
 overlay.Size = UDim2.fromScale(1, 1)
 overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-overlay.BackgroundTransparency = 0.3
+overlay.BackgroundTransparency = 0.4 -- Sedikit gelap agar kontras
 overlay.BorderSizePixel = 0
 overlay.ZIndex = 3
 overlay.Parent = SG
@@ -258,7 +246,7 @@ creditText.Size = UDim2.new(1, -56, 0, 20)
 creditText.Position = UDim2.new(0, 28, 0, 205)
 creditText.BackgroundTransparency = 1
 creditText.Text = "SCRIPT INI DI BUAT OLEH JENOWA STORE"
-creditText.TextColor3 = Color3.fromRGB(150, 200, 240) -- Biru muda elegan
+creditText.TextColor3 = Color3.fromRGB(150, 200, 240) 
 creditText.Font = Enum.Font.GothamMedium
 creditText.TextSize = 12
 creditText.ZIndex = 21
