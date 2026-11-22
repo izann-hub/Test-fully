@@ -1,5 +1,5 @@
 -- LocalScript
--- JENOWA STORE ❄ | CUSTOM WELCOME IMAGE
+-- JENOWA STORE ❄ | ASCII WELCOME & EXECUTE
 
 local TweenService = game:GetService("TweenService")
 local Players      = game:GetService("Players")
@@ -155,7 +155,7 @@ end)
 -- ============================================
 -- 3. KARTU UTAMA (PREMIUM ICE GLASS)
 -- ============================================
-local W, H = 500, 340
+local W, H = 520, 380 -- Sedikit diperbesar untuk muat teks ASCII
 local card = Instance.new("Frame")
 card.Name = "Card"
 card.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -219,17 +219,34 @@ divider.BackgroundTransparency = 0.7
 divider.BorderSizePixel = 0
 divider.ZIndex = 21
 
--- PESAN SELAMAT DATANG (MENGGUNAKAN IMAGE LABEL)
-local welcomeImg = Instance.new("ImageLabel")
-welcomeImg.Size = UDim2.new(1, -56, 0, 80)
-welcomeImg.Position = UDim2.fromOffset(28, 110)
-welcomeImg.BackgroundTransparency = 1
--- ID Gambar Teks "SELAMAT DATANG" (Ganti dengan ID gambar buatanmu jika perlu)
-welcomeImg.Image = "rbxassetid://7233424590" 
-welcomeImg.ScaleType = Enum.ScaleType.Fit
-welcomeImg.ZIndex = 21
-welcomeImg.Parent = card
+-- PESAN SELAMAT DATANG (ASCII ART)
+local asciiText = [[
+██╗    ██╗███████╗██╗      ██████╗ ██████╗ ███╗   ███╗███████╗
+██║    ██║██╔════╝██║     ██╔════╝██╔═══██╗████╗ ████║██╔════╝
+██║ █╗ ██║█████╗  ██║     ██║     ██║   ██║██╔████╔██║█████╗  
+██║███╗██║██╔══╝  ██║     ██║     ██║   ██║██║╚██╔╝██║██╔══╝  
+╚███╔███╔╝███████╗███████╗╚██████╗╚██████╔╝██║ ╚═╝ ██║███████╗
+ ╚══╝╚══╝ ╚══════╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝
+]]
 
+local welcomeText = Instance.new("TextLabel")
+welcomeText.Size = UDim2.new(1, -56, 0, 120)
+welcomeText.Position = UDim2.fromOffset(28, 100)
+welcomeText.BackgroundTransparency = 1
+welcomeText.Text = asciiText
+welcomeText.TextColor3 = Color3.fromRGB(255, 255, 255)
+welcomeText.Font = Enum.Font.Code -- Wajib Code agar rapi
+welcomeText.TextSize = 10 -- Ukuran kecil agar muat
+welcomeText.TextXAlignment = Enum.TextXAlignment.Center
+welcomeText.TextYAlignment = Enum.TextYAlignment.Top
+welcomeText.ZIndex = 21
+welcomeText.Parent = card
+
+local welcomeStroke = Instance.new("UIStroke", welcomeText)
+welcomeStroke.Thickness = 1
+welcomeStroke.Color = Color3.fromRGB(100, 180, 255) -- Efek Glow Biru Es
+
+-- TOMBOL EXECUTE SCRIPT
 local enterBtn = Instance.new("TextButton")
 enterBtn.Size = UDim2.new(1, -56, 0, 50)
 enterBtn.Position = UDim2.new(0, 28, 1, -78)
