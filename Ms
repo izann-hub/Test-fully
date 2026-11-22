@@ -271,10 +271,10 @@ ScreenGui.Parent = PlayerGui
 
 -- MAIN UI
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 520, 0, 380)
-MainFrame.Position = UDim2.new(0.5, -260, 0.5, -190)
+MainFrame.Size = UDim2.new(0, 520, 0, 420) -- 🔑 TINGGI DISESUAIKAN
+MainFrame.Position = UDim2.new(0.5, -260, 0.5, -210) -- 🔑 POSISI TENGAH
 MainFrame.BackgroundColor3 = Pallete.Black
-MainFrame.BackgroundTransparency = 0.15
+MainFrame.BackgroundTransparency = 0.3
 MainFrame.BorderSizePixel = 0
 MainFrame.ClipsDescendants = true
 MainFrame.Active = true
@@ -290,8 +290,8 @@ BgImage.Size = UDim2.new(1, 0, 1, 0)
 BgImage.Position = UDim2.new(0, 0, 0, 0)
 BgImage.BackgroundTransparency = 1
 BgImage.Image = "rbxassetid://103847419624330"
-BgImage.ImageTransparency = 0.4
-BgImage.ScaleType = Enum.ScaleType.Fit
+BgImage.ImageTransparency = 0.3
+BgImage.ScaleType = Enum.ScaleType.Crop -- 🔑 CROP BIAR PENUH
 BgImage.ZIndex = 1
 BgImage.Parent = MainFrame
 
@@ -352,11 +352,11 @@ ToggleGrad.Color = ColorSequence.new{
 }
 ToggleGrad.Parent = ToggleStroke
 
--- 🟢 LOOP WARNA BERPUTAR 20 KELILING (SUPER CEPAT)
+-- 🟢 LOOP WARNA BERPUTAR 20 KELILING
 task.spawn(function()
     local colorTime = 0
     while ScreenGui.Parent do
-        colorTime = colorTime + 0.2 -- 20x lebih cepat
+        colorTime = colorTime + 0.2
         if colorTime > 1 then colorTime = 0 end
         pcall(function()
             if ToggleGrad then ToggleGrad.Offset = Vector2.new(colorTime, 0) end
@@ -408,7 +408,7 @@ ToggleBtnMain.MouseButton1Click:Connect(function()
         MainFrame.Size = UDim2.new(0, 0, 0, 0)
         MainFrame.BackgroundTransparency = 1
         TweenService:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-            Size = UDim2.new(0, 520, 0, 380), BackgroundTransparency = 0.15
+            Size = UDim2.new(0, 520, 0, 420), BackgroundTransparency = 0.3
         }):Play()
     else
         local tweenOut = TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
@@ -720,11 +720,11 @@ TabSet.MouseButton1Click:Connect(function() SwitchTab(TabSet, PanelSet) end)
 SwitchTab(TabHome, PanelHome)
 
 -- ============================================================
--- HOME CONTENT (PREMIUM BARU)
+-- HOME CONTENT (PREMIUM BARU - FULL & RAMAI)
 -- ============================================================
 local HomeCard = Instance.new("Frame")
-HomeCard.Size = UDim2.new(1, -10, 0, 200)
-HomeCard.Position = UDim2.new(0, 5, 0, 10)
+HomeCard.Size = UDim2.new(1, -10, 1, -10)
+HomeCard.Position = UDim2.new(0, 5, 0, 5)
 HomeCard.BackgroundColor3 = Pallete.DarkPurple
 HomeCard.BackgroundTransparency = 0.4
 HomeCard.BorderSizePixel = 0
@@ -740,7 +740,7 @@ HomeCardStroke.Parent = HomeCard
 
 -- Banner Atas
 local TopBanner = Instance.new("Frame")
-TopBanner.Size = UDim2.new(1, 0, 0, 40)
+TopBanner.Size = UDim2.new(1, 0, 0, 50)
 TopBanner.Position = UDim2.new(0, 0, 0, 0)
 TopBanner.BackgroundColor3 = Pallete.Ungu
 TopBanner.BackgroundTransparency = 0.2
@@ -750,8 +750,8 @@ Instance.new("UICorner", TopBanner).CornerRadius = UDim.new(0, 10)
 TopBanner.Parent = HomeCard
 
 local TopBannerFill = Instance.new("Frame")
-TopBannerFill.Size = UDim2.new(1, 0, 0, 10)
-TopBannerFill.Position = UDim2.new(0, 0, 1, -10)
+TopBannerFill.Size = UDim2.new(1, 0, 0, 15)
+TopBannerFill.Position = UDim2.new(0, 0, 1, -15)
 TopBannerFill.BackgroundColor3 = Pallete.Ungu
 TopBannerFill.BackgroundTransparency = 0.2
 TopBannerFill.BorderSizePixel = 0
@@ -759,10 +759,10 @@ TopBannerFill.ZIndex = 6
 TopBannerFill.Parent = TopBanner
 
 local BannerTitle = Instance.new("TextLabel")
-BannerTitle.Size = UDim2.new(1, -20, 1, 0)
-BannerTitle.Position = UDim2.new(0, 10, 0, 0)
+BannerTitle.Size = UDim2.new(1, -20, 0, 25)
+BannerTitle.Position = UDim2.new(0, 10, 0, 5)
 BannerTitle.BackgroundTransparency = 1
-BannerTitle.Text = "THB PREMIUM SYSTEM"
+BannerTitle.Text = "THB PREMIUM DASHBOARD"
 BannerTitle.Font = Enum.Font.GothamBlack
 BannerTitle.TextSize = 16
 BannerTitle.TextColor3 = Pallete.White
@@ -770,17 +770,29 @@ BannerTitle.TextXAlignment = Enum.TextXAlignment.Center
 BannerTitle.ZIndex = 7
 BannerTitle.Parent = TopBanner
 
+local BannerSub = Instance.new("TextLabel")
+BannerSub.Size = UDim2.new(1, -20, 0, 15)
+BannerSub.Position = UDim2.new(0, 10, 0, 28)
+BannerSub.BackgroundTransparency = 1
+BannerSub.Text = "Fully Automated System V1"
+BannerSub.Font = Enum.Font.Gotham
+BannerSub.TextSize = 10
+BannerSub.TextColor3 = Color3.fromRGB(220, 200, 255)
+BannerSub.TextXAlignment = Enum.TextXAlignment.Center
+BannerSub.ZIndex = 7
+BannerSub.Parent = TopBanner
+
 -- Profil (Avatar + Nama)
 local ProfileFrame = Instance.new("Frame")
-ProfileFrame.Size = UDim2.new(1, 0, 0, 80)
-ProfileFrame.Position = UDim2.new(0, 0, 0, 45)
+ProfileFrame.Size = UDim2.new(1, 0, 0, 70)
+ProfileFrame.Position = UDim2.new(0, 0, 0, 55)
 ProfileFrame.BackgroundTransparency = 1
 ProfileFrame.ZIndex = 6
 ProfileFrame.Parent = HomeCard
 
 local Avatar = Instance.new("ImageLabel")
-Avatar.Size = UDim2.new(0, 50, 0, 50)
-Avatar.Position = UDim2.new(0, 15, 0, 5)
+Avatar.Size = UDim2.new(0, 45, 0, 45)
+Avatar.Position = UDim2.new(0, 15, 0, 12)
 Avatar.BackgroundColor3 = Pallete.Black
 Avatar.Image = "rbxthumb://type=AvatarHeadShot&id=" .. LocalPlayer.UserId .. "&w=150&h=150"
 Avatar.BorderSizePixel = 0
@@ -795,7 +807,7 @@ AvatarStroke.Parent = Avatar
 
 local NameLabel = Instance.new("TextLabel")
 NameLabel.Size = UDim2.new(1, -80, 0, 20)
-NameLabel.Position = UDim2.new(0, 75, 0, 10)
+NameLabel.Position = UDim2.new(0, 70, 0, 10)
 NameLabel.BackgroundTransparency = 1
 NameLabel.Text = LocalPlayer.DisplayName
 NameLabel.Font = Enum.Font.GothamBold
@@ -809,7 +821,7 @@ NameLabel.Parent = ProfileFrame
 
 local StatusLabel = Instance.new("TextLabel")
 StatusLabel.Size = UDim2.new(1, -80, 0, 15)
-StatusLabel.Position = UDim2.new(0, 75, 0, 30)
+StatusLabel.Position = UDim2.new(0, 70, 0, 30)
 StatusLabel.BackgroundTransparency = 1
 StatusLabel.Text = "🟢 Premium User"
 StatusLabel.Font = Enum.Font.Gotham
@@ -821,20 +833,20 @@ StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
 StatusLabel.ZIndex = 7
 StatusLabel.Parent = ProfileFrame
 
--- Stats Grid (2 Kotak Kiri Kanan)
+-- Grid 4 Kotak Statistik (2x2)
 local StatsGrid = Instance.new("Frame")
-StatsGrid.Size = UDim2.new(1, -20, 0, 45)
-StatsGrid.Position = UDim2.new(0, 10, 0, 135)
+StatsGrid.Size = UDim2.new(1, -20, 0, 100)
+StatsGrid.Position = UDim2.new(0, 10, 0, 130)
 StatsGrid.BackgroundTransparency = 1
 StatsGrid.ZIndex = 6
 StatsGrid.Parent = HomeCard
 
-local function CreateMiniStat(name, icon, xPos, xSize)
+local function CreateMiniStat(name, icon, xPos, yPos, xSize, ySize)
     local box = Instance.new("Frame")
-    box.Size = UDim2.new(xSize, -5, 1, 0)
-    box.Position = UDim2.new(xPos, 5, 0, 0)
+    box.Size = UDim2.new(xSize, -5, ySize, -5)
+    box.Position = UDim2.new(xPos, 5, yPos, 5)
     box.BackgroundColor3 = Pallete.Black
-    box.BackgroundTransparency = 0.5
+    box.BackgroundTransparency = 0.4
     box.BorderSizePixel = 0
     box.ZIndex = 7
     Instance.new("UICorner", box).CornerRadius = UDim.new(0, 6)
@@ -859,7 +871,7 @@ local function CreateMiniStat(name, icon, xPos, xSize)
     
     local val = Instance.new("TextLabel")
     val.Size = UDim2.new(1, 0, 0, 20)
-    val.Position = UDim2.new(0, 0, 0, 20)
+    val.Position = UDim2.new(0, 0, 0, 22)
     val.BackgroundTransparency = 1
     val.Text = "0"
     val.Font = Enum.Font.GothamBlack
@@ -871,15 +883,82 @@ local function CreateMiniStat(name, icon, xPos, xSize)
     return val
 end
 
-local StatMarshVal = CreateMiniStat("Marshmallow", "🍬", 0, 0.5)
-local StatSoldVal = CreateMiniStat("Terjual", "💀", 0.5, 0.5)
+local StatMarshVal = CreateMiniStat("Marshmallow", "🍬", 0, 0, 0.5, 0.5)
+local StatSoldVal = CreateMiniStat("Terjual", "💀", 0.5, 0, 0.5, 0.5)
+local StatCycleVal = CreateMiniStat("Siklus", "🔄", 0, 0.5, 0.5, 0.5)
+local StatProfitVal = CreateMiniStat("Profit", "💵", 0.5, 0.5, 0.5, 0.5)
+
+-- Info & Status Box (Bawah Grid)
+local InfoBox = Instance.new("Frame")
+InfoBox.Size = UDim2.new(0.5, -15, 0, 40)
+InfoBox.Position = UDim2.new(0, 10, 0, 235)
+InfoBox.BackgroundColor3 = Pallete.UnguTua
+InfoBox.BackgroundTransparency = 0.3
+InfoBox.BorderSizePixel = 0
+InfoBox.ZIndex = 7
+Instance.new("UICorner", InfoBox).CornerRadius = UDim.new(0, 6)
+InfoBox.Parent = HomeCard
+
+local InfoTitle = Instance.new("TextLabel")
+InfoTitle.Size = UDim2.new(1, 0, 0, 15)
+InfoTitle.Position = UDim2.new(0, 0, 0, 4)
+InfoTitle.BackgroundTransparency = 1
+InfoTitle.Text = "🏠 APARTMENT"
+InfoTitle.Font = Enum.Font.GothamBold
+InfoTitle.TextSize = 9
+InfoTitle.TextColor3 = Pallete.UnguTerang
+InfoTitle.ZIndex = 8
+InfoTitle.Parent = InfoBox
+
+local InfoApartmentLabel = Instance.new("TextLabel")
+InfoApartmentLabel.Size = UDim2.new(1, 0, 0, 15)
+InfoApartmentLabel.Position = UDim2.new(0, 0, 0, 18)
+InfoApartmentLabel.BackgroundTransparency = 1
+InfoApartmentLabel.Text = "None"
+InfoApartmentLabel.Font = Enum.Font.Gotham
+InfoApartmentLabel.TextSize = 11
+InfoApartmentLabel.TextColor3 = Pallete.White
+InfoApartmentLabel.ZIndex = 8
+InfoApartmentLabel.Parent = InfoBox
+
+local StatusBox = Instance.new("Frame")
+StatusBox.Size = UDim2.new(0.5, -15, 0, 40)
+StatusBox.Position = UDim2.new(0.5, 5, 0, 235)
+StatusBox.BackgroundColor3 = Pallete.UnguTua
+StatusBox.BackgroundTransparency = 0.3
+StatusBox.BorderSizePixel = 0
+StatusBox.ZIndex = 7
+Instance.new("UICorner", StatusBox).CornerRadius = UDim.new(0, 6)
+StatusBox.Parent = HomeCard
+
+local StatusTitle = Instance.new("TextLabel")
+StatusTitle.Size = UDim2.new(1, 0, 0, 15)
+StatusTitle.Position = UDim2.new(0, 0, 0, 4)
+StatusTitle.BackgroundTransparency = 1
+StatusTitle.Text = "⚡ SYSTEM STATUS"
+StatusTitle.Font = Enum.Font.GothamBold
+StatusTitle.TextSize = 9
+StatusTitle.TextColor3 = Pallete.UnguTerang
+StatusTitle.ZIndex = 8
+StatusTitle.Parent = StatusBox
+
+local StatusSystemLabel = Instance.new("TextLabel")
+StatusSystemLabel.Size = UDim2.new(1, 0, 0, 15)
+StatusSystemLabel.Position = UDim2.new(0, 0, 0, 18)
+StatusSystemLabel.BackgroundTransparency = 1
+StatusSystemLabel.Text = "🔴 Idle"
+StatusSystemLabel.Font = Enum.Font.GothamBold
+StatusSystemLabel.TextSize = 11
+StatusSystemLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+StatusSystemLabel.ZIndex = 8
+StatusSystemLabel.Parent = StatusBox
 
 -- Timer Bawah
 local TimerBox = Instance.new("Frame")
 TimerBox.Size = UDim2.new(1, -20, 0, 25)
-TimerBox.Position = UDim2.new(0, 10, 0, 185)
-TimerBox.BackgroundColor3 = Pallete.UnguTua
-TimerBox.BackgroundTransparency = 0.3
+TimerBox.Position = UDim2.new(0, 10, 0, 285)
+TimerBox.BackgroundColor3 = Pallete.Ungu
+TimerBox.BackgroundTransparency = 0.2
 TimerBox.BorderSizePixel = 0
 TimerBox.ZIndex = 7
 Instance.new("UICorner", TimerBox).CornerRadius = UDim.new(0, 6)
@@ -894,6 +973,18 @@ StatTimeLabel.TextSize = 11
 StatTimeLabel.TextColor3 = Pallete.White
 StatTimeLabel.ZIndex = 8
 StatTimeLabel.Parent = TimerBox
+
+-- Footer Text
+local FooterText = Instance.new("TextLabel")
+FooterText.Size = UDim2.new(1, 0, 0, 15)
+FooterText.Position = UDim2.new(0, 0, 0, 315)
+FooterText.BackgroundTransparency = 1
+FooterText.Text = "Powered by THB Store"
+FooterText.Font = Enum.Font.Gotham
+FooterText.TextSize = 9
+FooterText.TextColor3 = Color3.fromRGB(150, 150, 160)
+FooterText.ZIndex = 7
+FooterText.Parent = HomeCard
 
 -- FARM CONTENT
 local FarmTitle = Instance.new("TextLabel")
@@ -2140,6 +2231,28 @@ task.spawn(function()
             if StatSoldVal then
                 StatSoldVal.Text = tostring(FarmState.Sold or 0)
             end
+            if StatCycleVal then
+                StatCycleVal.Text = tostring(FarmState.Cycles or 0)
+            end
+            if StatProfitVal then
+                StatProfitVal.Text = FormatMoney(FarmState.Profit or 0)
+            end
+            
+            if InfoApartmentLabel then
+                local apt = getgenv().FA_OWNED_APRT
+                InfoApartmentLabel.Text = apt and apt:gsub("CompactWalkupAPT", "APT ") or "None"
+            end
+            
+            if StatusSystemLabel then
+                if FarmRunning then
+                    StatusSystemLabel.Text = "🟢 Active"
+                    StatusSystemLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+                else
+                    StatusSystemLabel.Text = "🔴 Idle"
+                    StatusSystemLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+                end
+            end
+            
             if StatTimeLabel then
                 StatTimeLabel.Text = "⏱️ Waktu: " .. os.date("%M:%S", os.time() - (FarmState.StartTime or os.time()))
             end
