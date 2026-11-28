@@ -1,0 +1,211 @@
+-- GepengServer Lengkap + Ukuran | Dark Angel
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- ===== BUAT REMOTES DI AWAL =====
+local remotes = ReplicatedStorage:FindFirstChild("GepengRemotes")
+if not remotes then
+	remotes = Instance.new("Folder")
+	remotes.Name = "GepengRemotes"
+	remotes.Parent = ReplicatedStorage
+end
+
+local function ambilAtauBuat(parent, nama, kelas)
+	local obj = parent:FindFirstChild(nama)
+	if not obj then
+		obj = Instance.new(kelas)
+		obj.Name = nama
+		obj.Parent = parent
+	end
+	return obj
+end
+
+local updateUI = ambilAtauBuat(remotes, "UpdateUI", "RemoteEvent")
+local ValidasiAksi = ambilAtauBuat(remotes, "ValidasiAksi", "RemoteEvent")
+local Heartbeat = ambilAtauBuat(remotes, "Heartbeat", "RemoteEvent")
+local UbahUkuran = ambilAtauBuat(remotes, "UbahUkuran", "RemoteEvent") -- Remote baru untuk ukuran
+
+-- ===== AMBIL ARENA & AKTOR =====
+local Arena = workspace:WaitForChild("Arena")
+local Aktor = workspace:WaitForChild("Aktor")
+local Rintangan = workspace:WaitForChild("Rintangan")
+
+local Pelari = Aktor:WaitForChild("Pelari")
+local Pengejar = Aktor:WaitForChild("Pengejar")
+
+local BUNTU = {5, 9, 14, 18}
+local posPelari, posPengejar = 1, 20
+local ketuk, diamPelari = 0, 0
+local selesai = false
+local ukuranGepeng = 4 -- Default ukuran part (4x4 stud)
+
+-- ===== ANTI-CHEAT STATE =====
+local logKick = {}
+local curang = {}
+local gagalValidasi = {}
+local TOLERANSI = 3
+local cooldownRemote = {}
+local COOLDOWN = 0.1
+
+local function bolehKirim(pemain)
+	local now = os.clock()
+	if cooldownRemote[pemain.UserId] and now - cooldownRemote[pemain.UserId] < COOLDOWN then
+		return false
+	end
+	cooldownRemote[pemain.UserId] = now
+	return true
+end
+
+local function kirimPeringatan(pemain, jenis, pesan)
+	updateUI:FireClient(pemain, { peringatan = { jenis = jenis, pesan = pesan } })
+end
+
+-- ===== FUNGSI UBAH UKURAN =====
+local function terapkanUkuranGepeng(ukuranBaru)
+	ukuranGepeng = ukuranBaru
+	for _, part in ipairs(Arena:GetChildren()) do
+		if part:IsA("BasePart") and part.Name:match("Lorong_") then
+			part.Size = Vector3.new(ukuranBaru, 1, ukuranBaru)
+		elseif part:IsA("BasePart") and part.Name:match("Buntu_") then
+			part.Size = Vector3.new(ukuranBaru, 1, ukuranBaru)
+		end
+	end
+end
+
+UbahUkuran.OnServerEvent:Connect(function(pemain, ukuran)
+	if not bolehKirim(pemain) then return end
+	if type(ukuran) ~= "number" then return end
+	-- Batasi ukuran agar tidak terlalu kecil/besar
+	if ukuran < 2 or ukuran > 10 then return end
+	
+	terapkanUkuranGepeng(ukuran)
+	kirimPeringatan(pemain, "koneksi", "Ukuran Gepeng diubah ke " .. ukuran .. " stud.")
+end)
+
+-- ===== POSISI =====
+local function posKePart(nama, nomor)
+	return Arena:FindFirstChild(nama .. "_" .. nomor)
+end
+
+local function tempatkan(aktor, nomor)
+	local p = posKePart("Lorong", nomor)
+	if p then
+		aktor.Position = p.Position + Vector3.new(0, 3, 0)
+	end
+end
+
+local function kirimUI()
+	updateUI:FireAllClients({
+		ketuk = ketuk,
+		pelari = posPelari,
+		pengejar = posPengejar,
+		buntu = BUNTU,
+		selesai = selesai,
+	})
+end
+
+-- ===== RINTANGAN =====
+local function cekRintangan(nomor)
+	for _, r in ipairs(Rintangan:GetChildren()) do
+		local n = tonumber(r.Name:match("%d+"))
+		if n == nomor then
+			if r.Name:find("Genangan") then
+				diamPelari += 1
+			elseif r.Name:find("Pintu") then
+				local dadu = math.random(1, 6)
+				if dadu % 2 == 0 then
+					posPengejar += 1
+				end
+			elseif r.Name:find("Gelap") then
+				diamPelari += 1
+			end
+		end
+	end
+end
+
+-- ===== LANGKAH =====
+local function langkah()
+	if selesai then return end
+	ketuk += 1
+
+	if diamPelari > 0 then
+		diamPelari -= 1
+	else
+		posPelari += 1
+	end
+
+	if ketuk % 2 == 0 then
+		posPengejar += 1
+	end
+
+	if posPelari > 20 then posPelari = 20 end
+	if posPengejar > 20 then posPengejar = 20 end
+
+	tempatkan(Pelari, posPelari)
+	tempatkan(Pengejar, posPengejar)
+
+	cekRintangan(posPelari)
+	kirimUI()
+
+	if posPengejar >= posPelari then
+		selesai = true
+		kirimUI()
+	end
+end
+
+-- ===== VALIDASI SERVER =====
+ValidasiAksi.OnServerEvent:Connect(function(pemain, aksi, dari, ke)
+	if not bolehKirim(pemain) then return end
+	if type(aksi) ~= "string" then return end
+
+	if aksi == "kick_report" then
+		table.insert(logKick, 1, { pemain = pemain.Name, waktu = os.time() })
+		if #logKick > 5 then table.remove(logKick) end
+		return
+	end
+
+	if aksi == "gerak" then
+		local valid = true
+		if type(dari) ~= "number" or type(ke) ~= "number" then valid = false end
+		if valid and math.abs(ke - dari) ~= 1 then valid = false end
+		if valid and (ke < 1 or ke > 20) then valid = false end
+
+		if not valid then
+			gagalValidasi[pemain.UserId] = (gagalValidasi[pemain.UserId] or 0) + 1
+			if gagalValidasi[pemain.UserId] >= TOLERANSI then
+				curang[pemain.UserId] = true
+				kirimPeringatan(pemain, "curang", "Validasi gagal 3 kali. Ronde dihentikan.")
+			else
+				kirimPeringatan(pemain, "curang", "Aksi tidak valid (" .. gagalValidasi[pemain.UserId] .. "/3).")
+			end
+		else
+			gagalValidasi[pemain.UserId] = 0
+		end
+	end
+end)
+
+Heartbeat.OnServerEvent:Connect(function(pemain, waktuClient)
+	if type(waktuClient) ~= "number" then return end
+	Heartbeat:FireClient(pemain, os.clock())
+end)
+
+-- ===== PEMBERSIHAN =====
+Players.PlayerRemoving:Connect(function(pemain)
+	gagalValidasi[pemain.UserId] = nil
+	curang[pemain.UserId] = nil
+	cooldownRemote[pemain.UserId] = nil
+end)
+
+-- ===== START =====
+Players.PlayerAdded:Connect(function()
+	tempatkan(Pelari, posPelari)
+	tempatkan(Pengejar, posPengejar)
+	kirimUI()
+end)
+
+task.spawn(function()
+	while not selesai do
+		task.wait(2)
+		langkah()
+	end
+end)
