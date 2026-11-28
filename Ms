@@ -1,0 +1,242 @@
+-- LocalScript: StarterPlayerScripts → JWSR
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Lighting = game:GetService("Lighting")
+local Workspace = game:GetService("Workspace")
+
+local player = Players.LocalPlayer
+local PremiumCheck = ReplicatedStorage:FindFirstChild("PremiumCheck")
+    or Instance.new("RemoteEvent", ReplicatedStorage)
+PremiumCheck.Name = "PremiumCheck"
+
+-- BUILD GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "JWSR"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent = player:WaitForChild("PlayerGui")
+
+local main = Instance.new("Frame")
+main.Name = "MainFrame"
+main.Size = UDim2.fromScale(0.4, 0.65)
+main.Position = UDim2.fromScale(0.5, 0.5)
+main.AnchorPoint = Vector2.new(0.5, 0.5)
+main.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+main.Parent = gui
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
+local stroke = Instance.new("UIStroke", main)
+stroke.Thickness = 1.5
+stroke.Color = Color3.fromRGB(80, 80, 90)
+
+local title = Instance.new("TextLabel")
+title.Name = "Title"
+title.Size = UDim2.new(1, 0, 0.1, 0)
+title.BackgroundTransparency = 1
+title.Text = "JWSR"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 24
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Parent = main
+
+local status = Instance.new("TextLabel")
+status.Name = "StatusLabel"
+status.Size = UDim2.new(1, 0, 0.07, 0)
+status.Position = UDim2.new(0, 0, 0.1, 0)
+status.BackgroundTransparency = 1
+status.Text = "Memeriksa..."
+status.Font = Enum.Font.Gotham
+status.TextSize = 14
+status.TextColor3 = Color3.fromRGB(200, 200, 200)
+status.Parent = main
+
+local action = Instance.new("TextButton")
+action.Name = "ActionButton"
+action.Size = UDim2.fromScale(0.6, 0.08)
+action.Position = UDim2.fromScale(0.5, 0.22)
+action.AnchorPoint = Vector2.new(0.5, 0.5)
+action.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+action.Text = "Akses"
+action.Font = Enum.Font.GothamBold
+action.TextSize = 14
+action.TextColor3 = Color3.fromRGB(255, 255, 255)
+action.Parent = main
+Instance.new("UICorner", action).CornerRadius = UDim.new(0, 8)
+
+local close = Instance.new("TextButton")
+close.Name = "CloseButton"
+close.Size = UDim2.fromOffset(28, 28)
+close.Position = UDim2.new(1, -34, 0, 6)
+close.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+close.Text = "X"
+close.Font = Enum.Font.GothamBold
+close.TextSize = 14
+close.TextColor3 = Color3.fromRGB(255, 255, 255)
+close.Parent = main
+Instance.new("UICorner", close).CornerRadius = UDim.new(0, 6)
+
+local scroll = Instance.new("ScrollingFrame")
+scroll.Name = "Features"
+scroll.Size = UDim2.new(1, -20, 0.62, 0)
+scroll.Position = UDim2.new(0, 10, 0.3, 0)
+scroll.BackgroundTransparency = 1
+scroll.BorderSizePixel = 0
+scroll.ScrollBarThickness = 4
+scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+scroll.Parent = main
+Instance.new("UIListLayout", scroll).Padding = UDim.new(0, 6)
+
+-- OVERLAY LOCK
+local overlay = Instance.new("Frame")
+overlay.Name = "LockOverlay"
+overlay.Size = UDim2.fromScale(1, 1)
+overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+overlay.BackgroundTransparency = 0.5
+overlay.ZIndex = 10
+overlay.Visible = false
+overlay.Parent = main
+Instance.new("UICorner", overlay).CornerRadius = UDim.new(0, 12)
+
+local lockText = Instance.new("TextLabel")
+lockText.Size = UDim2.fromScale(1, 1)
+lockText.BackgroundTransparency = 1
+lockText.Text = "🔒 PREMIUM ONLY"
+lockText.Font = Enum.Font.GothamBold
+lockText.TextSize = 22
+lockText.TextColor3 = Color3.fromRGB(255, 80, 80)
+lockText.ZIndex = 11
+lockText.Parent = overlay
+
+-- FITUR OPTIMIZE
+local state = {
+    LowGraphics = false,
+    FPSBoost = false,
+    ClearParticles = false,
+    HideSky = false,
+    DisableShadows = false,
+}
+
+local disabledParticles = {}
+
+local function applyLowGraphics(on)
+    Lighting.GlobalShadows = not on
+    Lighting.FogEnd = on and 100000 or 1000
+    Lighting.EnvironmentDiffuseScale = on and 0 or 1
+    Lighting.EnvironmentSpecularScale = on and 0 or 1
+end
+
+local function applyFPSBoost(on)
+    pcall(function()
+        settings().Rendering.QualityLevel = on and 1 or 10
+    end)
+    Workspace.Terrain.WaterWaveSize = on and 0 or 1
+    Workspace.Terrain.WaterWaveSpeed = on and 0 or 1
+end
+
+local function applyClearParticles(on)
+    if on then
+        for _, obj in ipairs(Workspace:GetDescendants()) do
+            if obj:IsA("ParticleEmitter") or obj:IsA("Smoke") or obj:IsA("Fire") then
+                if obj.Enabled then
+                    obj.Enabled = false
+                    table.insert(disabledParticles, obj)
+                end
+            end
+        end
+    else
+        for _, obj in ipairs(disabledParticles) do
+            if obj.Parent then obj.Enabled = true end
+        end
+        disabledParticles = {}
+    end
+end
+
+local function applyHideSky(on)
+    local sky = Lighting:FindFirstChildOfClass("Sky")
+    if on and sky then sky.Parent = nil end
+end
+
+local function applyDisableShadows(on)
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("BasePart") then
+            obj.CastShadow = not on
+        end
+    end
+end
+
+local map = {
+    LowGraphics = applyLowGraphics,
+    FPSBoost = applyFPSBoost,
+    ClearParticles = applyClearParticles,
+    HideSky = applyHideSky,
+    DisableShadows = applyDisableShadows,
+}
+
+-- ===== TOMBOL FITUR (INI YANG KAU MINTA) =====
+local buttons = {}
+local urutan = {"LowGraphics", "FPSBoost", "ClearParticles", "HideSky", "DisableShadows"}
+
+for _, name in ipairs(urutan) do
+    local btn = Instance.new("TextButton")
+    btn.Name = name
+    btn.Size = UDim2.new(1, 0, 0, 38)
+    btn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+    btn.Text = name .. ": Off"
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 14
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.AutoButtonColor = true
+    btn.Parent = scroll
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+
+    local btnStroke = Instance.new("UIStroke", btn)
+    btnStroke.Thickness = 1
+    btnStroke.Color = Color3.fromRGB(70, 70, 80)
+
+    btn.MouseButton1Click:Connect(function()
+        if not premium then return end -- blokir non-premium
+        state[name] = not state[name]
+        map[name](state[name])
+        btn.Text = name .. ": " .. (state[name] and "On" or "Off")
+        btn.BackgroundColor3 = state[name]
+            and Color3.fromRGB(40, 120, 60)
+            or Color3.fromRGB(45, 45, 55)
+        btnStroke.Color = state[name]
+            and Color3.fromRGB(0, 200, 100)
+            or Color3.fromRGB(70, 70, 80)
+    end)
+    buttons[name] = btn
+end
+
+-- LOGIC PREMIUM
+local premium = false
+
+action.MouseButton1Click:Connect(function()
+    PremiumCheck:FireServer()
+end)
+
+close.MouseButton1Click:Connect(function()
+    gui.Enabled = false
+end)
+
+PremiumCheck.OnClientEvent:Connect(function(isPremium)
+    premium = isPremium
+    if premium then
+        status.Text = "Premium Aktif"
+        status.TextColor3 = Color3.fromRGB(0, 200, 100)
+        action.Text = "Refresh"
+        action.Active = true
+        overlay.Visible = false
+        scroll.Visible = true
+    else
+        status.Text = "Premium Diperlukan"
+        status.TextColor3 = Color3.fromRGB(200, 50, 50)
+        action.Text = "Terkunci"
+        action.Active = false
+        overlay.Visible = true
+        scroll.Visible = false
+    end
+end)
+
+PremiumCheck:FireServer()
